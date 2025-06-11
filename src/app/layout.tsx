@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <Header />
-        {children}
+        <main className="min-h-screen ">{children}</main> {/* pb-24 evita sobreposição com o footer */}
         <Footer />
       </body>
     </html>
