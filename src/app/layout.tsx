@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "ECOMZERO",
     images: [
       {
-        url: "https://www.ecomzero.com.br/fav.png", // Substitua pelo caminho da imagem desejada
+        url: "https://www.ecomzero.com.br/ecom.png",
         width: 1200,
         height: 630,
         alt: "Imagem de compartilhamento do ECOMZERO",
