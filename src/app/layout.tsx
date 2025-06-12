@@ -18,7 +18,23 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ECOMZERO",
   description: "Calculadora de precificação para Shopee",
+  openGraph: {
+    title: "ECOMZERO",
+    description: "Calculadora de precificação para Shopee",
+    url: "https://www.ecomzero.com.br",
+    siteName: "ECOMZERO",
+    images: [
+      {
+        url: "https://www.ecomzero.com.br/fav.png", // Substitua pelo caminho da imagem desejada
+        width: 1200,
+        height: 630,
+        alt: "Imagem de compartilhamento do ECOMZERO",
+      },
+    ],
+    type: "website",
+  },
 };
+
 
 export default function RootLayout({
   children,
