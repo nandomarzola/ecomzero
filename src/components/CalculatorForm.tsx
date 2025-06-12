@@ -7,13 +7,13 @@ import CalculationResult from '@/components/CalculationResult';
 
 const CalculatorForm = () => {
   const initialFormState = {
-    product_name: 'Seu Produto', // Nome do produto para teste
+    product_name: 'Seu Produto',
     product_cost: '',
     selling_price: '',
-    logistic_cost: '',
+    logistic_cost: '0,00',
     is_new_seller: '',
     is_in_free_shipping_program: '',
-    additional_commission_percent: '',
+    additional_commission_percent: '0,00',
   };
 
   const [form, setForm] = useState(initialFormState);
