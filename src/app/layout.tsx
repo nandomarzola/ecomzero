@@ -56,7 +56,7 @@ export default function RootLayout({
             gtag('config', 'G-L52TXPMG2P');
           `}
         </Script>
-        <Script
+         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8445617399965497"
           crossOrigin="anonymous"
