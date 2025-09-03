@@ -119,6 +119,7 @@ const CalculatorForm = () => {
               onBlur={handleBlur}
               required
               placeholder="Ex: 5,00"
+              className="placeholder-black"
             />
 
             <Input
@@ -129,6 +130,7 @@ const CalculatorForm = () => {
               onChange={handleChange}
               required
               placeholder="Ex: 11,99"
+              className="placeholder-black"
             />
 
             <Input
@@ -139,6 +141,7 @@ const CalculatorForm = () => {
               onChange={handleChange}
               placeholder="Ex: 0"
               description="Embalagens, mão de obra ou outros custos."
+              className="placeholder-black"
             />
 
             <Input
@@ -149,6 +152,7 @@ const CalculatorForm = () => {
               onChange={handleChange}
               placeholder="Ex: 2,00"
               description="Campanhas ou outras taxas!"
+              className="placeholder-black"
             />
 
             <div className="flex flex-col">
@@ -159,16 +163,16 @@ const CalculatorForm = () => {
                 Caso seja vendedor a menos de 30 dias na shopee
               </span>
               <select
-                name="is_new_seller"
-                value={form.is_new_seller}
-                onChange={handleChange}
-                required
-                className="border border-gray-300 rounded-lg p-2 text-sm focus:ring-red-800 focus:border-red-800"
-              >
-                <option value="">Selecione</option>
-                <option value="sim">Sim</option>
-                <option value="nao">Não</option>
-              </select>
+  name="is_new_seller"
+  value={form.is_new_seller}
+  onChange={handleChange}
+  required
+  className="border border-gray-300 rounded-lg p-2 text-sm focus:ring-red-800 focus:border-red-800 text-black appearance-none bg-white"
+>
+  <option value="" hidden>Selecione</option>
+  <option value="sim">Sim</option>
+  <option value="nao">Não</option>
+</select>
             
             </div>
 
@@ -180,16 +184,16 @@ const CalculatorForm = () => {
                 &nbsp;
               </span>
               <select
-                name="is_in_free_shipping_program"
-                value={form.is_in_free_shipping_program}
-                onChange={handleChange}
-                required
-                className="border border-gray-300 rounded-lg p-2 text-sm focus:ring-red-800 focus:border-red-800"
-              >
-                <option value="">Selecione</option>
-                <option value="sim">Sim</option>
-                <option value="nao">Não</option>
-              </select>
+  name="is_in_free_shipping_program"
+  value={form.is_in_free_shipping_program}
+  onChange={handleChange}
+  required
+  className="border border-gray-300 rounded-lg p-2 text-sm focus:ring-red-800 focus:border-red-800 text-black appearance-none bg-white"
+>
+  <option value="" hidden>Selecione</option>
+  <option value="sim">Sim</option>
+  <option value="nao">Não</option>
+</select>
             </div>
           </div>
 
@@ -203,7 +207,7 @@ const CalculatorForm = () => {
       ) : (
         <CalculationResult
           result={calculationResult.calculation.result}
-          onReset={handleReset} // Função para reiniciar o cálculo e limpar os inputs
+          onReset={handleReset} 
         />
       )}
     </div>
