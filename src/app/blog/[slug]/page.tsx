@@ -5,9 +5,7 @@ import economiaArticles from "@/service/economia.json";
 
 export default function BlogPage({ params }: any) {
   const allArticles = [...politicaArticles, ...economiaArticles];
-
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
-
   const article = allArticles.find(a => a.slug === slug);
 
   if (!article) {
