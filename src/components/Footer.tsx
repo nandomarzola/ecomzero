@@ -17,7 +17,7 @@ export default function Footer() {
             Política de Privacidade
           </Link>
           <Link href="/about" className="hover:text-white transition">
-            Sobre
+            Sobre Nós
           </Link>
           <Link href="/contact" className="hover:text-white transition">
             Contato
