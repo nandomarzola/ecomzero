@@ -1,6 +1,12 @@
 {
   "categorias": [
     {
+      "id": "tudo",
+      "label": "Tudo",
+      "icone": "Grid2X2",
+      "relacionadas": []
+    },
+    {
       "id": "iluminacao",
       "label": "Iluminação",
       "icone": "Lightbulb",
@@ -16,7 +22,7 @@
       "id": "ferramentas",
       "label": "Ferramentas",
       "icone": "Wrench",
-      "relacionadas": ["iluminacao"]
+      "relacionadas": ["iluminacao", "utilidades"]
     },
     {
       "id": "beleza",
@@ -25,10 +31,16 @@
       "relacionadas": []
     },
     {
-      "id": "tudo",
-      "label": "Tudo",
-      "icone": "Grid2X2",
-      "relacionadas": []
+      "id": "utilidades",
+      "label": "Utilidades",
+      "icone": "Package",
+      "relacionadas": ["limpeza", "ferramentas"]
+    },
+    {
+      "id": "limpeza",
+      "label": "Limpeza",
+      "icone": "SprayCan",
+      "relacionadas": ["utilidades"]
     }
   ]
 }

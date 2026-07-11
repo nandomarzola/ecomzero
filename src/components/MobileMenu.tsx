@@ -75,6 +75,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
                   <li key={item.label}>
                     <Link
                       href={item.href}
+                      scroll={!item.href.includes("?")}
                       onClick={() => setOpen(false)}
                       aria-current={index === 0 ? "page" : undefined}
                       className="font-display flex min-h-12 items-center rounded-lg px-4 text-sm font-semibold text-white/90 transition hover:bg-[#170303] hover:text-[#A9EC17]"

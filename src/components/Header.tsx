@@ -5,9 +5,9 @@ import MobileMenu from "@/components/MobileMenu";
 const navigation = [
   { label: "Início", href: "/" },
   { label: "Categorias", href: "/#vitrine" },
-  { label: "Ofertas", href: "/#vitrine" },
-  { label: "Novidades", href: "/#vitrine" },
-  { label: "Mais Vendidos", href: "/#vitrine" },
+  { label: "Ofertas", href: "/?f=ofertas#vitrine" },
+  { label: "Novidades", href: "/?f=novidades#vitrine" },
+  { label: "Mais Vendidos", href: "/?f=mais-vendidos#vitrine" },
   { label: "Sobre a EcomZero", href: "/#sobre" },
 ];
 
@@ -28,6 +28,7 @@ export default function Header() {
               <li key={item.label}>
                 <Link
                   href={item.href}
+                  scroll={!item.href.includes("?")}
                   aria-current={index === 0 ? "page" : undefined}
                   className={`font-display relative py-6 text-xs font-semibold transition hover:text-[#A9EC17] lg:text-sm ${index === 0 ? "text-white after:absolute after:bottom-3 after:left-0 after:h-0.5 after:w-full after:bg-[#A9EC17]" : "text-white/85"}`}
                 >
