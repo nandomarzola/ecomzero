@@ -109,17 +109,17 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,0,0,0.55)_0%,rgba(5,0,0,0.78)_55%,#050000_100%)] sm:hidden" />
               </div>
 
-              <div className="relative mx-auto flex min-h-[590px] max-w-[1440px] items-center px-8 py-14 sm:px-16 lg:px-24">
+              <div className="relative mx-auto flex min-h-[500px] max-w-[1440px] items-center px-5 py-10 sm:min-h-[590px] sm:px-16 sm:py-14 lg:px-24">
                 <div className="relative z-10 min-w-0 w-full max-w-[620px]">
-                  <BrandLogo className="mb-3 scale-110 origin-left" />
-                  <p className="font-display text-xs font-bold uppercase tracking-[0.25em] text-[#A9EC17]">
+                  <BrandLogo className="mb-3 origin-left sm:scale-110" />
+                  <p className="font-display text-[11px] font-bold uppercase tracking-[0.25em] text-[#A9EC17] sm:text-xs">
                     {slide.eyebrow}
                   </p>
-                  <TitleTag className="font-display mt-3 text-4xl font-extrabold leading-[0.98] text-white sm:text-5xl lg:text-6xl">
+                  <TitleTag className="font-display mt-2 text-3xl font-extrabold leading-[0.98] text-white sm:mt-3 sm:text-5xl lg:text-6xl">
                     {slide.titulo}
                     <span className="mt-2 block text-[#A9EC17]">{slide.destaque}</span>
                   </TitleTag>
-                  <p className="font-display mt-4 inline-flex rounded-lg border border-[#8C1111] bg-[#7B0D0D]/70 px-4 py-2 text-sm font-bold tracking-wide text-white sm:text-base">
+                  <p className="font-display mt-4 inline-flex rounded-lg border border-[#8C1111] bg-[#7B0D0D]/70 px-3 py-2 text-xs font-bold tracking-wide text-white sm:px-4 sm:text-base">
                     {slide.subtitulo}
                   </p>
 
@@ -127,9 +127,9 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
                     {details.map(({ label, icon: Icon }, index) => (
                       <div
                         key={label}
-                        className={`flex min-h-24 min-w-0 flex-col items-center justify-center gap-2 px-2 py-3 text-center ${index > 0 ? "border-l border-[#771010]" : ""}`}
+                        className={`flex min-h-20 min-w-0 flex-col items-center justify-center gap-1.5 px-2 py-3 text-center sm:min-h-24 sm:gap-2 ${index > 0 ? "border-l border-[#771010]" : ""} ${index === 2 || index === 3 ? "border-t border-[#771010] sm:border-t-0" : ""} ${index === 2 ? "border-l-0 sm:border-l" : ""}`}
                       >
-                        <Icon className="h-7 w-7 text-[#A9EC17]" strokeWidth={1.6} />
+                        <Icon className="h-6 w-6 text-[#A9EC17] sm:h-7 sm:w-7" strokeWidth={1.6} />
                         <span className="max-w-full break-words text-[9px] font-semibold leading-4 text-white sm:text-[11px]">
                           {label}
                         </span>
@@ -139,7 +139,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
 
                   <Link
                     href={slide.href}
-                    className="font-display mt-5 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#A9EC17] px-7 py-3 text-sm font-bold text-black transition hover:brightness-110"
+                    className="font-display mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#A9EC17] px-7 py-3 text-sm font-bold text-black transition hover:brightness-110 sm:w-auto"
                   >
                     VER PRODUTO
                   </Link>
@@ -155,7 +155,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
         type="button"
         onClick={() => emblaApi?.scrollPrev()}
         aria-label="Banner anterior"
-        className="absolute left-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#A9EC17] transition hover:bg-black/45 sm:left-5"
+        className="absolute left-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#A9EC17] transition hover:bg-black/45 sm:left-5 sm:flex"
       >
         <ArrowLeft className="h-8 w-8" strokeWidth={1.8} />
       </button>
@@ -163,7 +163,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
         type="button"
         onClick={() => emblaApi?.scrollNext()}
         aria-label="Próximo banner"
-        className="absolute right-3 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#A9EC17] transition hover:bg-black/45 sm:right-5"
+        className="absolute right-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#A9EC17] transition hover:bg-black/45 sm:right-5 sm:flex"
       >
         <ArrowRight className="h-8 w-8" strokeWidth={1.8} />
       </button>

@@ -34,11 +34,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         )}
       </Link>
 
-      <div className="flex flex-1 flex-col border-t border-[#5F0E0E] p-4">
-        <h3 className="font-display truncate text-sm font-semibold text-white">
+      <div className="flex flex-1 flex-col border-t border-[#5F0E0E] p-3 sm:p-4">
+        <h3 className="font-display truncate text-xs font-semibold text-white sm:text-sm">
           {product.nome}
         </h3>
-        <p className="mt-1 truncate text-[11px] text-white/60">{product.subtitulo}</p>
+        <p className="mt-1 truncate text-[10px] text-white/60 sm:text-[11px]">{product.subtitulo}</p>
 
         <div className="mt-2 flex items-center gap-1">
           {Array.from({ length: product.avaliacao }).map((_, index) => (
@@ -47,12 +47,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           <span className="ml-1 text-[10px] text-white/55">({product.reviews})</span>
         </div>
 
-        <div className="mt-auto flex items-end justify-between gap-3 pt-3">
-          <strong className="font-display whitespace-nowrap text-lg font-bold text-white">
+        <div className="mt-auto flex flex-col items-stretch gap-2 pt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+          <strong className="font-display whitespace-nowrap text-base font-bold text-white sm:text-lg">
             {formatPrice(product.preco)}
           </strong>
           <Link
             href={product.href}
+            aria-label={`Ver produto ${product.nome}`}
             className="font-display inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-[#A9EC17] px-3 text-[10px] font-extrabold text-black transition hover:scale-[1.03] hover:brightness-110"
           >
             VER PRODUTO

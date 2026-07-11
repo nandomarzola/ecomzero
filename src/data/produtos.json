@@ -50,5 +50,223 @@
         "precoPor": 12.90
       }
     ]
+  },
+  {
+    "slug": "sensor-alarme-magnetico-sirene-porta-janela-sem-fio",
+    "categoria": "Segurança",
+    "nome": "Sensor Alarme Magnético Sirene Porta Janela Sem Fio",
+    "subtitulo": "Proteção prática para casas, comércios e escritórios",
+    "descricao": "Sensor de alarme magnético com sirene integrada para portas e janelas. Fácil de instalar, funciona sem fios e ajuda a aumentar a segurança de residências, apartamentos, comércios, escritórios e outros ambientes.",
+    "imagem": "/produtos/sensor_alarme/capa.jpg",
+    "imagens": [
+      "/produtos/sensor_alarme/capa.jpg",
+      "/produtos/sensor_alarme/secundaria1.jpg",
+      "/produtos/sensor_alarme/secundaria2.jpg"
+    ],
+    "caracteristicas": [
+      "Sirene de alto volume integrada",
+      "Instalação rápida sem necessidade de fios",
+      "Ideal para portas, janelas, armários e gavetas",
+      "Funcionamento com pilhas",
+      "Compacto, leve e fácil de utilizar"
+    ],
+    "linkShopee": "https://shopee.com.br/Sensor-Alarme-Magn%C3%A9tico-Sirene-Porta-Janela-Sem-Fio-Seguran%C3%A7a-Casa-Comercio-Antifurto-Alarme-i.611286890.42232131716?extraParams=%7B%22display_model_id%22%3A401132368217%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "1-unidade",
+        "label": "1 unidade",
+        "precoDe": 39.99,
+        "precoPor": 14.99
+      }
+    ]
+  },
+  {
+    "slug": "carmed-hidratante-labial-edicao-surpresa-selecoes-cimed-5g",
+    "categoria": "Beleza",
+    "nome": "Carmed Hidratante Labial Edição Surpresa Seleções Cimed 5g",
+    "subtitulo": "Hidratação diária com embalagem surpresa colecionável",
+    "descricao": "O Carmed Seleções é uma edição especial inspirada em países campeões mundiais. Possui fórmula hidratante para uso diário, acabamento incolor e embalagem surpresa, tornando cada compra uma experiência única para colecionadores e fãs da linha Carmed. :contentReference[oaicite:0]{index=0}",
+    "imagem": "/produtos/carmed/capa.jpg",
+    "imagens": [
+      "/produtos/carmed/capa.jpg",
+      "/produtos/carmed/secundaria1.jpg",
+      "/produtos/carmed/secundaria2.jpg"
+    ],
+    "caracteristicas": [
+      "Hidratante labial de 5g",
+      "Acabamento incolor",
+      "Edição surpresa inspirada nas seleções",
+      "Embalagem colecionável",
+      "Ideal para uso diário"
+    ],
+    "linkShopee": "https://shopee.com.br/Carmed-Hidratante-Labial-Edi%C3%A7%C3%A3o-Surpresa-Sele%C3%A7%C3%B5es-Cimed-5g-i.611286890.53461857758?extraParams=%7B%22display_model_id%22%3A381030039882%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "1-unidade",
+        "label": "1 unidade",
+        "precoDe": 29.99,
+        "precoPor": 19.99
+      }
+    ]
+  },
+  {
+    "slug": "canivete-tatico-xingu-dobravel-aco-inox-camuflado",
+    "categoria": "Ferramentas",
+    "nome": "Canivete Tático Xingu Dobrável Aço Inox Camuflado",
+    "subtitulo": "Resistente e portátil para camping, pesca e uso diário",
+    "descricao": "Canivete tático Xingu com estrutura dobrável, lâmina em aço inox e acabamento camuflado. Uma opção compacta e resistente para atividades como camping, pesca, trilhas e tarefas do dia a dia.",
+    "imagem": "/produtos/canivete2929/capa.jpg",
+    "imagens": [
+      "/produtos/canivete2929/capa.jpg",
+      "/produtos/canivete2929/secundaria1.jpg",
+      "/produtos/canivete2929/secundaria2.jpg",
+      "/produtos/canivete2929/secundaria3.jpg",
+      "/produtos/canivete2929/secundaria4.jpg"
+    ],
+    "caracteristicas": [
+      "Lâmina produzida em aço inox",
+      "Estrutura dobrável e fácil de transportar",
+      "Acabamento camuflado",
+      "Ideal para camping, pesca e atividades ao ar livre",
+      "Disponível em kits com 1, 2 ou 3 unidades"
+    ],
+    "linkShopee": "https://shopee.com.br/Canivete-T%C3%A1tico-Xingu-Dobr%C3%A1vel-A%C3%A7o-Inox-Camuflado-Camping-Pesca-Resistente-(1-2-ou-3-Unidades)-i.611286890.46007497503?extraParams=%7B%22display_model_id%22%3A425665039669%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "1-unidade",
+        "label": "1 unidade",
+        "precoDe": 19.90,
+        "precoPor": 16.99
+      },
+      {
+        "id": "2-unidades",
+        "label": "2 unidades",
+        "precoDe": 34.90,
+        "precoPor": 29.99
+      },
+      {
+        "id": "3-unidades",
+        "label": "3 unidades",
+        "precoDe": 49.90,
+        "precoPor": 38.99
+      }
+    ]
+  },
+  {
+    "slug": "lencos-intimos-dermacyd-48un-96un",
+    "categoria": "Beleza",
+    "nome": "Lenços Íntimos Dermacyd 48un 96un Higiene Feminina",
+    "subtitulo": "pH Equilibrado para higiene íntima diária",
+    "descricao": "Os Lenços Íntimos Dermacyd foram desenvolvidos para proporcionar higiene íntima prática e delicada em qualquer momento do dia. Com pH equilibrado e fórmula suave, ajudam a manter a sensação de limpeza e frescor, sendo ideais para uso diário, viagens, academia e rotina feminina.",
+    "imagem": "/produtos/dermacyd_lenco/capa.jpg",
+    "imagens": [
+      "/produtos/dermacyd_lenco/capa.jpg",
+      "/produtos/dermacyd_lenco/secundaria1.jpg",
+      "/produtos/dermacyd_lenco/secundaria2.jpg"
+    ],
+    "caracteristicas": [
+      "Fórmula com pH equilibrado",
+      "Indicado para higiene íntima diária",
+      "Sensação prolongada de limpeza e frescor",
+      "Ideal para levar na bolsa, viagens e academia",
+      "Disponível em kits com 48 ou 96 unidades"
+    ],
+    "linkShopee": "https://shopee.com.br/Len%C3%A7os-%C3%8Dntimos-Dermacyd-48un-96un-Higiene-Feminina-pH-Equilibrado-Uso-Di%C3%A1rio-i.611286890.55509586519?extraParams=%7B%22display_model_id%22%3A405847293645%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "48-unidades",
+        "label": "1 pacote (48 unidades)",
+        "precoDe": 49.99,
+        "precoPor": 29.99
+      },
+      {
+        "id": "96-unidades",
+        "label": "2 pacotes (96 unidades)",
+        "precoDe": 69.99,
+        "precoPor": 49.99
+      }
+    ]
+  },
+  {
+    "slug": "balanca-eletronica-digital-cozinha-10kg",
+    "categoria": "Utilidades",
+    "nome": "Balança Eletrônica Digital de Cozinha 10kg",
+    "subtitulo": "Precisão para receitas, dieta e nutrição",
+    "descricao": "Balança eletrônica digital com capacidade para pesar de 1g até 10kg. Ideal para preparar receitas, controlar porções, acompanhar dietas e realizar medições precisas na cozinha. Compacta, fácil de usar e com visor digital de fácil leitura.",
+    "imagem": "/produtos/balanca_cozinha/capa.jpg",
+    "imagens": [
+      "/produtos/balanca_cozinha/capa.jpg",
+      "/produtos/balanca_cozinha/secundaria1.jpg",
+      "/produtos/balanca_cozinha/secundaria2.jpg"
+    ],
+    "caracteristicas": [
+      "Capacidade de 1g até 10kg",
+      "Alta precisão para medições",
+      "Display digital de fácil leitura",
+      "Ideal para receitas, dieta e nutrição",
+      "Design compacto e fácil de armazenar"
+    ],
+    "linkShopee": "https://shopee.com.br/Balan%C3%A7a-Eletr%C3%B4nica-Digital-De-Cozinha-Pesa-De-1gr-At%C3%A9-10kg-Cor-Branco-e-Nutri%C3%A7%C3%A3o-i.611286890.58253221636?extraParams=%7B%22display_model_id%22%3A119727124266%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "balanca-10kg",
+        "label": "1 unidade",
+        "precoDe": 39.99,
+        "precoPor": 16.99
+      }
+    ]
+  },
+  {
+    "slug": "veja-limpador-concentrado-100ml",
+    "categoria": "Limpeza",
+    "nome": "Veja Limpador Concentrado 100ml",
+    "subtitulo": "Limpa, perfuma e desinfeta com alta concentração",
+    "descricao": "O Veja Limpador Concentrado 100ml oferece alto rendimento para a limpeza da casa, ajudando a limpar, perfumar e desinfetar diversas superfícies. Disponível em diferentes fragrâncias para deixar o ambiente sempre agradável.",
+    "imagem": "/produtos/veja_concentrado/capa.jpg",
+    "imagens": [
+      "/produtos/veja_concentrado/capa.jpg",
+      "/produtos/veja_concentrado/secundaria1.jpg",
+      "/produtos/veja_concentrado/secundaria2.jpg"
+    ],
+    "caracteristicas": [
+      "Fórmula concentrada de alto rendimento",
+      "Limpa, perfuma e desinfeta",
+      "Ideal para diversas superfícies",
+      "Fragrâncias exclusivas",
+      "Embalagem prática de 100ml"
+    ],
+    "linkShopee": "https://shopee.com.br/Veja-Limpador-Concentrado-100ml-Limpa-Perfuma-e-Desinfeta-i.611286890.58201822419?extraParams=%7B%22display_model_id%22%3A189183214312%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "quartzo-rosa",
+        "label": "Quartzo Rosa",
+        "precoDe": 39.99,
+        "precoPor": 21.99
+      },
+      {
+        "id": "ametista-lavanda",
+        "label": "Ametista Lavanda",
+        "precoDe": 39.99,
+        "precoPor": 21.99
+      },
+      {
+        "id": "rubelita",
+        "label": "Rubelita",
+        "precoDe": 39.99,
+        "precoPor": 21.99
+      },
+      {
+        "id": "citrino",
+        "label": "Citrino",
+        "precoDe": 39.99,
+        "precoPor": 21.99
+      },
+      {
+        "id": "agua-marinha",
+        "label": "Água Marinha",
+        "precoDe": 39.99,
+        "precoPor": 21.99
+      }
+    ]
   }
 ]

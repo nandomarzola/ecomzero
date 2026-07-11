@@ -72,20 +72,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" data-scroll-behavior="smooth">
+    <html
+      lang="pt-BR"
+      data-scroll-behavior="smooth"
+    >
       <body
         className={`${geist.variable} ${montserrat.variable} flex min-h-screen flex-col antialiased`}
       >
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationJsonLd),
+          }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(webSiteJsonLd) }}
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(webSiteJsonLd),
+          }}
         />
+
         <Header />
+
         <main className="flex-1">{children}</main>
+
         <Footer />
       </body>
     </html>

@@ -1,0 +1,34 @@
+{
+  "categorias": [
+    {
+      "id": "iluminacao",
+      "label": "Iluminação",
+      "icone": "Lightbulb",
+      "relacionadas": ["seguranca", "ferramentas"]
+    },
+    {
+      "id": "seguranca",
+      "label": "Segurança",
+      "icone": "ShieldCheck",
+      "relacionadas": ["iluminacao"]
+    },
+    {
+      "id": "ferramentas",
+      "label": "Ferramentas",
+      "icone": "Wrench",
+      "relacionadas": ["iluminacao"]
+    },
+    {
+      "id": "beleza",
+      "label": "Beleza",
+      "icone": "Heart",
+      "relacionadas": []
+    },
+    {
+      "id": "tudo",
+      "label": "Tudo",
+      "icone": "Grid2X2",
+      "relacionadas": []
+    }
+  ]
+}

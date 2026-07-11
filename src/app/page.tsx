@@ -16,13 +16,13 @@ export default function HomePage() {
         <FeatureBar />
       </div>
 
-      <section id="vitrine" className="mx-auto max-w-[1440px] px-5 py-10 lg:px-8 lg:py-14">
-        <div className="mb-7 flex items-end justify-between gap-5">
+      <section id="vitrine" className="mx-auto max-w-[1360px] px-4 py-10 sm:px-5 sm:py-16 lg:px-8 lg:py-20">
+        <div className="mb-6 flex items-end justify-between gap-5 sm:mb-10">
           <div>
-            <h2 className="font-display text-2xl font-bold uppercase text-white sm:text-3xl">
-              Vitrine EcomZero
+            <h2 className="font-display text-xl font-bold uppercase text-white sm:text-3xl">
+              EcomZero
             </h2>
-            <p className="mt-2 text-sm text-white/65">
+            <p className="mt-2 text-xs text-white/65 sm:text-sm">
               Selecionamos os <strong className="text-[#A9EC17]">melhores produtos</strong>{" "}
               para facilitar sua vida.
             </p>
@@ -36,7 +36,7 @@ export default function HomePage() {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
           {homeData.produtos.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

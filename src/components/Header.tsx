@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
+import MobileMenu from "@/components/MobileMenu";
 
 const navigation = [
   { label: "Início", href: "/" },
@@ -13,13 +14,16 @@ const navigation = [
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 text-white backdrop-blur">
-      <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center gap-8 px-5 lg:px-8">
+      <div className="mx-auto flex min-h-[64px] max-w-[1440px] items-center gap-4 px-4 sm:min-h-[72px] sm:gap-8 sm:px-5 lg:px-8">
         <Link href="/" aria-label="EcomZero — página inicial" className="shrink-0">
           <BrandLogo priority />
         </Link>
 
-        <nav className="ml-auto min-w-0 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Navegação principal">
-          <ul className="flex min-w-max items-center gap-7 lg:gap-10">
+        <nav
+          className="ml-auto hidden min-w-0 overflow-x-auto [scrollbar-width:none] md:block [&::-webkit-scrollbar]:hidden"
+          aria-label="Navegação principal"
+        >
+          <ul className="flex min-w-max items-center gap-6 lg:gap-10">
             {navigation.map((item, index) => (
               <li key={item.label}>
                 <Link
@@ -33,6 +37,8 @@ export default function Header() {
             ))}
           </ul>
         </nav>
+
+        <MobileMenu items={navigation} />
       </div>
     </header>
   );

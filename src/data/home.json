@@ -1,6 +1,15 @@
 {
   "slides": [
     {
+      "id": "sensor-alarme",
+      "eyebrow": "ECOMZERO",
+      "titulo": "SENSOR",
+      "destaque": "ALARME",
+      "subtitulo": "PORTA • JANELA • SEM FIO",
+      "imagem": "/produtos/sensor_alarme/capa.jpg",
+      "href": "/produto/sensor-alarme-magnetico-sirene-porta-janela-sem-fio"
+    },
+    {
       "id": "lampada-led",
       "eyebrow": "ECOMZERO",
       "titulo": "LÂMPADA LED",
@@ -17,7 +26,25 @@
       "subtitulo": "15CM • 200 PEÇAS • ALTA RESISTÊNCIA",
       "imagem": "/produtos/abracadeira/capa.jpg",
       "href": "/produto/abracadeira-nylon-15cm-200-pecas-branca"
-    }
+    },
+    {
+    "id": "carmed-selecoes",
+    "eyebrow": "ECOMZERO",
+    "titulo": "CARMED",
+    "destaque": "SELEÇÕES",
+    "subtitulo": "EDIÇÃO SURPRESA • 5G",
+    "imagem": "/produtos/carmed/capa.jpg",
+    "href": "/produto/carmed-hidratante-labial-edicao-surpresa-selecoes-cimed-5g"
+  },
+    {
+    "id": "veja-concentrado",
+    "eyebrow": "ECOMZERO",
+    "titulo": "VEJA",
+    "destaque": "CONCENTRADO",
+    "subtitulo": "LIMPA • PERFUMA • DESINFETA",
+    "imagem": "/produtos/veja_concentrado/capa.jpg",
+    "href": "/produto/veja-limpador-concentrado-100ml"
+  }
   ],
   "produtos": [
     {
@@ -40,6 +67,72 @@
       "reviews": 54,
       "imagem": "/produtos/abracadeira/capa.jpg",
       "href": "/produto/abracadeira-nylon-15cm-200-pecas-branca",
+      "badge": "OFERTA"
+    },
+    {
+      "id": "sensor-alarme",
+      "nome": "Sensor Alarme Magnético",
+      "subtitulo": "Porta • Janela • Sem Fio",
+      "preco": 14.99,
+      "avaliacao": 5,
+      "reviews": 42,
+      "imagem": "/produtos/sensor_alarme/capa.jpg",
+      "href": "/produto/sensor-alarme-magnetico-sirene-porta-janela-sem-fio",
+      "badge": "NOVIDADE"
+    },
+    {
+      "id": "carmed-selecoes",
+      "nome": "Carmed Hidratante Labial",
+      "subtitulo": "Edição Surpresa Seleções 5g",
+      "preco": 19.99,
+      "avaliacao": 5,
+      "reviews": 98,
+      "imagem": "/produtos/carmed/capa.jpg",
+      "href": "/produto/carmed-hidratante-labial-edicao-surpresa-selecoes-cimed-5g",
+      "badge": "EDIÇÃO LIMITADA"
+    },
+    {
+      "id": "canivete2929",
+      "nome": "Canivete Tático Xingu Camuflado",
+      "subtitulo": "Dobrável • Aço Inox • Camping e Pesca",
+      "preco": 16.99,
+      "avaliacao": 5,
+      "reviews": 0,
+      "imagem": "/produtos/canivete2929/capa.jpg",
+      "href": "/produto/canivete-tatico-xingu-dobravel-aco-inox-camuflado",
+      "badge": "OFERTA"
+    },
+    {
+      "id": "dermacyd-lencos",
+      "nome": "Lenços Íntimos Dermacyd",
+      "subtitulo": "48 ou 96 Unidades",
+      "preco": 29.99,
+      "avaliacao": 5,
+      "reviews": 0,
+      "imagem": "/produtos/dermacyd_lenco/capa.jpg",
+      "href": "/produto/lencos-intimos-dermacyd-48un-96un",
+      "badge": "OFERTA"
+    },
+    {
+      "id": "balanca-cozinha",
+      "nome": "Balança Digital de Cozinha",
+      "subtitulo": "Precisão de 1g até 10kg",
+      "preco": 16.99,
+      "avaliacao": 5,
+      "reviews": 0,
+      "imagem": "/produtos/balanca_cozinha/capa.jpg",
+      "href": "/produto/balanca-eletronica-digital-cozinha-10kg",
+      "badge": "OFERTA"
+    },
+    {
+      "id": "veja-concentrado",
+      "nome": "Veja Limpador Concentrado",
+      "subtitulo": "100ml • Diversas Fragrâncias",
+      "preco": 21.99,
+      "avaliacao": 5,
+      "reviews": 0,
+      "imagem": "/produtos/veja_concentrado/capa.jpg",
+      "href": "/produto/veja-limpador-concentrado-100ml",
       "badge": "OFERTA"
     }
   ]
