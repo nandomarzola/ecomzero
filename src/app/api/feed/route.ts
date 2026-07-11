@@ -49,6 +49,8 @@ const buildItem = (produto: Produto, variante: Variante, hasMultipleVariants: bo
     `<g:link>${escapeXml(link)}</g:link>`,
     `<g:image_link>${escapeXml(imageLink)}</g:image_link>`,
     `<g:availability>in stock</g:availability>`,
+    `<g:inventory>999</g:inventory>`,
+    `<g:quantity_to_sell_on_facebook>999</g:quantity_to_sell_on_facebook>`,
     `<g:condition>new</g:condition>`,
     `<g:price>${escapeXml(formatPrice(variante.precoPor))}</g:price>`,
     `<g:brand>${escapeXml(BRAND)}</g:brand>`,
