@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ECOMZERO",
   description: "Calculadora de precificação para Shopee",
+  verification: {
+    other: {
+      "facebook-domain-verification": "ewk429k251g6tuuvg9n39iru0cywkd",
+    },
+  },
   openGraph: {
     title: "ECOMZERO",
     description: "Calculadora de precificação para Shopee",
