@@ -112,6 +112,41 @@ export async function generateMetadata({
   };
 }
 
+const buildProductJsonLd = (product: Product) => {
+  const prices = product.variantes.map((variant) => variant.precoPor);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.nome,
+    description: product.descricao,
+    image: product.imagens.map((image) => `${siteUrl}${image}`),
+    category: product.categoria,
+    url: `${siteUrl}/produto/${product.slug}`,
+    brand: { "@type": "Brand", name: "EcomZero" },
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "BRL",
+      lowPrice: Math.min(...prices).toFixed(2),
+      highPrice: Math.max(...prices).toFixed(2),
+      offerCount: product.variantes.length,
+      availability: "https://schema.org/InStock",
+      url: product.linkShopee,
+      seller: { "@type": "Organization", name: "EcomZero" },
+    },
+  };
+};
+
+const buildBreadcrumbJsonLd = (product: Product) => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Início", item: siteUrl },
+    { "@type": "ListItem", position: 2, name: "Produtos", item: `${siteUrl}/#vitrine` },
+    { "@type": "ListItem", position: 3, name: product.nome },
+  ],
+});
+
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
   const product = findProduct(slug);
@@ -122,6 +157,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_72%_25%,#230505_0%,#090101_34%,#000_68%)]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProductJsonLd(product)) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildBreadcrumbJsonLd(product)) }}
+      />
       <div className="mx-auto max-w-[1440px] px-5 py-8 lg:px-8 lg:py-12">
         <nav className="mb-8 flex flex-wrap items-center gap-3 text-xs text-white/45" aria-label="Navegação estrutural">
           <Link href="/" className="transition hover:text-[#A9EC17]">

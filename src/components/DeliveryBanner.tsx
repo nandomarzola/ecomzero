@@ -17,7 +17,7 @@ export default function DeliveryBanner() {
         </div>
         <a
           href="#vitrine"
-          className="font-display inline-flex min-h-12 w-full items-center justify-center gap-10 rounded-xl bg-[#A9EC17] px-8 py-3 text-sm font-bold text-black transition hover:brightness-110 sm:w-auto"
+          className="font-display inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-[#A9EC17] px-8 py-3 text-sm font-bold text-black transition hover:brightness-110 sm:w-auto"
         >
           SAIBA MAIS
           <ArrowRight className="h-5 w-5" />

@@ -2,7 +2,7 @@
   {
     "slug": "lampada-led-recarregavel-20w-usb",
     "categoria": "Iluminação",
-    "nome": "Lâmpada LED Recarregável 20W USB Super Forte",
+    "nome": "Lâmpsada LED Recarregável 20W USB Super Forte",
     "subtitulo": "Ilumina tudo: camping, pesca e emergência",
     "descricao": "Luz forte e recarregável via USB, sem depender de pilha. Ideal para camping, pesca, obra ou qualquer emergência com falta de energia.",
     "imagem": "/produtos/lampada-led.jpg",
@@ -20,6 +20,35 @@
       { "id": "kit-1", "label": "1 unidade", "precoDe": 29.99, "precoPor": 18.90 },
       { "id": "kit-2", "label": "2 unidades", "precoDe": 59.98, "precoPor": 32.90 },
       { "id": "kit-3", "label": "3 unidades", "precoDe": 89.97, "precoPor": 44.90 }
+    ]
+  },
+    {
+    "slug": "abracadeira-nylon-15cm-200-pecas-branca",
+    "categoria": "Ferramentas",
+    "nome": "Abraçadeira Nylon 15cm 200 Peças Branca Alta Resistência",
+    "subtitulo": "Organize cabos com praticidade e segurança",
+    "descricao": "Kit com 200 abraçadeiras de nylon de 15cm, ideais para organização de cabos, instalações elétricas, automação, jardinagem e diversas aplicações no dia a dia. Fabricadas em nylon resistente para garantir fixação firme e durabilidade.",
+    "imagem": "/produtos/abracadeira/capa.jpg",
+    "imagens": [
+      "/produtos/abracadeira/capa.jpg",
+      "/produtos/abracadeira/secundaria1.jpg",
+      "/produtos/abracadeira/secundaria2.jpg"
+    ],
+    "caracteristicas": [
+      "Pacote com 200 abraçadeiras de nylon",
+      "Comprimento de 15cm",
+      "Alta resistência e excelente fixação",
+      "Ideal para organizar cabos, fios e instalações",
+      "Cor branca para acabamento discreto"
+    ],
+    "linkShopee": "https://shopee.com.br/Abra%C3%A7adeira-Nylon-15cm-200-Pe%C3%A7as-Enforca-Gato-Branco-Alta-Resist%C3%AAncia-Organizar-Cabos-i.611286890.49457829327?extraParams=%7B%22display_model_id%22%3A440694250776%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      {
+        "id": "200-branca",
+        "label": "200 peças",
+        "precoDe": 39.99,
+        "precoPor": 12.90
+      }
     ]
   }
 ]

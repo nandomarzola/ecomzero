@@ -24,6 +24,7 @@ export default function Header() {
               <li key={item.label}>
                 <Link
                   href={item.href}
+                  aria-current={index === 0 ? "page" : undefined}
                   className={`font-display relative py-6 text-xs font-semibold transition hover:text-[#A9EC17] lg:text-sm ${index === 0 ? "text-white after:absolute after:bottom-3 after:left-0 after:h-0.5 after:w-full after:bg-[#A9EC17]" : "text-white/85"}`}
                 >
                   {item.label}
