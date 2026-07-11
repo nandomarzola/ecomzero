@@ -1,0 +1,143 @@
+{
+  "slides": [
+    {
+      "id": "lampada-led",
+      "eyebrow": "ECOMZERO",
+      "titulo": "LÂMPADA LED",
+      "destaque": "RECARREGÁVEL",
+      "subtitulo": "PORTÁTIL • USB • MULTIUSO",
+      "imagem": "/produtos/lampada-led.jpg",
+      "href": "/produto/lampada-led-recarregavel-20w-usb"
+    },
+    {
+      "id": "audio",
+      "eyebrow": "TECNOLOGIA PARA SUA ROTINA",
+      "titulo": "FONE BLUETOOTH",
+      "destaque": "SEM LIMITES",
+      "subtitulo": "CONFORTO • AUTONOMIA • SOM LIMPO",
+      "imagem": "/mock/produtos/fone.jpg",
+      "href": "#vitrine"
+    },
+    {
+      "id": "esporte",
+      "eyebrow": "CONFORTO EM MOVIMENTO",
+      "titulo": "TÊNIS RUNNER",
+      "destaque": "MAIS LEVE",
+      "subtitulo": "CONFORTO • ESTILO • RESISTÊNCIA",
+      "imagem": "/mock/produtos/tenis.jpg",
+      "href": "#vitrine"
+    }
+  ],
+  "produtos": [
+    {
+      "id": "lampada",
+      "nome": "Lâmpada LED Recarregável",
+      "subtitulo": "Portátil • USB • Multiuso",
+      "preco": 18.90,
+      "avaliacao": 5,
+      "reviews": 128,
+      "imagem": "/produtos/lampada-led.jpg",
+      "href": "/produto/lampada-led-recarregavel-20w-usb",
+      "badge": "MAIS VENDIDO"
+    },
+    {
+      "id": "fone",
+      "nome": "Fone de Ouvido Bluetooth",
+      "subtitulo": "Som de alta qualidade",
+      "preco": 129.90,
+      "avaliacao": 5,
+      "reviews": 96,
+      "imagem": "/mock/produtos/fone.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "tenis",
+      "nome": "Tênis Esportivo Runner",
+      "subtitulo": "Conforto e estilo",
+      "preco": 149.90,
+      "avaliacao": 5,
+      "reviews": 84,
+      "imagem": "/mock/produtos/tenis.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "luminaria",
+      "nome": "Luminária de Mesa LED",
+      "subtitulo": "Estilo e praticidade",
+      "preco": 89.90,
+      "avaliacao": 5,
+      "reviews": 73,
+      "imagem": "/mock/produtos/luminaria.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "mochila",
+      "nome": "Mochila Executiva",
+      "subtitulo": "Resistente e moderna",
+      "preco": 159.90,
+      "avaliacao": 5,
+      "reviews": 64,
+      "imagem": "/mock/produtos/mochila.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "relogio",
+      "nome": "Smartwatch Watch X",
+      "subtitulo": "Monitoramento completo",
+      "preco": 199.90,
+      "avaliacao": 5,
+      "reviews": 58,
+      "imagem": "/mock/produtos/relogio.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "cozinha",
+      "nome": "Organizador de Cozinha",
+      "subtitulo": "Mais espaço e praticidade",
+      "preco": 69.90,
+      "avaliacao": 5,
+      "reviews": 47,
+      "imagem": "/mock/produtos/cozinha.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "ferramentas",
+      "nome": "Kit Ferramentas 110 Peças",
+      "subtitulo": "Completo e resistente",
+      "preco": 179.90,
+      "avaliacao": 5,
+      "reviews": 39,
+      "imagem": "/mock/produtos/ferramentas.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "suporte",
+      "nome": "Suporte Veicular",
+      "subtitulo": "Fixação segura",
+      "preco": 49.90,
+      "avaliacao": 5,
+      "reviews": 31,
+      "imagem": "/mock/produtos/suporte.jpg",
+      "href": "#",
+      "badge": ""
+    },
+    {
+      "id": "garrafa",
+      "nome": "Garrafa Térmica 1L",
+      "subtitulo": "Quente ou frio por horas",
+      "preco": 79.90,
+      "avaliacao": 5,
+      "reviews": 27,
+      "imagem": "/mock/produtos/garrafa.jpg",
+      "href": "#",
+      "badge": ""
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[
+  {
+    "slug": "lampada-led-recarregavel-20w-usb",
+    "categoria": "Iluminação",
+    "nome": "Lâmpada LED Recarregável 20W USB Super Forte",
+    "subtitulo": "Ilumina tudo: camping, pesca e emergência",
+    "descricao": "Luz forte e recarregável via USB, sem depender de pilha. Ideal para camping, pesca, obra ou qualquer emergência com falta de energia.",
+    "imagem": "/produtos/lampada-led.jpg",
+    "imagens": [
+      "/produtos/lampada-led.jpg"
+    ],
+    "caracteristicas": [
+      "Potência de 20W com iluminação intensa",
+      "Bateria recarregável por conexão USB",
+      "Estrutura portátil para transportar e pendurar",
+      "Uso em camping, pesca, obra e emergências"
+    ],
+    "linkShopee": "https://shopee.com.br/L%C3%A2mpada-LED-Recarreg%C3%A1vel-20W-USB-Super-Forte-Ilumina-Tudo-Camping-Pesca-Emerg%C3%AAncia-Kit-1-2-ou-3-i.611286890.56357767629?extraParams=%7B%22display_model_id%22%3A360748634798%2C%22model_selection_logic%22%3A3%7D",
+    "variantes": [
+      { "id": "kit-1", "label": "1 unidade", "precoDe": 29.99, "precoPor": 18.90 },
+      { "id": "kit-2", "label": "2 unidades", "precoDe": 59.98, "precoPor": 32.90 },
+      { "id": "kit-3", "label": "3 unidades", "precoDe": 89.97, "precoPor": 44.90 }
+    ]
+  }
+]

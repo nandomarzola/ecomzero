@@ -1,45 +1,49 @@
 import type { Metadata } from "next";
-import Script from 'next/script';
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import Header from "@/components/Header";
+import { Geist, Montserrat } from "next/font/google";
 import Footer from "@/components/Footer";
+import Header from "@/components/Header";
+import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const geist = Geist({
   subsets: ["latin"],
+  variable: "--font-geist",
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const montserrat = Montserrat({
   subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-montserrat",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ECOMZERO",
-  description: "Calculadora de precificação para Shopee",
-  verification: {
-    other: {
-      "facebook-domain-verification": "ewk429k251g6tuuvg9n39iru0cywkd",
-    },
+  metadataBase: new URL("https://www.ecomzero.com.br"),
+  title: {
+    default: "EcomZero | Produtos úteis para o dia a dia",
+    template: "%s | EcomZero",
   },
+  description:
+    "Conheça os produtos da EcomZero e finalize sua compra com segurança na loja oficial da Shopee.",
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "ECOMZERO",
-    description: "Calculadora de precificação para Shopee",
-    url: "https://www.ecomzero.com.br",
-    siteName: "ECOMZERO",
+    title: "EcomZero | Produtos úteis para o dia a dia",
+    description:
+      "Conheça os produtos da EcomZero e finalize sua compra com segurança na loja oficial da Shopee.",
+    url: "/",
+    siteName: "EcomZero",
+    locale: "pt_BR",
+    type: "website",
     images: [
       {
-        url: "https://www.ecomzero.com.br/ecom.png",
-        width: 1200,
-        height: 630,
-        alt: "Imagem de compartilhamento do ECOMZERO",
+        url: "/produtos/lampada-led.jpg",
+        width: 1024,
+        height: 1024,
+        alt: "Lâmpada LED Recarregável 20W USB Super Forte",
       },
     ],
-    type: "website",
   },
 };
-
 
 export default function RootLayout({
   children,
@@ -47,32 +51,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-L52TXPMG2P"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-L52TXPMG2P');
-          `}
-        </Script>
-         <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8445617399965497"
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-      </head>
+    <html lang="pt-BR" data-scroll-behavior="smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+        className={`${geist.variable} ${montserrat.variable} flex min-h-screen flex-col antialiased`}
       >
         <Header />
-        <main className="min-h-screen ">{children}</main> {/* pb-24 evita sobreposição com o footer */}
+        <main className="flex-1">{children}</main>
         <Footer />
       </body>
     </html>
