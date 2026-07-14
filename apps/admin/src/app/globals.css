@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist);
+  --font-display: var(--font-montserrat);
+
+  /* Design tokens do painel admin — não são os mesmos da loja, de propósito */
+  --color-bg: #050505;
+  --color-card: #111111;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-accent: #a9ec17;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: #ffffff;
+}
+
+* {
+  border-color: var(--color-border);
+}

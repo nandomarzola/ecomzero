@@ -1,12 +1,16 @@
+"use client";
+
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
-import homeData from "@/data/home.json";
-
-type Product = (typeof homeData.produtos)[number];
+import { Check, ShoppingCart } from "lucide-react";
+import { useCartCount } from "@/components/CartProvider";
+import { addToCartAction } from "@/lib/actions/cartActions";
+import type { Product } from "@/types/product";
 
 type ProductCardProps = {
   product: Product;
+  layout?: "auto" | "grid";
 };
 
 const formatPrice = (price: number) =>
@@ -16,48 +20,95 @@ const formatPrice = (price: number) =>
   });
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const [isPending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<"idle" | "added">("idle");
+  const { refreshCartCount } = useCartCount();
+
+  const href = `/produto/${product.slug}`;
+  const defaultVariant = product.variantes[0];
+  const prices = product.variantes.map((variant) => variant.precoPor);
+  const lowestPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const hasPriceVariation = new Set(prices).size > 1;
+  const image =
+    product.slug === "sensor-alarme-magnetico-sirene-porta-janela-sem-fio"
+      ? "/images/hero-sensor-cutout.png"
+      : product.imagem;
+
+  const handleQuickAdd = () => {
+    if (!defaultVariant) return;
+
+    startTransition(async () => {
+      const result = await addToCartAction({
+        variantId: defaultVariant.id,
+        quantidade: 1,
+      });
+
+      if (result.success) {
+        refreshCartCount();
+        setFeedback("added");
+        window.setTimeout(() => setFeedback("idle"), 1800);
+      }
+    });
+  };
+
   return (
-    <article className="group flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#6B1010] bg-[#080101] transition hover:-translate-y-1 hover:border-[#A9EC17]/60 hover:shadow-[0_14px_35px_rgba(89,0,0,0.28)]">
-      <Link href={product.href} className="relative block aspect-[1/0.95] overflow-hidden bg-[radial-gradient(circle_at_50%_65%,#4B0B08,#170202_58%,#080101)]">
+    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-[10px] border border-white/[0.08] bg-[#0D0D0D] transition duration-300 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-[3px] hover:border-[#A9EC17]/45 focus-within:border-[#A9EC17]/55">
+      <Link
+        href={href}
+        className="relative block aspect-[1.08/1] overflow-hidden bg-[radial-gradient(circle_at_50%_55%,#222_0%,#151515_48%,#0D0D0D_78%)] p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] focus-visible:ring-inset sm:p-5"
+      >
         <Image
-          src={product.imagem}
+          src={image}
           alt={product.nome}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1280px) 33vw, 20vw"
-          className="object-cover mix-blend-screen transition duration-500 group-hover:scale-105"
+          sizes="(max-width: 639px) 46vw, (max-width: 1023px) 30vw, 19vw"
+          className="object-contain p-3 transition duration-300 motion-reduce:transition-none group-hover:scale-[1.03] sm:p-4"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_58%,rgba(8,1,1,0.68)_100%)]" />
-        {product.badge && (
-          <span className="absolute bottom-2 left-3 rounded-full bg-[#A9EC17] px-3 py-1 text-[9px] font-extrabold text-black">
-            {product.badge}
-          </span>
-        )}
       </Link>
 
-      <div className="flex flex-1 flex-col border-t border-[#5F0E0E] p-3 sm:p-4">
-        <h3 className="font-display truncate text-xs font-semibold text-white sm:text-sm">
+      <div className="flex flex-1 flex-col border-t border-white/[0.06] p-3 sm:p-4">
+        <Link
+          href={href}
+          className="font-display line-clamp-2 min-h-10 text-[12px] font-semibold leading-5 text-white outline-none transition hover:text-[#A9EC17] focus-visible:text-[#A9EC17] sm:text-sm"
+        >
           {product.nome}
-        </h3>
-        <p className="mt-1 truncate text-[10px] text-white/60 sm:text-[11px]">{product.subtitulo}</p>
+        </Link>
+        <p className="mt-1 line-clamp-2 min-h-8 text-[10px] leading-4 text-white/52 sm:text-[11px]">
+          {product.subtitulo}
+        </p>
 
-        <div className="mt-2 flex items-center gap-1">
-          {Array.from({ length: product.avaliacao }).map((_, index) => (
-            <Star key={index} className="h-3 w-3 fill-[#EAFB00] text-[#EAFB00]" />
-          ))}
-          <span className="ml-1 text-[10px] text-white/55">({product.reviews})</span>
-        </div>
-
-        <div className="mt-auto flex flex-col items-stretch gap-2 pt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
-          <strong className="font-display whitespace-nowrap text-base font-bold text-white sm:text-lg">
-            {formatPrice(product.preco)}
+        <div className="mt-auto pt-3">
+          {hasPriceVariation && (
+            <p className="text-[9px] font-medium uppercase tracking-wide text-white/45 sm:text-[10px]">
+              A partir de
+            </p>
+          )}
+          <strong className="font-display block text-base font-extrabold text-[#A9EC17] sm:text-lg">
+            {formatPrice(lowestPrice)}
           </strong>
-          <Link
-            href={product.href}
-            aria-label={`Ver produto ${product.nome}`}
-            className="font-display inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-[#A9EC17] px-3 text-[10px] font-extrabold text-black transition hover:scale-[1.03] hover:brightness-110"
-          >
-            VER PRODUTO
-          </Link>
+
+          <div className="mt-3 grid grid-cols-[1fr_38px] gap-2">
+            <Link
+              href={href}
+              aria-label={`Ver produto ${product.nome}`}
+              className="font-display inline-flex min-h-[38px] items-center justify-center rounded-md border border-white/20 px-2 text-center text-[9px] font-bold text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:text-[10px]"
+            >
+              VER PRODUTO
+            </Link>
+            <button
+              type="button"
+              onClick={handleQuickAdd}
+              disabled={isPending || !defaultVariant}
+              aria-label={`Adicionar ${product.nome} ao carrinho`}
+              className="inline-flex h-[38px] w-[38px] items-center justify-center rounded-md border border-white/20 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {feedback === "added" ? (
+                <Check className="h-4 w-4 text-[#A9EC17]" strokeWidth={2.5} />
+              ) : (
+                <ShoppingCart className="h-4 w-4" strokeWidth={1.8} />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </article>

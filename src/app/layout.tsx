@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Montserrat } from "next/font/google";
+import AuthSessionProvider from "@/components/AuthSessionProvider";
+import BottomNav from "@/components/BottomNav";
+import { CartProvider } from "@/components/CartProvider";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { ProductFiltersProvider } from "@/components/ProductFiltersProvider";
 import "./globals.css";
 
 const geist = Geist({
@@ -75,9 +79,11 @@ export default function RootLayout({
     <html
       lang="pt-BR"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
     >
       <body
         className={`${geist.variable} ${montserrat.variable} flex min-h-screen flex-col antialiased`}
+        suppressHydrationWarning
       >
         <script
           type="application/ld+json"
@@ -92,11 +98,19 @@ export default function RootLayout({
           }}
         />
 
-        <Header />
+        <AuthSessionProvider>
+          <CartProvider>
+            <ProductFiltersProvider>
+              <Header />
 
-        <main className="flex-1">{children}</main>
+              <main className="flex-1 pb-16 md:pb-0">{children}</main>
 
-        <Footer />
+              <Footer />
+
+              <BottomNav />
+            </ProductFiltersProvider>
+          </CartProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

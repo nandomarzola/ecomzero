@@ -1,0 +1,255 @@
+"use client";
+
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
+import {
+  Bell,
+  ChevronDown,
+  ClipboardList,
+  CreditCard,
+  Heart,
+  LogIn,
+  LogOut,
+  MapPin,
+  ShoppingCart,
+  Tag,
+  UserRound,
+} from "lucide-react";
+import CartBadgeCount from "@/components/CartBadgeCount";
+
+type HeaderAccount = {
+  name: string;
+  email: string;
+};
+
+type HeaderActionsProps = {
+  compact?: boolean;
+  account?: HeaderAccount | null;
+};
+
+const accountItems = [
+  { label: "Meus pedidos", icon: ClipboardList },
+  { label: "Meus dados", icon: UserRound },
+  { label: "Endereços", icon: MapPin },
+  { label: "Formas de pagamento", icon: CreditCard },
+  { label: "Favoritos", icon: Heart },
+  { label: "Cupons e benefícios", icon: Tag },
+  { label: "Notificações", icon: Bell },
+];
+
+const guestItems = accountItems.slice(0, 5).filter(
+  (item) => item.label !== "Formas de pagamento",
+);
+
+const getInitials = (name: string) =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+
+export default function HeaderActions({
+  compact = false,
+  account = null,
+}: HeaderActionsProps) {
+  const { data: session } = useSession();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const sessionAccount = session?.user?.email
+    ? {
+        name: session.user.name?.trim() || session.user.email,
+        email: session.user.email,
+      }
+    : null;
+  const activeAccount = account ?? sessionAccount;
+  const isAuthenticated = activeAccount !== null;
+  const accountMenuRef = useRef<HTMLDetailsElement>(null);
+
+  const closeAccountMenu = () => {
+    if (accountMenuRef.current) {
+      accountMenuRef.current.open = false;
+    }
+  };
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    closeAccountMenu();
+
+    try {
+      await signOut({ redirectTo: "/" });
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
+  useEffect(() => {
+    const handlePointerDown = (event: PointerEvent) => {
+      const menu = accountMenuRef.current;
+
+      if (
+        menu?.open &&
+        event.target instanceof Node &&
+        !menu.contains(event.target)
+      ) {
+        menu.open = false;
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const menu = accountMenuRef.current;
+
+      if (event.key !== "Escape" || !menu?.open) {
+        return;
+      }
+
+      menu.open = false;
+      const summary = menu.querySelector("summary");
+
+      if (summary instanceof HTMLElement) {
+        summary.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  return (
+    <div className={`header-actions flex shrink-0 items-center ${compact ? "ml-0 gap-0" : "ml-auto gap-4 lg:gap-6"}`}>
+      <button
+        type="button"
+        title="Informar CEP — em breve"
+        className={`header-action header-action-cep items-center gap-2 text-left transition hover:text-[#A9EC17] ${compact ? "hidden" : "hidden xl:flex"}`}
+      >
+        <MapPin className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.8} />
+        <span>
+          <span className="block text-[11px] font-semibold leading-4 text-white">Informe seu CEP</span>
+          <span className="block text-[9px] font-normal leading-3 text-white/45">Calcular frete</span>
+        </span>
+      </button>
+
+      <details
+        ref={accountMenuRef}
+        className={`group/account relative ${compact ? "hidden" : "hidden lg:block"}`}
+      >
+        <summary className="header-action header-action-account flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-left text-white transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] [&::-webkit-details-marker]:hidden">
+          {isAuthenticated ? (
+            <span className="font-display flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#A9EC17] text-[11px] font-bold text-[#A9EC17]">
+              {getInitials(activeAccount.name)}
+            </span>
+          ) : (
+            <UserRound className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
+          )}
+
+          <span className="min-w-0">
+            <span className="block max-w-28 truncate text-[11px] font-semibold leading-4 text-white">
+              {isAuthenticated ? activeAccount.name : "Minha conta"}
+            </span>
+            <span className="block text-[9px] font-normal leading-3 text-white/45">
+              {isAuthenticated ? "Minha conta" : "Entrar ou cadastrar"}
+            </span>
+          </span>
+
+          <ChevronDown
+            className="ml-1 h-4 w-4 shrink-0 text-white/65 transition group-open/account:rotate-180"
+            strokeWidth={1.7}
+          />
+        </summary>
+
+        <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[252px] overflow-hidden rounded-lg border border-white/[0.12] bg-[#101010] p-3 shadow-2xl shadow-black/70">
+          <div className="flex items-center gap-3 border-b border-white/[0.08] px-1 pb-3">
+            <span className="font-display flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#A9EC17] text-xs font-bold text-[#A9EC17]">
+              {isAuthenticated ? (
+                getInitials(activeAccount.name)
+              ) : (
+                <UserRound className="h-6 w-6" strokeWidth={1.5} />
+              )}
+            </span>
+            <span className="min-w-0">
+              <strong className="font-display block truncate text-xs font-semibold text-white">
+                {isAuthenticated ? activeAccount.name : "Minha conta"}
+              </strong>
+              <span className="mt-1 block truncate text-[9px] leading-4 text-white/45">
+                {isAuthenticated
+                  ? activeAccount.email
+                  : "Acesse, gerencie seus pedidos e muito mais."}
+              </span>
+            </span>
+          </div>
+
+          {!isAuthenticated && (
+            <div className="grid gap-2 border-b border-white/[0.08] py-3">
+              <Link
+                href="/login"
+                onClick={closeAccountMenu}
+                className="font-display flex h-9 w-full items-center justify-center rounded bg-[#A9EC17] text-[10px] font-bold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                Entrar
+              </Link>
+              <Link
+                href="/cadastro"
+                onClick={closeAccountMenu}
+                className="font-display flex h-9 w-full items-center justify-center rounded border border-[#A9EC17]/55 text-[10px] font-bold uppercase text-[#A9EC17] transition hover:border-[#A9EC17] hover:bg-[#A9EC17]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              >
+                Cadastrar
+              </Link>
+            </div>
+          )}
+
+          <div className="py-2">
+            {(isAuthenticated ? accountItems : guestItems).map(({ label, icon: Icon }) => (
+              <button
+                key={label}
+                type="button"
+                disabled
+                title={`${label} ainda não disponível`}
+                className="flex w-full cursor-not-allowed items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65"
+              >
+                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className="border-t border-white/[0.08] pt-2">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={isSigningOut}
+                className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.04] hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 disabled:cursor-wait disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" strokeWidth={1.5} />
+                {isSigningOut ? "Saindo..." : "Sair da conta"}
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={closeAccountMenu}
+                className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.04] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              >
+                <LogIn className="h-4 w-4" strokeWidth={1.5} />
+                Entrar na conta
+              </Link>
+            )}
+          </div>
+        </div>
+      </details>
+
+      <Link
+        href="/carrinho"
+        aria-label="Carrinho"
+        className={`header-action header-cart relative inline-flex h-11 w-11 items-center justify-center transition ${compact ? "text-white/90 hover:text-[#A9EC17]" : "text-white hover:text-[#A9EC17]"}`}
+      >
+        <ShoppingCart className="h-6 w-6" strokeWidth={1.8} />
+        <CartBadgeCount />
+      </Link>
+    </div>
+  );
+}

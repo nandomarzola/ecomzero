@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import products from "@/data/produtos.json";
+import { getAllProducts } from "@/lib/services/productService";
 
 const siteUrl = "https://www.ecomzero.com.br";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await getAllProducts();
   const productEntries: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${siteUrl}/produto/${product.slug}`,
     changeFrequency: "weekly",

@@ -1,18 +1,10 @@
-import produtos from "@/data/produtos.json";
+import { getAllProducts } from "@/lib/services/productService";
+import type { Product, ProductVariant } from "@/types/product";
 
 export const dynamic = "force-static";
 
 const SITE_URL = "https://www.ecomzero.com.br";
 const BRAND = "EcomZero";
-
-type Variante = {
-  id: string;
-  label: string;
-  precoDe: number;
-  precoPor: number;
-};
-
-type Produto = (typeof produtos)[number];
 
 const escapeXml = (value: string) =>
   value
@@ -30,7 +22,7 @@ const formatPrice = (value: number) => `${value.toFixed(2)} BRL`;
 const absoluteUrl = (path: string) =>
   path.startsWith("http") ? path : `${SITE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 
-const buildItem = (produto: Produto, variante: Variante, hasMultipleVariants: boolean) => {
+const buildItem = (produto: Product, variante: ProductVariant, hasMultipleVariants: boolean) => {
   const id = hasMultipleVariants
     ? `${produto.slug}-${variante.id}`
     : produto.slug;
@@ -48,6 +40,7 @@ const buildItem = (produto: Produto, variante: Variante, hasMultipleVariants: bo
     `<g:description>${cdata(produto.descricao)}</g:description>`,
     `<g:link>${escapeXml(link)}</g:link>`,
     `<g:image_link>${escapeXml(imageLink)}</g:image_link>`,
+    // Catálogo sem controle de estoque — disponibilidade sempre "in stock" por decisão de produto.
     `<g:availability>in stock</g:availability>`,
     `<g:inventory>999</g:inventory>`,
     `<g:quantity_to_sell_on_facebook>999</g:quantity_to_sell_on_facebook>`,
@@ -69,9 +62,10 @@ const buildItem = (produto: Produto, variante: Variante, hasMultipleVariants: bo
   return `<item>${parts.join("")}</item>`;
 };
 
-export function GET() {
+export async function GET() {
+  const produtos = await getAllProducts();
   const items: string[] = [];
-  for (const produto of produtos as Produto[]) {
+  for (const produto of produtos) {
     const hasMultipleVariants = produto.variantes.length > 1;
     for (const variante of produto.variantes) {
       items.push(buildItem(produto, variante, hasMultipleVariants));

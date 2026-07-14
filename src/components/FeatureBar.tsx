@@ -1,27 +1,28 @@
-import { Leaf, ShieldCheck, Sparkles, ThumbsUp } from "lucide-react";
+import { BadgeCheck, Headphones, ShieldCheck, Truck } from "lucide-react";
 
 const features = [
-  { title: "PRATICIDADE", subtitle: "NO DIA A DIA", icon: ShieldCheck },
-  { title: "ECONOMIA", subtitle: "DE ENERGIA", icon: Leaf },
-  { title: "SEGURANÇA", subtitle: "E CONFIANÇA", icon: Sparkles },
-  { title: "QUALIDADE", subtitle: "QUE DURA", icon: ThumbsUp },
+  { title: "COMPRA 100% SEGURA", subtitle: "Seus dados protegidos", icon: ShieldCheck },
+  { title: "ENVIO PARA TODO BRASIL", subtitle: "Receba em qualquer estado", icon: Truck },
+  { title: "ATENDIMENTO HUMANO", subtitle: "Suporte rápido e dedicado", icon: Headphones },
+  { title: "PRODUTOS SELECIONADOS", subtitle: "Qualidade que você confia", icon: BadgeCheck },
 ];
 
 export default function FeatureBar() {
   return (
-    <section className="mx-auto max-w-[1380px] px-4 sm:px-5 lg:px-8">
-      <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-[#6A1010] bg-[linear-gradient(90deg,#0B0202,#210505,#0B0202)] lg:grid-cols-4">
+    <section className="border-b border-white/[0.08] bg-[#0C0C0C]">
+      <div className="mx-auto grid max-w-[1440px] grid-cols-2 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
         {features.map(({ title, subtitle, icon: Icon }, index) => (
           <article
             key={title}
-            className={`flex items-center justify-center gap-3 px-4 py-4 sm:gap-4 sm:px-6 sm:py-5 ${index === 1 ? "border-l border-[#511010] lg:border-l" : ""} ${index === 2 ? "border-t border-[#511010] lg:border-t-0 lg:border-l" : ""} ${index === 3 ? "border-l border-t border-[#511010] lg:border-t-0" : ""}`}
+            className={`flex min-h-[78px] items-center gap-3 px-3 py-4 sm:px-5 ${index % 2 === 1 ? "border-l border-white/[0.06]" : ""} ${index > 1 ? "border-t border-white/[0.06] lg:border-t-0" : ""} ${index > 0 ? "lg:border-l lg:border-white/[0.06]" : ""}`}
           >
-            <Icon className="h-8 w-8 shrink-0 text-[#A9EC17] sm:h-10 sm:w-10" strokeWidth={1.8} />
-            <p className="font-display text-[11px] font-bold leading-4 text-white sm:text-sm sm:leading-5">
-              {title}
-              <br />
-              {subtitle}
-            </p>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/[0.08] bg-[#111111]">
+              <Icon className="h-5 w-5 text-[#A9EC17]" strokeWidth={1.7} />
+            </span>
+            <div>
+              <p className="font-display text-[10px] font-bold leading-4 text-white sm:text-[11px]">{title}</p>
+              <p className="text-[9px] leading-4 text-white/45 sm:text-[10px]">{subtitle}</p>
+            </div>
           </article>
         ))}
       </div>

@@ -2,30 +2,128 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { XCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, XCircle } from "lucide-react";
 
 import ProductCard from "@/components/ProductCard";
-import homeData from "@/data/home.json";
+import { useProductFilters } from "@/components/ProductFiltersProvider";
 import categoriasData from "@/data/categorias.json";
+import type { Product } from "@/types/product";
 
-const badgeMap: Record<string, string[]> = {
-  ofertas: ["OFERTA"],
-  novidades: ["NOVIDADE", "EDIÇÃO LIMITADA"],
-  "mais-vendidos": ["MAIS VENDIDO"],
+type ShowcaseProps = {
+  produtos: Product[];
 };
 
-const filterLabels: Record<string, string> = {
-  ofertas: "Ofertas",
-  novidades: "Novidades",
-  "mais-vendidos": "Mais vendidos",
+type ProductShelfProps = {
+  title: string;
+  subtitle: string;
+  products: Product[];
 };
 
-export default function Showcase() {
-  const searchParams = useSearchParams();
-  const cat = searchParams.get("cat");
-  const filtro = searchParams.get("f");
-  const sectionRef = useRef<HTMLElement | null>(null);
+const normalizeText = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
+  const shelfRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollShelf = (direction: -1 | 1) => {
+    const shelf = shelfRef.current;
+    if (!shelf) return;
+
+    shelf.scrollBy({
+      left: direction * shelf.clientWidth * 0.82,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  };
+
+  if (products.length === 0) return null;
+
+  return (
+    <section aria-labelledby={`shelf-${title.toLowerCase().replaceAll(" ", "-")}`}>
+      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+        <div>
+          <span className="mb-3 block h-0.5 w-11 bg-[#A9EC17]" />
+          <h2
+            id={`shelf-${title.toLowerCase().replaceAll(" ", "-")}`}
+            className="font-display text-xl font-bold uppercase text-white sm:text-2xl"
+          >
+            {title}
+          </h2>
+          <p className="mt-1 text-[11px] text-white/50 sm:text-xs">{subtitle}</p>
+        </div>
+        <Link
+          href="/#vitrine"
+          className="font-display inline-flex shrink-0 items-center gap-2 text-[10px] font-bold uppercase text-[#A9EC17] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:text-xs"
+        >
+          Ver todos
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => scrollShelf(-1)}
+          aria-label={`Ver produtos anteriores em ${title}`}
+          className="absolute left-0 top-[42%] z-10 hidden h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:flex"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+
+        <div
+          ref={shelfRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:gap-4 [&::-webkit-scrollbar]:hidden"
+        >
+          {products.map((product, index) => (
+            <div
+              key={`${title}-${product.id}-${index}`}
+              className="w-[calc((100%-0.75rem)/2)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
+            >
+              <ProductCard product={product} layout="grid" />
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => scrollShelf(1)}
+          aria-label={`Ver mais produtos em ${title}`}
+          className="absolute right-0 top-[42%] z-10 hidden h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:flex"
+        >
+          <ArrowRight className="h-5 w-5" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function completeShelf(products: Product[], catalog: Product[], length: number) {
+  if (products.length >= length || catalog.length === 0) {
+    return products.slice(0, length);
+  }
+
+  const completed = [...products];
+  let index = 0;
+
+  while (completed.length < length) {
+    const candidate = catalog[index % catalog.length];
+    if (!completed.some((product) => product.id === candidate.id) || catalog.length < length) {
+      completed.push(candidate);
+    }
+    index += 1;
+  }
+
+  return completed;
+}
+
+export default function Showcase({ produtos: allProdutos }: ShowcaseProps) {
+  const { cat, searchQuery, setSearchQuery } = useProductFilters();
+  const sectionRef = useRef<HTMLDivElement | null>(null);
   const isFirstRender = useRef(true);
 
   useEffect(() => {
@@ -33,103 +131,103 @@ export default function Showcase() {
       isFirstRender.current = false;
       return;
     }
-    if (!cat && !filtro) return;
+    if (!cat) return;
 
-    const el = sectionRef.current;
-    if (!el) return;
+    const element = sectionRef.current;
+    if (!element) return;
 
-    const rect = el.getBoundingClientRect();
+    const rect = element.getBoundingClientRect();
     const currentTop = window.scrollY + rect.top;
-    const headerOffset = 88;
     window.scrollTo({
-      top: Math.max(0, currentTop - headerOffset),
+      top: Math.max(0, currentTop - 88),
       behavior: "smooth",
     });
-  }, [cat, filtro]);
+  }, [cat]);
 
-  let produtos = homeData.produtos;
-  let titulo = "Todos os produtos";
-  let subtitulo: ReactNode = (
-    <>
-      Selecionamos os{" "}
-      <strong className="text-[#A9EC17]">melhores produtos</strong> para
-      facilitar sua vida.
-    </>
-  );
+  let products = allProdutos;
+  let title = "Todos os produtos";
+  let subtitle: ReactNode = "Produtos selecionados para facilitar sua rotina.";
 
-  if (filtro && badgeMap[filtro]) {
-    const badges = badgeMap[filtro];
-    produtos = produtos.filter(
-      (produto) => produto.badge && badges.includes(produto.badge),
-    );
-    titulo = filterLabels[filtro];
-    subtitulo = (
-      <>
-        Confira os itens em{" "}
-        <strong className="text-[#A9EC17]">
-          {filterLabels[filtro].toLowerCase()}
-        </strong>
-        .
-      </>
-    );
-  } else if (cat && cat !== "tudo") {
-    const catInfo = categoriasData.categorias.find(
-      (item) => item.id === cat,
-    );
-    produtos = produtos.filter((produto) => produto.categoria === cat);
-    titulo = catInfo?.label ?? cat;
-    subtitulo = (
-      <>
-        Produtos da categoria{" "}
-        <strong className="text-[#A9EC17]">
-          {catInfo?.label ?? cat}
-        </strong>
-        .
-      </>
-    );
+  if (cat && cat !== "tudo") {
+    const category = categoriasData.categorias.find((item) => item.id === cat);
+    products = products.filter((product) => product.categoria === cat);
+    title = category?.label ?? cat;
+    subtitle = `Produtos da categoria ${category?.label ?? cat}.`;
   }
 
-  const hasFilter = Boolean((cat && cat !== "tudo") || filtro);
+  const trimmedSearch = searchQuery.trim();
+  if (trimmedSearch) {
+    const normalizedQuery = normalizeText(trimmedSearch);
+    products = products.filter((product) =>
+      normalizeText(product.nome).includes(normalizedQuery),
+    );
+    title = `Resultados para "${trimmedSearch}"`;
+    subtitle = `${products.length} ${products.length === 1 ? "produto encontrado" : "produtos encontrados"}.`;
+  }
+
+  const hasFilter = Boolean((cat && cat !== "tudo") || trimmedSearch);
+  const bestSellers = completeShelf(allProdutos.slice(0, 5), allProdutos, 5);
+  const releases = completeShelf(allProdutos.slice(5, 10), allProdutos, 5);
 
   return (
-    <section
+    <div
       id="vitrine"
       ref={sectionRef}
-      className="mx-auto max-w-[1360px] scroll-mt-24 px-4 py-10 sm:px-5 sm:py-16 lg:px-8 lg:py-20"
+      className="mx-auto max-w-[1440px] scroll-mt-24 px-4 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-20"
     >
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-10">
-        <div className="min-w-0">
-          <h2 className="font-display text-xl font-bold uppercase text-white sm:text-3xl">
-            {titulo}
-          </h2>
-          <p className="mt-2 text-xs text-white/65 sm:text-sm">{subtitulo}</p>
-        </div>
-        {hasFilter && (
-          <Link
-            href="/#vitrine"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-1.5 text-xs text-white/80 transition hover:border-[#A9EC17] hover:text-[#A9EC17] sm:text-sm"
-          >
-            <XCircle className="h-4 w-4" />
-            Limpar filtro
-          </Link>
-        )}
-      </div>
+      {hasFilter ? (
+        <section aria-labelledby="filtered-products-title">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
+            <div>
+              <span className="mb-3 block h-0.5 w-11 bg-[#A9EC17]" />
+              <h2
+                id="filtered-products-title"
+                className="font-display text-xl font-bold uppercase text-white sm:text-2xl"
+              >
+                {title}
+              </h2>
+              <p className="mt-1 text-xs text-white/50">{subtitle}</p>
+            </div>
+            <Link
+              href="/#vitrine"
+              onClick={() => setSearchQuery("")}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs text-white/70 transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+            >
+              <XCircle className="h-4 w-4" />
+              Limpar filtro
+            </Link>
+          </div>
 
-      {produtos.length === 0 ? (
-        <div className="rounded-xl border border-[#4D0B0B] bg-[#0A0101] px-6 py-10 text-center text-sm text-white/70">
-          Nenhum produto encontrado nessa seleção.{" "}
-          <Link href="/#vitrine" className="text-[#A9EC17] hover:underline">
-            Ver todos
-          </Link>
-          .
-        </div>
+          {products.length === 0 ? (
+            <div className="rounded-xl border border-white/10 bg-[#0D0D0D] px-6 py-12 text-center text-sm text-white/65">
+              Nenhum produto encontrado nessa seleção. {" "}
+              <Link href="/#vitrine" className="text-[#A9EC17] hover:underline">
+                Ver todos
+              </Link>
+              .
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} layout="grid" />
+              ))}
+            </div>
+          )}
+        </section>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
-          {produtos.map((produto) => (
-            <ProductCard key={produto.id} product={produto} />
-          ))}
+        <div className="space-y-14 sm:space-y-16">
+          <ProductShelf
+            title="Mais vendidos"
+            subtitle="Os produtos favoritos dos nossos clientes."
+            products={bestSellers}
+          />
+          <ProductShelf
+            title="Lançamentos"
+            subtitle="Novidades selecionadas para você."
+            products={releases}
+          />
         </div>
       )}
-    </section>
+    </div>
   );
 }

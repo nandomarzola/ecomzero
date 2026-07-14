@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sensor-alarme",
+    "eyebrow": "ECOMZERO",
+    "titulo": "SENSOR",
+    "destaque": "ALARME",
+    "subtitulo": "PORTA • JANELA • SEM FIO",
+    "imagem": "/produtos/sensor_alarme/capa.jpg",
+    "href": "/produto/sensor-alarme-magnetico-sirene-porta-janela-sem-fio"
+  },
+  {
+    "id": "lampada-led",
+    "eyebrow": "ECOMZERO",
+    "titulo": "LÂMPADA LED",
+    "destaque": "RECARREGÁVEL",
+    "subtitulo": "PORTÁTIL • USB • MULTIUSO",
+    "imagem": "/produtos/lampada-led.jpg",
+    "href": "/produto/lampada-led-recarregavel-20w-usb"
+  },
+  {
+    "id": "abracadeira",
+    "eyebrow": "ECOMZERO",
+    "titulo": "ABRAÇADEIRA",
+    "destaque": "NYLON",
+    "subtitulo": "15CM • 200 PEÇAS • ALTA RESISTÊNCIA",
+    "imagem": "/produtos/abracadeira/capa.jpg",
+    "href": "/produto/abracadeira-nylon-15cm-200-pecas-branca"
+  },
+  {
+    "id": "carmed-selecoes",
+    "eyebrow": "ECOMZERO",
+    "titulo": "CARMED",
+    "destaque": "SELEÇÕES",
+    "subtitulo": "EDIÇÃO SURPRESA • 5G",
+    "imagem": "/produtos/carmed/capa.jpg",
+    "href": "/produto/carmed-hidratante-labial-edicao-surpresa-selecoes-cimed-5g"
+  },
+  {
+    "id": "veja-concentrado",
+    "eyebrow": "ECOMZERO",
+    "titulo": "VEJA",
+    "destaque": "CONCENTRADO",
+    "subtitulo": "LIMPA • PERFUMA • DESINFETA",
+    "imagem": "/produtos/veja_concentrado/capa.jpg",
+    "href": "/produto/veja-limpador-concentrado-100ml"
+  }
+]

@@ -1,19 +1,28 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowUpRight,
+  BadgeCheck,
   Clock3,
+  Headphones,
+  Package,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
+  Tag,
 } from "lucide-react";
+import CategoryStrip from "@/components/CategoryStrip";
 import ProductGallery from "@/components/ProductGallery";
 import ProductPurchase from "@/components/ProductPurchase";
-import products from "@/data/produtos.json";
-import categoriesData from "@/data/categorias.json";
-
-type Product = (typeof products)[number];
+import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
+import TrustBadges from "@/components/TrustBadges";
+import {
+  findCategoryLabel,
+  getAllProducts,
+  getProductBySlug,
+  getRelatedProducts,
+} from "@/lib/services/productService";
+import type { Product } from "@/types/product";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -21,81 +30,20 @@ type ProductPageProps = {
 
 const siteUrl = "https://www.ecomzero.com.br";
 
-const purchaseBenefits = [
-  {
-    label: "Envio",
-    value: "Rastreado",
-    detail: "Acompanhe na Shopee",
-    icon: Clock3,
-  },
-  {
-    label: "Compra",
-    value: "Protegida",
-    detail: "Dentro da plataforma",
-    icon: ShieldCheck,
-  },
-  {
-    label: "Suporte",
-    value: "Pela Shopee",
-    detail: "Direto no pedido",
-    icon: RefreshCw,
-  },
+const featureIcons = [Tag, Package, Sparkles, Clock3];
+
+const trustBadges = [
+  { icon: ShieldCheck, title: "Compra 100% segura", detail: "Seus dados protegidos" },
+  { icon: Clock3, title: "Envio rápido", detail: "Para todo o Brasil" },
+  { icon: RefreshCw, title: "Troca garantida", detail: "Até 7 dias após o recebimento" },
+  { icon: Headphones, title: "Atendimento humano", detail: "Suporte rápido e dedicado" },
 ];
-
-const findProduct = (slug: string): Product | undefined =>
-  products.find((product) => product.slug === slug);
-
-const normalizeCategory = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
-
-const getRelatedProducts = (currentProduct: Product) => {
-  const currentCategory = categoriesData.categorias.find(
-    (category) =>
-      normalizeCategory(category.id) ===
-      normalizeCategory(currentProduct.categoria),
-  );
-
-  const relatedCategoryIds = currentCategory?.relacionadas ?? [];
-
-  return products
-    .filter((product) => {
-      if (product.slug === currentProduct.slug) {
-        return false;
-      }
-
-      const productCategory = normalizeCategory(product.categoria);
-      const currentProductCategory = normalizeCategory(
-        currentProduct.categoria,
-      );
-
-      const isSameCategory =
-        productCategory === currentProductCategory;
-
-      const isRelatedCategory = relatedCategoryIds.some(
-        (categoryId) =>
-          normalizeCategory(categoryId) === productCategory,
-      );
-
-      return isSameCategory || isRelatedCategory;
-    })
-    .slice(0, 4);
-};
-
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  return products.map((product) => ({ slug: product.slug }));
-}
 
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = findProduct(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     return {
@@ -172,22 +120,18 @@ const buildBreadcrumbJsonLd = (product: Product) => ({
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = findProduct(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const relatedProducts = getRelatedProducts(product);
-
-  const currentCategory = categoriesData.categorias.find(
-    (category) =>
-      normalizeCategory(category.id) ===
-      normalizeCategory(product.categoria),
-  );
+  const allProducts = await getAllProducts();
+  const relatedProducts = getRelatedProducts(product, allProducts);
+  const categoryLabel = findCategoryLabel(product.categoria) ?? product.categoria;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_72%_25%,#230505_0%,#090101_34%,#000_68%)]">
+    <div className="product-detail-page min-h-screen bg-black">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -202,9 +146,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
         }}
       />
 
-      <div className="mx-auto max-w-[1440px] px-4 py-6 sm:px-5 sm:py-8 lg:px-8 lg:py-12">
+      <CategoryStrip />
+
+      <div className="mx-auto max-w-[1440px] px-4 pb-14 pt-5 sm:px-6 sm:pb-16 sm:pt-7 lg:px-10 lg:pb-20">
         <nav
-          className="mb-5 flex flex-wrap items-center gap-2 text-[11px] text-white/45 sm:mb-8 sm:gap-3 sm:text-xs"
+          className="mb-5 flex flex-wrap items-center gap-2 text-[11px] text-white/42 sm:gap-3 sm:text-xs lg:mb-6"
           aria-label="Navegação estrutural"
         >
           <Link href="/" className="transition hover:text-[#A9EC17]">
@@ -223,129 +169,68 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <span>/</span>
 
           <span className="font-semibold uppercase text-[#A9EC17]">
-            {currentCategory?.label ?? product.categoria}
+            {categoryLabel}
           </span>
         </nav>
 
-        <section className="grid items-start gap-6 sm:gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.92fr)] xl:gap-16">
+        <section className="grid items-start gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.04fr)_minmax(420px,0.96fr)] xl:gap-12">
           <ProductGallery
             images={product.imagens}
             productName={product.nome}
           />
 
-          <div className="min-w-0 lg:sticky lg:top-28">
+          <div className="w-full min-w-0 lg:sticky lg:top-24">
             <p className="font-display text-[11px] font-bold uppercase tracking-[0.24em] text-[#A9EC17] sm:text-xs">
-              {currentCategory?.label ?? product.categoria}
+              {categoryLabel}
             </p>
 
-            <h1 className="font-display mt-3 text-2xl font-extrabold leading-[1.1] text-white sm:mt-4 sm:text-4xl xl:text-5xl">
+            <h1 className="font-display mt-2 max-w-full break-words text-[28px] font-extrabold leading-[1.08] text-white sm:text-4xl lg:text-balance lg:text-[40px]">
               {product.nome}
             </h1>
 
-            <p className="mt-3 text-base text-white/65 sm:mt-4 sm:text-lg">
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/72">
+              <BadgeCheck className="h-4 w-4 text-[#A9EC17]" strokeWidth={1.8} />
+              Produto selecionado pela EcomZero
+            </div>
+
+            <p className="mt-6 text-sm leading-6 text-white/72 sm:text-[15px]">
               {product.subtitulo}
             </p>
 
-            <p className="mt-5 max-w-2xl text-sm leading-6 text-white/60 sm:mt-7 sm:leading-7 sm:text-base">
+            <p className="mt-1.5 max-w-2xl text-[13px] leading-6 text-white/52 sm:text-sm">
               {product.descricao}
             </p>
 
-            <ul className="mt-5 grid gap-2 text-sm text-white/72 sm:mt-6 sm:gap-3 sm:grid-cols-2">
-              {product.caracteristicas.map((feature) => (
-                <li key={feature} className="flex gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#A9EC17]" />
-                  <span className="leading-6">{feature}</span>
-                </li>
-              ))}
-            </ul>
-
-            <ProductPurchase
-              variants={product.variantes}
-              shopeeUrl={product.linkShopee}
-            />
-
-            <div className="mt-6 grid grid-cols-3 gap-2 border-t border-white/10 pt-6 sm:mt-8 sm:gap-3 sm:pt-7">
-              {purchaseBenefits.map(
-                ({ label, value, detail, icon: Icon }) => (
-                  <article key={label} className="min-w-0">
-                    <Icon
-                      className="h-5 w-5 text-[#A9EC17] sm:h-6 sm:w-6"
-                      strokeWidth={1.5}
-                    />
-
-                    <p className="font-display mt-2 text-[9px] font-bold uppercase tracking-[0.14em] text-white/50 sm:mt-3 sm:text-[10px]">
-                      {label}
-                    </p>
-
-                    <p className="mt-1 text-xs font-semibold text-white sm:text-base">
-                      {value}
-                    </p>
-
-                    <p className="mt-1 text-[9px] leading-4 text-white/40 sm:text-xs">
-                      {detail}
-                    </p>
-                  </article>
-                ),
-              )}
+            <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-white/[0.08] py-5 sm:grid-cols-3 xl:grid-cols-5">
+              {product.caracteristicas.map((feature, index) => {
+                const Icon = featureIcons[index % featureIcons.length];
+                return (
+                  <div
+                    key={feature}
+                    className="flex min-w-0 items-start gap-2"
+                  >
+                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
+                    <span className="text-[10px] leading-[1.4] text-white/65 xl:text-[10.5px]">
+                      {feature}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
+
+            <ProductPurchase variants={product.variantes} fallbackShopeeUrl={product.linkShopee} />
           </div>
         </section>
 
+        <TrustBadges
+          items={trustBadges}
+          className="mt-5 grid-cols-2 lg:grid-cols-4"
+        />
+
         {relatedProducts.length > 0 && (
-          <section className="mt-12 border-t border-white/10 pt-8 sm:mt-20 sm:pt-12">
-            <div className="mb-5 flex items-end justify-between gap-5 sm:mb-7">
-              <div>
-                <p className="font-display text-[11px] font-bold uppercase tracking-[0.22em] text-[#A9EC17] sm:text-xs">
-                  Continue explorando
-                </p>
-
-                <h2 className="font-display mt-2 text-xl font-bold text-white sm:mt-3 sm:text-3xl">
-                  Produtos relacionados
-                </h2>
-              </div>
-
-              <Link
-                href="/#vitrine"
-                className="hidden text-sm text-white/55 hover:text-[#A9EC17] sm:block"
-              >
-                Ver toda a vitrine
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              {relatedProducts.map((relatedProduct) => (
-                <Link
-                  key={relatedProduct.slug}
-                  href={`/produto/${relatedProduct.slug}`}
-                  className="group relative min-h-44 overflow-hidden rounded-xl border border-[#4D0B0B] bg-[#0A0101] sm:min-h-64"
-                >
-                  <Image
-                    src={relatedProduct.imagem}
-                    alt={relatedProduct.nome}
-                    fill
-                    sizes="(max-width: 640px) 50vw, 25vw"
-                    className="object-cover opacity-55 transition duration-500 group-hover:scale-105 group-hover:opacity-70"
-                  />
-
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_25%,rgba(0,0,0,0.94)_100%)]" />
-
-                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-3 sm:gap-4 sm:p-5">
-                    <div className="min-w-0">
-                      <h3 className="font-display truncate text-sm font-bold text-white sm:text-lg">
-                        {relatedProduct.nome}
-                      </h3>
-
-                      <p className="mt-1 truncate text-[10px] leading-4 text-white/55 sm:text-xs sm:leading-5">
-                        {relatedProduct.subtitulo}
-                      </p>
-                    </div>
-
-                    <ArrowUpRight className="h-5 w-5 shrink-0 text-[#A9EC17] sm:h-6 sm:w-6" />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
+          <div className="mt-12 border-t border-white/[0.08] pt-9 sm:mt-16 sm:pt-11">
+            <RelatedProductsCarousel produtos={relatedProducts} />
+          </div>
         )}
       </div>
     </div>

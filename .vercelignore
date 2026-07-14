@@ -1,0 +1,6 @@
+# Nunca subir env locais em deploy manual via CLI — a Vercel já injeta as
+# env vars reais no build/runtime; um .env local não deve viajar no upload.
+.env
+.env.local
+.env.production.local
+.env.*.local

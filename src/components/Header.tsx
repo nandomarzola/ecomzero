@@ -1,46 +1,96 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Accessibility, ShoppingCart } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import CartBadgeCount from "@/components/CartBadgeCount";
+import HeaderActions from "@/components/HeaderActions";
 import MobileMenu from "@/components/MobileMenu";
+import SearchBar from "@/components/SearchBar";
 
 const navigation = [
   { label: "Início", href: "/" },
   { label: "Categorias", href: "/#vitrine" },
-  { label: "Ofertas", href: "/?f=ofertas#vitrine" },
-  { label: "Novidades", href: "/?f=novidades#vitrine" },
-  { label: "Mais Vendidos", href: "/?f=mais-vendidos#vitrine" },
   { label: "Sobre a EcomZero", href: "/#sobre" },
 ];
 
 export default function Header() {
+  const pathname = usePathname();
+  const isProductPage = pathname.startsWith("/produto/");
+  const isHomePage = pathname === "/";
+  const isCartPage = pathname === "/carrinho";
+  const isRegistrationPage = pathname === "/cadastro";
+  const isLoginPage = pathname === "/login";
+  const usesStorefrontHeader =
+    isHomePage || isProductPage || isRegistrationPage || isLoginPage;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 text-white backdrop-blur">
-      <div className="mx-auto flex min-h-[64px] max-w-[1440px] items-center gap-4 px-4 sm:min-h-[72px] sm:gap-8 sm:px-5 lg:px-8">
-        <Link href="/" aria-label="EcomZero — página inicial" className="shrink-0">
+    <header
+      className={`site-header sticky top-0 z-50 border-b border-white/10 bg-black/95 text-white backdrop-blur ${usesStorefrontHeader ? "bg-[#030303]/95" : ""}`}
+    >
+      <div className={`header-accent-strip h-1 bg-[#B01818] ${usesStorefrontHeader ? "hidden" : ""}`} />
+
+      <div className="header-mobile flex min-h-[64px] items-center gap-4 px-4 md:hidden">
+        <Link href="/" aria-label="EcomZero — página inicial" className="relative z-[1] shrink-0">
+          <BrandLogo priority />
+        </Link>
+        <Link
+          href="/carrinho"
+          aria-label="Carrinho"
+          className="relative ml-auto inline-flex h-11 w-11 items-center justify-center text-white transition hover:text-[#A9EC17]"
+        >
+          <ShoppingCart className="h-6 w-6" strokeWidth={1.8} />
+          <CartBadgeCount />
+        </Link>
+        <MobileMenu items={navigation} />
+      </div>
+
+      {usesStorefrontHeader && (
+        <div className="px-4 pb-3 md:hidden">
+          <SearchBar />
+        </div>
+      )}
+
+      <div
+        className={`header-desktop mx-auto hidden items-center md:flex ${usesStorefrontHeader ? "min-h-[76px] max-w-[1440px] gap-7 px-6 py-3 lg:px-8" : "max-w-[1440px] gap-6 px-5 py-3 lg:px-8"}`}
+      >
+        <Link href="/" aria-label="EcomZero — página inicial" className="relative z-[1] shrink-0">
           <BrandLogo priority />
         </Link>
 
-        <nav
-          className="ml-auto hidden min-w-0 overflow-x-auto [scrollbar-width:none] md:block [&::-webkit-scrollbar]:hidden"
-          aria-label="Navegação principal"
+        <button
+          type="button"
+          title="Recursos de acessibilidade — em breve"
+          aria-label="Recursos de acessibilidade"
+          className={`header-accessibility shrink-0 text-[#A9EC17] transition hover:brightness-110 ${usesStorefrontHeader ? "hidden" : ""}`}
         >
-          <ul className="flex min-w-max items-center gap-6 lg:gap-10">
-            {navigation.map((item, index) => (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  scroll={!item.href.includes("?")}
-                  aria-current={index === 0 ? "page" : undefined}
-                  className={`font-display relative py-6 text-xs font-semibold transition hover:text-[#A9EC17] lg:text-sm ${index === 0 ? "text-white after:absolute after:bottom-3 after:left-0 after:h-0.5 after:w-full after:bg-[#A9EC17]" : "text-white/85"}`}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+          <Accessibility className="h-6 w-6" strokeWidth={1.8} />
+        </button>
 
-        <MobileMenu items={navigation} />
+        <div className={usesStorefrontHeader ? "header-search max-w-[660px] flex-1" : "header-search max-w-xl flex-1"}>
+          <SearchBar />
+        </div>
+
+        <HeaderActions />
       </div>
+
+      <nav
+        aria-label="Navegação principal"
+        className={`header-nav mx-auto items-center ${usesStorefrontHeader || isCartPage ? "hidden" : "hidden max-w-[1440px] gap-6 border-t border-white/10 px-5 py-2 md:flex lg:gap-10 lg:px-8"}`}
+      >
+        {navigation.map((item, index) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            scroll={!item.href.includes("?")}
+            aria-current={index === 0 ? "page" : undefined}
+            className="font-display text-xs font-semibold text-white/70 transition hover:text-[#A9EC17]"
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

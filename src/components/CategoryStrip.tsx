@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useProductFilters } from "@/components/ProductFiltersProvider";
 import {
   Grid2X2,
   Heart,
   Lightbulb,
+  Menu,
   Package,
   ShieldCheck,
   SprayCan,
@@ -15,7 +16,7 @@ import {
 import categoriasData from "@/data/categorias.json";
 
 const iconMap = {
-  tudo: Grid2X2,
+  tudo: Menu,
   iluminacao: Lightbulb,
   seguranca: ShieldCheck,
   ferramentas: Wrench,
@@ -25,12 +26,12 @@ const iconMap = {
 };
 
 export default function CategoryStrip() {
-  const searchParams = useSearchParams();
-  const active = searchParams.get("cat") ?? (searchParams.get("f") ? "" : "tudo");
+  const { cat } = useProductFilters();
+  const active = cat ?? "tudo";
 
   return (
-    <section className="border-y border-[#360808] bg-[#080000]">
-      <div className="mx-auto flex max-w-[1440px] gap-3 overflow-x-auto px-5 py-4 [scrollbar-width:none] sm:justify-center sm:gap-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
+    <section className="border-y border-white/[0.08] bg-[#080808]">
+      <div className="mx-auto flex h-[58px] max-w-[1440px] items-stretch gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:px-6 lg:px-8 [&::-webkit-scrollbar]:hidden">
         {categoriasData.categorias.map((categoria) => {
           const Icon =
             iconMap[categoria.id as keyof typeof iconMap] ?? Grid2X2;
@@ -46,27 +47,31 @@ export default function CategoryStrip() {
               href={href}
               scroll={false}
               aria-current={isActive ? "page" : undefined}
-              className="group flex min-w-[90px] flex-col items-center gap-2 text-center"
+              className={`group relative flex shrink-0 items-center gap-2.5 px-3 text-center sm:px-4 ${categoria.id === "tudo" ? "min-w-[176px]" : ""}`}
             >
               <span
-                className={`flex h-12 w-12 items-center justify-center rounded-full border transition ${
+                className={`flex items-center justify-center transition ${
                   isActive
-                    ? "border-[#A9EC17] bg-[#151a03] text-[#A9EC17] shadow-[0_0_20px_rgba(169,236,23,0.2)]"
-                    : "border-[#4A0B0B] bg-[#0D0202] text-[#A9EC17] group-hover:border-[#A9EC17]/60 group-hover:shadow-[0_0_20px_rgba(169,236,23,0.12)]"
+                    ? "text-[#A9EC17]"
+                    : "text-[#A9EC17]/85 group-hover:text-[#B7FF23]"
                 }`}
               >
-                <Icon className="h-6 w-6" strokeWidth={1.4} />
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
               </span>
 
               <span
-                className={`text-[11px] font-medium transition ${
+                className={`whitespace-nowrap text-[11px] font-medium transition ${
                   isActive
-                    ? "text-[#A9EC17]"
-                    : "text-white/85 group-hover:text-[#A9EC17]"
+                    ? "text-white"
+                    : "text-white/68 group-hover:text-[#A9EC17]"
                 }`}
               >
-                {categoria.label}
+                {categoria.id === "tudo" ? "Todas as categorias" : categoria.label}
               </span>
+
+              {isActive && (
+                <span className="absolute inset-x-2 bottom-0 h-0.5 bg-[#A9EC17]" aria-hidden="true" />
+              )}
             </Link>
           );
         })}

@@ -1,31 +1,31 @@
-import { Suspense } from "react";
 import CategoryStrip from "@/components/CategoryStrip";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import FeatureBar from "@/components/FeatureBar";
 import HeroShowcase from "@/components/HeroShowcase";
+import HomeInstitutional from "@/components/HomeInstitutional";
+import NewsletterBanner from "@/components/NewsletterBanner";
 import Showcase from "@/components/Showcase";
-import homeData from "@/data/home.json";
+import heroSlides from "@/data/hero-slides.json";
+import { getAllProducts } from "@/lib/services/productService";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const produtos = await getAllProducts();
+
   return (
     <div className="bg-black">
-      <Suspense
-        fallback={<div className="h-20 border-y border-[#360808] bg-[#080000]" />}
-      >
-        <CategoryStrip />
-      </Suspense>
+      <CategoryStrip />
 
-      <HeroShowcase slides={homeData.slides} />
+      <FeatureBar />
 
-      <div className="relative z-10 -mt-1 pb-4">
-        <FeatureBar />
-      </div>
+      <HeroShowcase slides={heroSlides} />
 
-      <Suspense fallback={<div className="min-h-[480px]" />}>
-        <Showcase />
-      </Suspense>
+      <Showcase produtos={produtos} />
 
       <DeliveryBanner />
+
+      <HomeInstitutional />
+
+      <NewsletterBanner />
     </div>
   );
 }

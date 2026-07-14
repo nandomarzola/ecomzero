@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowLeft,
   ArrowRight,
-  BatteryCharging,
-  Feather,
-  Lightbulb,
-  Magnet,
+  BadgeCheck,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  ShieldCheck,
+  Truck,
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
-import BrandLogo from "@/components/BrandLogo";
 
 type Slide = {
   id: string;
@@ -28,45 +28,39 @@ type HeroShowcaseProps = {
   slides: Slide[];
 };
 
-const details = [
-  { label: "FIXAÇÃO MAGNÉTICA", icon: Magnet },
-  { label: "LED DE ALTA POTÊNCIA", icon: Lightbulb },
-  { label: "RECARREGÁVEL VIA USB", icon: BatteryCharging },
-  { label: "PORTÁTIL E LEVE", icon: Feather },
+const benefits = [
+  { title: "Frete rápido", detail: "para todo o Brasil", icon: Truck },
+  { title: "Compra segura", detail: "dados protegidos", icon: ShieldCheck },
+  { title: "Troca fácil", detail: "em até 7 dias", icon: RefreshCw },
+  { title: "Qualidade", detail: "selecionada", icon: BadgeCheck },
 ];
 
 export default function HeroShowcase({ slides }: HeroShowcaseProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 32 });
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  const updateSelectedIndex = useCallback(() => {
-    if (emblaApi) {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-    }
-  }, [emblaApi]);
+  const subscribeToEmbla = useCallback(
+    (onStoreChange: () => void) => {
+      if (!emblaApi) return () => {};
+      emblaApi.on("select", onStoreChange);
+      emblaApi.on("reInit", onStoreChange);
+      return () => {
+        emblaApi.off("select", onStoreChange);
+        emblaApi.off("reInit", onStoreChange);
+      };
+    },
+    [emblaApi],
+  );
+
+  const selectedIndex = useSyncExternalStore(
+    subscribeToEmbla,
+    () => emblaApi?.selectedScrollSnap() ?? 0,
+    () => 0,
+  );
 
   useEffect(() => {
-    if (!emblaApi) {
-      return;
-    }
-
-    updateSelectedIndex();
-    emblaApi.on("select", updateSelectedIndex);
-    return () => {
-      emblaApi.off("select", updateSelectedIndex);
-    };
-  }, [emblaApi, updateSelectedIndex]);
-
-  useEffect(() => {
-    if (!emblaApi || paused) {
-      return;
-    }
-
-    // Respeita usuários que preferem menos movimento (a11y / Lighthouse)
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    if (!emblaApi || paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const timer = window.setInterval(() => emblaApi.scrollNext(), 6000);
     return () => window.clearInterval(timer);
@@ -74,7 +68,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
 
   return (
     <section
-      className="relative overflow-hidden bg-[#050000]"
+      className="relative overflow-hidden border-b border-white/[0.06] bg-black"
       aria-roledescription="carrossel"
       aria-label="Produtos em destaque"
       onMouseEnter={() => setPaused(true)}
@@ -86,66 +80,79 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
         <div className="flex touch-pan-y">
           {slides.map((slide, slideIndex) => {
             const TitleTag = slideIndex === 0 ? "h1" : "h2";
+            const isPrimary = slide.id === "sensor-alarme";
+            const imageSrc = isPrimary
+              ? "/images/hero-sensor-cutout.png"
+              : slide.imagem;
 
             return (
-            <article
-              key={slide.id}
-              role="group"
-              aria-roledescription="slide"
-              aria-label={`${slideIndex + 1} de ${slides.length}`}
-              className="relative min-w-0 flex-[0_0_100%] overflow-hidden bg-[radial-gradient(circle_at_80%_50%,#3B0707_0%,#160202_42%,#050000_76%)]"
-            >
-              <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle,#8B1111_1px,transparent_1px)] [background-position:0_0] [background-size:14px_14px] [mask-image:linear-gradient(90deg,black,transparent_30%)]" />
-              <div className="absolute inset-y-0 right-0 w-full opacity-70 sm:w-[62%] lg:w-[58%]">
-                <Image
-                  src={slide.imagem}
-                  alt=""
-                  fill
-                  priority={slide.id === slides[0]?.id}
-                  sizes="(max-width: 640px) 100vw, 60vw"
-                  className="object-cover object-center"
-                />
-                <div className="absolute inset-0 hidden bg-[linear-gradient(90deg,#050000_0%,rgba(5,0,0,0.92)_10%,rgba(5,0,0,0.28)_58%,rgba(5,0,0,0.15)_100%)] sm:block" />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,0,0,0.55)_0%,rgba(5,0,0,0.78)_55%,#050000_100%)] sm:hidden" />
-              </div>
+              <article
+                key={slide.id}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${slideIndex + 1} de ${slides.length}`}
+                className="relative min-w-0 flex-[0_0_100%] overflow-hidden"
+              >
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_48%,rgba(169,236,23,0.10),transparent_28%),linear-gradient(100deg,#000_0%,#020402_56%,#000_100%)]" />
 
-              <div className="relative mx-auto flex min-h-[500px] max-w-[1440px] items-center px-5 py-10 sm:min-h-[590px] sm:px-16 sm:py-14 lg:px-24">
-                <div className="relative z-10 min-w-0 w-full max-w-[620px]">
-                  <BrandLogo className="mb-3 origin-left sm:scale-110" />
-                  <p className="font-display text-[11px] font-bold uppercase tracking-[0.25em] text-[#A9EC17] sm:text-xs">
-                    {slide.eyebrow}
-                  </p>
-                  <TitleTag className="font-display mt-2 text-3xl font-extrabold leading-[0.98] text-white sm:mt-3 sm:text-5xl lg:text-6xl">
-                    {slide.titulo}
-                    <span className="mt-2 block text-[#A9EC17]">{slide.destaque}</span>
-                  </TitleTag>
-                  <p className="font-display mt-4 inline-flex rounded-lg border border-[#8C1111] bg-[#7B0D0D]/70 px-3 py-2 text-xs font-bold tracking-wide text-white sm:px-4 sm:text-base">
-                    {slide.subtitulo}
-                  </p>
+                <div className="relative mx-auto grid min-h-[540px] max-w-[1440px] items-center gap-8 px-4 py-10 sm:px-6 sm:py-12 lg:grid-cols-[44%_56%] lg:px-8 lg:py-0">
+                  <div className="relative z-10 max-w-[590px]">
+                    <p className="font-display text-[11px] font-bold uppercase tracking-[0.08em] text-[#A9EC17] sm:text-xs">
+                      {isPrimary ? "Tecnologia e praticidade" : slide.eyebrow}
+                    </p>
 
-                  <div className="mt-5 grid w-full max-w-full grid-cols-2 overflow-hidden rounded-xl border border-[#771010] bg-black/45 sm:max-w-[600px] sm:grid-cols-4">
-                    {details.map(({ label, icon: Icon }, index) => (
-                      <div
-                        key={label}
-                        className={`flex min-h-20 min-w-0 flex-col items-center justify-center gap-1.5 px-2 py-3 text-center sm:min-h-24 sm:gap-2 ${index > 0 ? "border-l border-[#771010]" : ""} ${index === 2 || index === 3 ? "border-t border-[#771010] sm:border-t-0" : ""} ${index === 2 ? "border-l-0 sm:border-l" : ""}`}
-                      >
-                        <Icon className="h-6 w-6 text-[#A9EC17] sm:h-7 sm:w-7" strokeWidth={1.6} />
-                        <span className="max-w-full break-words text-[9px] font-semibold leading-4 text-white sm:text-[11px]">
-                          {label}
-                        </span>
-                      </div>
-                    ))}
+                    <TitleTag className="font-display mt-3 text-[38px] font-extrabold uppercase leading-[1.02] text-white sm:text-5xl lg:text-[58px]">
+                      {isPrimary ? "Para facilitar" : slide.titulo}
+                      <span className="mt-1 block text-[#A9EC17]">
+                        {isPrimary ? "seu dia a dia." : slide.destaque}
+                      </span>
+                    </TitleTag>
+
+                    <p className="mt-4 max-w-[430px] text-sm leading-6 text-white/65 sm:text-base">
+                      {isPrimary
+                        ? "Produtos inteligentes, úteis e de qualidade para transformar sua rotina."
+                        : slide.subtitulo}
+                    </p>
+
+                    <Link
+                      href={isPrimary ? "/#vitrine" : slide.href}
+                      className="font-display mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-lg bg-[#A9EC17] px-7 text-xs font-extrabold uppercase text-black transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#B7FF23] hover:shadow-[0_10px_28px_rgba(169,236,23,0.14)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#A9EC17] motion-reduce:transform-none motion-reduce:transition-none"
+                    >
+                      {isPrimary ? "Ver todos os produtos" : "Ver produto"}
+                      <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                    </Link>
+
+                    <div className="mt-8 grid max-w-[600px] grid-cols-2 overflow-hidden rounded-lg border border-white/[0.08] bg-[#0B0B0B]/80 sm:grid-cols-4">
+                      {benefits.map(({ title, detail, icon: Icon }, index) => (
+                        <div
+                          key={title}
+                          className={`flex min-h-[66px] items-center gap-2 px-3 py-3 ${index % 2 === 1 ? "border-l border-white/[0.08]" : ""} ${index > 1 ? "border-t border-white/[0.08] sm:border-t-0" : ""} ${index > 0 ? "sm:border-l sm:border-white/[0.08]" : ""}`}
+                        >
+                          <Icon className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
+                          <p className="text-[9px] leading-3.5 text-white">
+                            <span className="block font-semibold">{title}</span>
+                            <span className="text-white/45">{detail}</span>
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <Link
-                    href={slide.href}
-                    className="font-display mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-[#A9EC17] px-7 py-3 text-sm font-bold text-black transition hover:brightness-110 sm:w-auto"
-                  >
-                    VER PRODUTO
-                  </Link>
+                  <div className="relative h-[310px] min-w-0 sm:h-[390px] lg:h-[540px]">
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 h-[82%] w-[82%] -translate-x-1/2 -translate-y-1/2 rounded-full border-[5px] border-[#A9EC17]/55 shadow-[0_0_60px_rgba(169,236,23,0.16),inset_0_0_70px_rgba(169,236,23,0.08)]" />
+                    <div className="pointer-events-none absolute bottom-[7%] left-1/2 h-[18%] w-[78%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse,#333_0%,#171717_48%,#050505_72%)] shadow-[0_28px_55px_rgba(0,0,0,0.7)]" />
+
+                    <Image
+                      src={imageSrc}
+                      alt={isPrimary ? "Sensor Alarme Magnético para portas e janelas" : slide.titulo}
+                      fill
+                      priority={slideIndex === 0}
+                      sizes="(max-width: 1024px) 100vw, 56vw"
+                      className={`relative z-[1] object-contain transition-transform duration-500 motion-reduce:transition-none ${isPrimary ? "p-3 sm:p-5 lg:p-8" : "rounded-2xl p-8 lg:p-16"}`}
+                    />
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
             );
           })}
         </div>
@@ -155,20 +162,21 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
         type="button"
         onClick={() => emblaApi?.scrollPrev()}
         aria-label="Banner anterior"
-        className="absolute left-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#A9EC17] transition hover:bg-black/45 sm:left-5 sm:flex"
+        className="absolute left-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/75 transition hover:border-[#A9EC17]/50 hover:text-[#A9EC17] lg:flex"
       >
-        <ArrowLeft className="h-8 w-8" strokeWidth={1.8} />
+        <ChevronLeft className="h-5 w-5" />
       </button>
+
       <button
         type="button"
         onClick={() => emblaApi?.scrollNext()}
         aria-label="Próximo banner"
-        className="absolute right-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[#A9EC17] transition hover:bg-black/45 sm:right-5 sm:flex"
+        className="absolute right-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/75 transition hover:border-[#A9EC17]/50 hover:text-[#A9EC17] lg:flex"
       >
-        <ArrowRight className="h-8 w-8" strokeWidth={1.8} />
+        <ChevronRight className="h-5 w-5" />
       </button>
 
-      <div className="absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2">
+      <div className="absolute bottom-3 left-1/2 z-20 flex -translate-x-1/2">
         {slides.map((slide, index) => (
           <button
             key={slide.id}
@@ -180,7 +188,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
           >
             <span
               aria-hidden="true"
-              className={`h-2.5 rounded-full transition-all ${selectedIndex === index ? "w-7 bg-[#A9EC17]" : "w-2.5 bg-white"}`}
+              className={`h-1.5 rounded-full transition-all ${selectedIndex === index ? "w-6 bg-[#A9EC17]" : "w-1.5 bg-white/75"}`}
             />
           </button>
         ))}

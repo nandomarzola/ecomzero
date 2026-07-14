@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
@@ -14,13 +14,22 @@ type MobileMenuProps = {
   items: MenuItem[];
 };
 
+const noopSubscribe = () => () => {};
+
+// Detecta se já passamos da hidratação (portal só pode montar no client) sem
+// setState dentro de efeito — useSyncExternalStore é a forma recomendada
+// para esse "hasMounted" flag: https://react.dev/reference/react/useSyncExternalStore
+function useIsMounted() {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
+}
+
 export default function MobileMenu({ items }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsMounted();
 
   useEffect(() => {
     if (!open) return;
@@ -102,7 +111,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
         aria-label="Abrir menu"
         aria-expanded={open}
         aria-controls="mobile-nav-drawer"
-        className="ml-auto inline-flex h-11 w-11 items-center justify-center rounded-lg text-white transition hover:text-[#A9EC17] md:hidden"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-white transition hover:text-[#A9EC17] md:hidden"
       >
         <Menu className="h-6 w-6" strokeWidth={1.8} />
       </button>
