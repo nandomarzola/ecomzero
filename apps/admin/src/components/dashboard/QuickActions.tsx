@@ -3,10 +3,8 @@ import { Image as ImageIcon, Package, ShoppingBag, Ticket, type LucideIcon } fro
 
 type Action = { href: string; label: string; icon: LucideIcon };
 
-// "Novo X" aponta pra seção correspondente por enquanto — sem formulário de
-// criação ainda (fase sem backend).
 const actions: Action[] = [
-  { href: "/produtos", label: "Novo Produto", icon: Package },
+  { href: "/produtos/novo", label: "Novo Produto", icon: Package },
   { href: "/banners", label: "Novo Banner", icon: ImageIcon },
   { href: "/cupons", label: "Novo Cupom", icon: Ticket },
   { href: "/pedidos", label: "Ver Pedidos", icon: ShoppingBag },

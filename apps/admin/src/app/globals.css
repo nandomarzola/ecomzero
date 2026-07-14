@@ -20,3 +20,29 @@ body {
 * {
   border-color: var(--color-border);
 }
+
+.admin-login-background {
+  background:
+    radial-gradient(circle at 50% 44%, rgba(169, 236, 23, 0.055), transparent 30%),
+    radial-gradient(circle at 50% 50%, #101110 0%, #060706 38%, #020302 78%);
+}
+
+.admin-login-background::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  opacity: 0.15;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 100% 4px;
+}
+
+.admin-login-card {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.025), transparent 42%),
+    linear-gradient(180deg, #111211 0%, #0d0e0d 100%);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.72),
+    0 0 55px rgba(169, 236, 23, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}

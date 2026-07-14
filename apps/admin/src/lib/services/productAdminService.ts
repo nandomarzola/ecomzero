@@ -84,6 +84,10 @@ export async function listProducts(search?: string): Promise<ProductListItem[]> 
   }));
 }
 
+export async function countProducts(): Promise<number> {
+  return prisma.product.count();
+}
+
 export async function getProductById(id: string) {
   return prisma.product.findUnique({
     where: { id },

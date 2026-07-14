@@ -3,16 +3,19 @@ import StatCard from "@/components/dashboard/StatCard";
 import RecentOrdersTable from "@/components/dashboard/RecentOrdersTable";
 import TopProductsList from "@/components/dashboard/TopProductsList";
 import QuickActions from "@/components/dashboard/QuickActions";
+import { countProducts } from "@/lib/services/productAdminService";
 
-// Dados de exemplo — sem backend ainda. Trocar por fetch real quando a API existir.
-const stats = [
-  { label: "Pedidos Hoje", value: "18", icon: ShoppingBag },
-  { label: "Faturamento", value: "R$ 3.240,00", icon: DollarSign },
-  { label: "Produtos", value: "8", icon: Package },
-  { label: "Clientes", value: "132", icon: Users },
-];
+export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const productCount = await countProducts();
+  const stats = [
+    { label: "Pedidos Hoje", value: "—", icon: ShoppingBag },
+    { label: "Faturamento", value: "—", icon: DollarSign },
+    { label: "Produtos", value: productCount.toString(), icon: Package },
+    { label: "Clientes", value: "—", icon: Users },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

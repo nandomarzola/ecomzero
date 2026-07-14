@@ -45,7 +45,10 @@ export default async function ProdutosPage({
         </button>
       </form>
 
-      <ProductsTable items={items} />
+      <ProductsTable
+        items={items}
+        emptyMessage={q ? "Nenhum produto corresponde à busca." : "Nenhum produto cadastrado."}
+      />
     </div>
   );
 }

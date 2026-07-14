@@ -8,11 +8,17 @@ const formatPrice = (v: number | null) =>
     ? "—"
     : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export default function ProductsTable({ items }: { items: ProductListItem[] }) {
+export default function ProductsTable({
+  items,
+  emptyMessage,
+}: {
+  items: ProductListItem[];
+  emptyMessage: string;
+}) {
   if (items.length === 0) {
     return (
       <p className="rounded-xl border border-white/[0.08] bg-[#111111] px-4 py-8 text-center text-sm text-white/50">
-        Nenhum produto encontrado.
+        {emptyMessage}
       </p>
     );
   }
