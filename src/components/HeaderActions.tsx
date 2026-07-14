@@ -29,13 +29,13 @@ type HeaderActionsProps = {
 };
 
 const accountItems = [
-  { label: "Meus pedidos", icon: ClipboardList },
-  { label: "Meus dados", icon: UserRound },
-  { label: "Endereços", icon: MapPin },
-  { label: "Formas de pagamento", icon: CreditCard },
-  { label: "Favoritos", icon: Heart },
-  { label: "Cupons e benefícios", icon: Tag },
-  { label: "Notificações", icon: Bell },
+  { label: "Meus pedidos", icon: ClipboardList, comingSoon: false },
+  { label: "Meus dados", icon: UserRound, comingSoon: false },
+  { label: "Endereços", icon: MapPin, comingSoon: false },
+  { label: "Formas de pagamento", icon: CreditCard, comingSoon: true },
+  { label: "Favoritos", icon: Heart, comingSoon: true },
+  { label: "Cupons e benefícios", icon: Tag, comingSoon: true },
+  { label: "Notificações", icon: Bell, comingSoon: true },
 ];
 
 const guestItems = accountItems.slice(0, 5).filter(
@@ -203,18 +203,29 @@ export default function HeaderActions({
           )}
 
           <div className="py-2">
-            {(isAuthenticated ? accountItems : guestItems).map(({ label, icon: Icon }) => (
-              <button
-                key={label}
-                type="button"
-                disabled
-                title={`${label} ainda não disponível`}
-                className="flex w-full cursor-not-allowed items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65"
-              >
-                <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                {label}
-              </button>
-            ))}
+            {(isAuthenticated ? accountItems : guestItems).map(
+              ({ label, icon: Icon, comingSoon }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled
+                  title={
+                    comingSoon
+                      ? `${label} — em breve`
+                      : `${label} terá uma tela em uma próxima etapa`
+                  }
+                  className={`flex w-full cursor-not-allowed items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] ${comingSoon ? "text-white/30" : "text-white/65"}`}
+                >
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                  <span className="min-w-0 flex-1 truncate">{label}</span>
+                  {comingSoon && (
+                    <span className="rounded border border-white/10 px-1 py-0.5 text-[7px] uppercase tracking-wide text-white/30">
+                      Em breve
+                    </span>
+                  )}
+                </button>
+              ),
+            )}
           </div>
 
           <div className="border-t border-white/[0.08] pt-2">

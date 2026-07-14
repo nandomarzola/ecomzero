@@ -1,0 +1,40 @@
+// Cria/atualiza o ÚNICO usuário do painel admin (single-user).
+// Uso:
+//   npx tsx --env-file=.env.local scripts/create-admin.ts <email> <senha>
+// Se o e-mail já existir, atualiza a senha (upsert). Senha guardada com bcrypt.
+import bcrypt from "bcryptjs";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../src/generated/prisma/client";
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
+
+async function main() {
+  const [emailArg, senhaArg] = process.argv.slice(2);
+  if (!emailArg || !senhaArg) {
+    throw new Error(
+      "Uso: npx tsx --env-file=.env.local scripts/create-admin.ts <email> <senha>",
+    );
+  }
+
+  const email = emailArg.trim().toLowerCase();
+  if (senhaArg.length < 8) {
+    throw new Error("A senha precisa ter pelo menos 8 caracteres.");
+  }
+
+  const senhaHash = await bcrypt.hash(senhaArg, 10);
+  const admin = await prisma.adminUser.upsert({
+    where: { email },
+    create: { email, senhaHash },
+    update: { senhaHash },
+  });
+
+  console.log(`AdminUser pronto: ${admin.email} (id ${admin.id})`);
+}
+
+main()
+  .catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());

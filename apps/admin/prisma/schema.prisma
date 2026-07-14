@@ -1,0 +1,73 @@
+// ⚠️ SCHEMA ESPELHO — NÃO É DONO DO SCHEMA.
+// Este projeto (apps/admin) compartilha o MESMO banco Postgres da loja
+// (ecomzero raiz). O schema é de propriedade EXCLUSIVA do projeto raiz.
+// NUNCA rode `prisma migrate` nem `prisma db push` aqui. Toda mudança de
+// coluna/tabela nasce em ../../prisma/schema.prisma (raiz), é migrada LÁ, e
+// aqui a gente só espelha a definição do model e roda `prisma generate`.
+// Por isso NÃO existe pasta prisma/migrations neste projeto.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Espelho de ../../prisma/schema.prisma (raiz). Mantido em sincronia manual.
+model Product {
+  id               String   @id @default(uuid())
+  slug             String   @unique
+  categoria        String
+  nome             String
+  subtitulo        String
+  descricao        String
+  imagem           String
+  imagens          String[]
+  videos           String[] @default([])
+  caracteristicas  String[]
+  linkShopee       String?
+  linkMercadoLivre String?
+  linkTiktokShop   String?
+  linkShein        String?
+  ativo            Boolean  @default(true)
+
+  avaliacaoMedia  Float?
+  totalAvaliacoes Int    @default(0)
+  comentarios     Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  variantes ProductVariant[]
+
+  @@index([categoria])
+}
+
+model ProductVariant {
+  id         String  @id @default(uuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label      String
+  precoDe    Decimal @db.Decimal(10, 2)
+  precoPor   Decimal @db.Decimal(10, 2)
+  skuInterno String?
+  linkShopee String?
+
+  pesoKg        Float @default(0.3)
+  alturaCm      Float @default(4)
+  larguraCm     Float @default(16)
+  comprimentoCm Float @default(11)
+
+  @@index([productId])
+}
+
+// Usuário do painel administrativo. Ver comentário no schema raiz.
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  senhaHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

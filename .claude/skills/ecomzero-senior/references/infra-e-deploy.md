@@ -56,9 +56,18 @@ Confirmado nos logs reais de build: `Datasource "db": PostgreSQL database "postg
 
 ### As vars de banco são "sensíveis" — não dá pra ler o valor de fora
 
-`vercel env pull` baixa `DATABASE_URL`/`POSTGRES_URL`/`PRISMA_DATABASE_URL` como **string vazia** — por design, a Vercel bloqueia leitura de env vars sensíveis via CLI/dashboard depois de criadas. Elas só ficam disponíveis de verdade **dentro do processo de build/runtime da própria Vercel**.
+`vercel env pull` baixa `DATABASE_URL`/`POSTGRES_URL`/`PRISMA_DATABASE_URL` como **string vazia** (confirmado de novo em 2026-07-14: `len 0` nas três) — por design, a Vercel bloqueia leitura de env vars sensíveis via CLI/dashboard depois de criadas. Elas só ficam disponíveis de verdade **dentro do processo de build/runtime da própria Vercel**.
 
-Isso significa: pra rodar migração/seed contra produção, não dá pra puxar a connection string pra rodar localmente. O jeito que funcionou:
+Isso significa: pra rodar migração/seed contra produção **via CLI**, não dá pra puxar a connection string. Duas formas que funcionam:
+
+**(a) Rodar um script one-off local contra o banco de prod — pegando a URL direta no dashboard.** A URL direta (`postgres://…@db.prisma.io:5432/postgres?sslmode=require`) fica visível no dashboard da Vercel → Storage → a base Prisma Postgres → aba de conexão (é a versão direta, NÃO a `prisma+postgres://` do Accelerate, que o `@prisma/adapter-pg` não aceita). Com ela em mãos dá pra rodar inline, sem gravar em arquivo:
+```bash
+DATABASE_URL='postgres://…@db.prisma.io:5432/postgres?sslmode=require' \
+  npx tsx --env-file=.env.local scripts/<script>.ts
+```
+Foi assim que o singleton `MelhorEnvioCredential` foi populado em prod (2026-07-14) — o script `save-melhor-envio-token.ts` usa `process.env.DATABASE_URL` direto (não importa `@/lib/config`, então nem precisa de `AUTH_SECRET`/resto do ambiente). Tradeoff: a connection string de prod passa pelo comando/histórico; só faça com a URL que o dono colou conscientemente. (`pg` avisa que `sslmode=require` vira alias de `verify-full` — inofensivo aqui.)
+
+**(b) Migração/seed dentro do próprio deploy remoto** (a URL nunca sai da Vercel):
 
 1. **Migração roda sozinha em todo deploy** — `package.json`:
    ```json

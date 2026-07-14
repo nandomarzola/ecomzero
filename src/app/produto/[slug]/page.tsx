@@ -30,6 +30,12 @@ type ProductPageProps = {
 
 const siteUrl = "https://www.ecomzero.com.br";
 
+// Imagem pode ser caminho relativo (/public legado) ou URL absoluta (Vercel
+// Blob, cadastro via admin). Para metadata/structured data prependemos siteUrl
+// só nos relativos.
+const toAbsoluteImage = (path: string) =>
+  path.startsWith("http") ? path : `${siteUrl}${path}`;
+
 const featureIcons = [Tag, Package, Sparkles, Clock3];
 
 const trustBadges = [
@@ -53,7 +59,7 @@ export async function generateMetadata({
   }
 
   const productUrl = `${siteUrl}/produto/${product.slug}`;
-  const imageUrl = `${siteUrl}${product.imagem}`;
+  const imageUrl = toAbsoluteImage(product.imagem);
 
   return {
     title: product.nome,
@@ -86,7 +92,7 @@ const buildProductJsonLd = (product: Product) => {
     "@type": "Product",
     name: product.nome,
     description: product.descricao,
-    image: product.imagens.map((image) => `${siteUrl}${image}`),
+    image: product.imagens.map(toAbsoluteImage),
     category: product.categoria,
     url: `${siteUrl}/produto/${product.slug}`,
     brand: { "@type": "Brand", name: "EcomZero" },
@@ -97,7 +103,7 @@ const buildProductJsonLd = (product: Product) => {
       highPrice: Math.max(...prices).toFixed(2),
       offerCount: product.variantes.length,
       availability: "https://schema.org/InStock",
-      url: product.linkShopee,
+      url: product.linkShopee ?? `${siteUrl}/produto/${product.slug}`,
       seller: { "@type": "Organization", name: "EcomZero" },
     },
   };

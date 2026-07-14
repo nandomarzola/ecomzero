@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Montserrat } from "next/font/google";
-import AdminShell from "@/components/layout/AdminShell";
 import "./globals.css";
 
 const geist = Geist({
@@ -35,7 +34,7 @@ export default function RootLayout({
       <body
         className={`${geist.variable} ${montserrat.variable} font-sans antialiased`}
       >
-        <AdminShell>{children}</AdminShell>
+        {children}
       </body>
     </html>
   );

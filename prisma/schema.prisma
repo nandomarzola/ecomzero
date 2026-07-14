@@ -31,9 +31,10 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  orders   Order[]
+  accounts  Account[]
+  sessions  Session[]
+  orders    Order[]
+  addresses Address[]
 }
 
 model Account {
@@ -75,22 +76,42 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model Address {
+  id          String  @id @default(uuid())
+  userId      String
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apelido     String?
+  cep         String
+  logradouro  String
+  numero      String
+  complemento String?
+  bairro      String
+  cidade      String
+  uf          String
+  padrao      Boolean @default(false)
+
+  @@index([userId])
+}
+
 // ── Catálogo ──────────────────────────────────────────────────────────────
 // Sem controle de estoque: todo produto/variante cadastrado é sempre
 // considerado disponível para compra (decisão de produto, não é bug).
 model Product {
-  id              String   @id @default(uuid())
-  slug            String   @unique
-  categoria       String
-  nome            String
-  subtitulo       String
-  descricao       String
-  imagem          String
-  imagens         String[]
-  videos          String[] @default([])
-  caracteristicas String[]
-  linkShopee      String
-  ativo           Boolean  @default(true)
+  id               String   @id @default(uuid())
+  slug             String   @unique
+  categoria        String
+  nome             String
+  subtitulo        String
+  descricao        String
+  imagem           String
+  imagens          String[]
+  videos           String[] @default([])
+  caracteristicas  String[]
+  linkShopee       String?
+  linkMercadoLivre String?
+  linkTiktokShop   String?
+  linkShein        String?
+  ativo            Boolean  @default(true)
 
   // Avaliação/comentários digitados manualmente no admin do Hub — não é um
   // sistema de avaliação de cliente real (decisão de produto, ver skill).
@@ -223,4 +244,17 @@ model MelhorEnvioCredential {
   refreshToken String
   expiraEm     DateTime
   atualizadoEm DateTime @updatedAt
+}
+
+// Usuário do painel administrativo (apps/admin). Single-user, separado do
+// `User` de cliente da loja. Criado via apps/admin/scripts/create-admin.ts
+// (bcrypt). Mora neste schema (o da loja) porque o admin compartilha o mesmo
+// banco Postgres e NUNCA roda migração própria — toda mudança de schema nasce
+// aqui, no projeto raiz, e o admin só espelha o model + `prisma generate`.
+model AdminUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  senhaHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

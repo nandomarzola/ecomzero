@@ -1,0 +1,27 @@
+import { z } from "zod";
+
+// Lê e valida as env vars uma vez. DATABASE_URL é a MESMA connection string da
+// loja (ecomzero raiz) — este painel escreve direto no banco do storefront.
+const envSchema = z.object({
+  DATABASE_URL: z.string().min(1, "DATABASE_URL não configurada"),
+  AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa ter pelo menos 32 caracteres"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  // Upload de imagens de produto. Opcional: sem ela, só o upload fica indisponível.
+  BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  const issues = parsed.error.issues
+    .map((issue) => `- ${issue.path.join(".")}: ${issue.message}`)
+    .join("\n");
+  throw new Error(`Variáveis de ambiente inválidas:\n${issues}`);
+}
+
+export const config = {
+  databaseUrl: parsed.data.DATABASE_URL,
+  authSecret: parsed.data.AUTH_SECRET,
+  nodeEnv: parsed.data.NODE_ENV,
+  blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,
+} as const;

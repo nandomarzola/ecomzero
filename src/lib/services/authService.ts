@@ -1,9 +1,8 @@
-import bcrypt from "bcryptjs";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import { hashPassword, verifyPassword } from "@/lib/security/password";
 import type { RegisterInput } from "@/lib/validation/auth";
 
-const PASSWORD_HASH_ROUNDS = 12;
 const DUMMY_PASSWORD_HASH =
   "$2b$12$4j/YCPB6oHNSBBpPVnk2L.fpJSP1wy39KKX3Cd5.D1lPOdBTqTG3G";
 
@@ -34,7 +33,7 @@ export async function registerUser(input: RegisterInput): Promise<SafeUser> {
     );
   }
 
-  const senhaHash = await bcrypt.hash(input.senha, PASSWORD_HASH_ROUNDS);
+  const senhaHash = await hashPassword(input.senha);
 
   try {
     const user = await prisma.user.create({
@@ -70,7 +69,7 @@ export async function validateCredentials(
   const email = emailInput.trim().toLowerCase();
   const user = await prisma.user.findUnique({ where: { email } });
   const senhaHash = user?.senhaHash ?? DUMMY_PASSWORD_HASH;
-  const passwordMatches = await bcrypt.compare(senha, senhaHash);
+  const passwordMatches = await verifyPassword(senha, senhaHash);
 
   if (!user || !user.senhaHash || !passwordMatches) return null;
 

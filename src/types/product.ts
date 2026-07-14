@@ -17,7 +17,7 @@ export type Product = {
   imagem: string;
   imagens: string[];
   caracteristicas: string[];
-  linkShopee: string;
+  linkShopee: string | null;
   ativo: boolean;
   variantes: ProductVariant[];
 };

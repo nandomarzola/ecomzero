@@ -17,7 +17,7 @@ import type { ProductVariant } from "@/types/product";
 
 type ProductPurchaseProps = {
   variants: ProductVariant[];
-  fallbackShopeeUrl: string;
+  fallbackShopeeUrl: string | null;
 };
 
 type PurchaseFeedback =
@@ -74,6 +74,7 @@ export default function ProductPurchase({
   };
 
   const handleBuyOnShopee = () => {
+    if (!shopeeUrl) return;
     window.open(shopeeUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -211,7 +212,10 @@ export default function ProductPurchase({
           <button
             type="button"
             onClick={handleBuyOnShopee}
-            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] hover:-translate-y-0.5 hover:border-[#A9EC17]/25 hover:shadow-[0_14px_32px_rgba(0,0,0,0.22)]"
+            disabled={!shopeeUrl}
+            aria-disabled={!shopeeUrl}
+            title={shopeeUrl ? undefined : "Este produto não está disponível na Shopee"}
+            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] hover:-translate-y-0.5 hover:border-[#A9EC17]/25 hover:shadow-[0_14px_32px_rgba(0,0,0,0.22)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:border-white/[0.08] disabled:hover:shadow-none"
           >
             <span className="flex h-8 items-center gap-1.5 text-lg font-semibold text-[#EE4D2D]">
               <span className="relative inline-flex">

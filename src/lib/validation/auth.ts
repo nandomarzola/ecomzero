@@ -7,7 +7,7 @@ const emailSchema = z
   .email("Informe um e-mail válido")
   .max(160);
 
-const senhaCadastroSchema = z
+export const registrationPasswordSchema = z
   .string()
   .min(8, "A senha deve ter pelo menos 8 caracteres")
   .max(72, "A senha deve ter no máximo 72 caracteres")
@@ -15,7 +15,7 @@ const senhaCadastroSchema = z
   .regex(/\d/, "A senha deve conter ao menos um número")
   .regex(/[^A-Za-zÀ-ÿ0-9\s]/, "A senha deve conter ao menos um caractere especial");
 
-const telefoneSchema = z
+export const telefoneSchema = z
   .string()
   .trim()
   .transform((value) => value.replace(/\D/g, ""))
@@ -28,7 +28,7 @@ export const registerSchema = z
     nome: z.string().trim().min(2, "Informe seu nome completo").max(120),
     email: emailSchema,
     telefone: telefoneSchema.optional(),
-    senha: senhaCadastroSchema,
+    senha: registrationPasswordSchema,
     aceitaMarketing: z.boolean().default(false),
   })
   .strict();

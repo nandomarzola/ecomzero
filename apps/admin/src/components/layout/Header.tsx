@@ -1,7 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Bell, Menu, PanelLeftClose, PanelLeftOpen, Search, User } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { Bell, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search, User } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/navigation";
 
 type HeaderProps = {
@@ -63,6 +64,16 @@ export default function Header({ collapsed, onOpenMobileSidebar, onToggleCollaps
           </div>
           <span className="hidden text-sm font-medium text-white sm:inline">Nando</span>
         </div>
+
+        <button
+          type="button"
+          onClick={() => signOut({ redirectTo: "/login" })}
+          aria-label="Sair"
+          title="Sair"
+          className="text-white/60 transition hover:text-white"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
       </div>
     </header>
   );
