@@ -1,16 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import {
-  getMelhorEnvioLabelFile,
-  type LabelFileFormat,
-} from "@/lib/services/shippingFulfillmentAdminService";
-
-const formats = new Set<LabelFileFormat>(["jpeg", "pdf", "zpl"]);
-const contentTypes: Record<LabelFileFormat, string> = {
-  jpeg: "image/jpeg",
-  pdf: "application/pdf",
-  zpl: "application/vnd.zebra-zpl",
-};
+import { getMelhorEnvioLabelFile } from "@/lib/services/shippingFulfillmentAdminService";
 
 function findUrl(value: unknown): string | null {
   if (typeof value === "string" && value.startsWith("https://")) return value;
@@ -31,13 +21,12 @@ export async function GET(
   }
 
   const { id, format: rawFormat } = await params;
-  if (!formats.has(rawFormat as LabelFileFormat)) {
+  if (rawFormat !== "jpeg") {
     return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
   }
-  const format = rawFormat as LabelFileFormat;
 
   try {
-    const upstream = await getMelhorEnvioLabelFile(id, format);
+    const upstream = await getMelhorEnvioLabelFile(id);
     const upstreamType = upstream.headers.get("content-type") ?? "";
     if (upstreamType.includes("application/json")) {
       const data = await upstream.json().catch(() => null);
@@ -51,8 +40,8 @@ export async function GET(
 
     return new NextResponse(upstream.body, {
       headers: {
-        "Content-Type": upstreamType || contentTypes[format],
-        "Content-Disposition": `${format === "zpl" ? "attachment" : "inline"}; filename="ecomzero-${id.slice(0, 8)}.${format}"`,
+        "Content-Type": upstreamType || "image/jpeg",
+        "Content-Disposition": `inline; filename="ecomzero-${id.slice(0, 8)}.jpeg"`,
         "Cache-Control": "private, no-store, max-age=0",
       },
     });

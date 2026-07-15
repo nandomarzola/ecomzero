@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Download, Loader2, Printer } from "lucide-react";
+import { ArrowLeft, Loader2, Printer } from "lucide-react";
 
 export default function ThermalLabelPrint({
   orderId,
@@ -29,12 +29,6 @@ export default function ThermalLabelPrint({
         <button type="button" onClick={() => window.print()} disabled={!loaded} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50">
           <Printer className="h-4 w-4" /> Imprimir 10×15
         </button>
-        <a href={`/api/orders/${orderId}/label/pdf`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 hover:text-white">
-          <Download className="h-4 w-4" /> PDF
-        </a>
-        <a href={`/api/orders/${orderId}/label/zpl`} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 hover:text-white">
-          <Download className="h-4 w-4" /> ZPL
-        </a>
       </div>
 
       <div className="thermal-label-sheet mx-auto flex h-[150mm] w-[100mm] items-center justify-center overflow-hidden bg-white shadow-2xl shadow-black/60">

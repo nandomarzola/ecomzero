@@ -2,11 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Download, ExternalLink, Loader2, PackageCheck, Printer, RefreshCw, ShoppingCart, WandSparkles } from "lucide-react";
+import { ExternalLink, Loader2, PackageCheck, Printer, RefreshCw, ShoppingCart, WandSparkles } from "lucide-react";
 import {
   createShipmentAction,
   generateLabelAction,
-  printLabelAction,
   purchaseShipmentAction,
   syncTrackingAction,
 } from "@/lib/actions/shipping";
@@ -19,7 +18,6 @@ type Shipment = {
   servico: string | null;
   codigoRastreio: string | null;
   urlRastreio: string | null;
-  urlEtiqueta: string | null;
   ultimoErro: string | null;
 } | null;
 
@@ -84,26 +82,25 @@ export default function ShipmentActions({
   }
 
   function generate() {
-    if (!window.confirm("Gerar a etiqueta agora? Nesta etapa a transportadora pode ser comunicada do envio.")) return;
-    run("generate", () => generateLabelAction(orderId));
-  }
-
-  function print() {
+    if (!window.confirm("Gerar a etiqueta térmica 10×15 agora? Nesta etapa a transportadora pode ser comunicada do envio.")) return;
     const tab = window.open("about:blank", "_blank");
     setError(null);
-    setOperation("print");
+    setOperation("generate");
     startTransition(async () => {
-      const result = await printLabelAction(orderId);
+      const result = await generateLabelAction(orderId);
       if (!result.ok) {
         tab?.close();
         setError(result.error);
-      } else if (tab) {
-        tab.opener = null;
-        tab.location.href = result.data;
       } else {
-        window.location.href = result.data;
+        const printUrl = new URL(`/pedidos/${orderId}/etiqueta?autoprint=1`, window.location.origin).toString();
+        if (tab) {
+          tab.opener = null;
+          tab.location.href = printUrl;
+        } else {
+          window.location.href = printUrl;
+        }
+        router.refresh();
       }
-      router.refresh();
       setOperation(null);
     });
   }
@@ -189,24 +186,9 @@ export default function ShipmentActions({
               </button>
             ) : null}
             {canPrintThermal ? (
-              <>
-                <a href={`/pedidos/${orderId}/etiqueta?autoprint=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black">
-                  <Printer className="h-4 w-4" /> Imprimir etiqueta
-                </a>
-                <a href={`/api/orders/${orderId}/label/pdf`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">
-                  <Download className="h-4 w-4" /> PDF
-                </a>
-                <a href={`/api/orders/${orderId}/label/zpl`} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">
-                  <Download className="h-4 w-4" /> ZPL
-                </a>
-                {shipment.urlEtiqueta ? (
-                  <a href={shipment.urlEtiqueta} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">Formato padrão <ExternalLink className="h-4 w-4" /></a>
-                ) : (
-                  <button type="button" disabled={pending} onClick={print} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-60">
-                    {operation === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />} Formato padrão
-                  </button>
-                )}
-              </>
+              <a href={`/pedidos/${orderId}/etiqueta?autoprint=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black">
+                <Printer className="h-4 w-4" /> Imprimir etiqueta
+              </a>
             ) : null}
             <button type="button" disabled={pending} onClick={() => run("sync", () => syncTrackingAction(orderId))} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-60">
               <RefreshCw className={`h-4 w-4 ${operation === "sync" ? "animate-spin" : ""}`} /> Atualizar status

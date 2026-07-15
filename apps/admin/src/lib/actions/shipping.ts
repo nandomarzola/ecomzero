@@ -5,7 +5,6 @@ import { auth } from "@/auth";
 import {
   createMelhorEnvioShipment,
   generateMelhorEnvioLabel,
-  printMelhorEnvioLabel,
   purchaseMelhorEnvioShipment,
   syncMelhorEnvioTracking,
   updateShippingSettings,
@@ -79,15 +78,4 @@ export async function generateLabelAction(orderId: string) {
 
 export async function syncTrackingAction(orderId: string) {
   return runShipmentAction(orderId, syncMelhorEnvioTracking);
-}
-
-export async function printLabelAction(orderId: string): Promise<ActionResult<string>> {
-  if (!(await isAuthenticated())) return { ok: false, error: "Sessão expirada. Faça login novamente." };
-  try {
-    const url = await printMelhorEnvioLabel(orderId);
-    revalidatePath(`/pedidos/${orderId}`);
-    return { ok: true, data: url };
-  } catch (error) {
-    return { ok: false, error: errorMessage(error) };
-  }
 }

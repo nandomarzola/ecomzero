@@ -278,15 +278,12 @@ async function getShipmentForOperation(orderId: string) {
   return shipment;
 }
 
-export type LabelFileFormat = "jpeg" | "pdf" | "zpl";
-
 export async function getMelhorEnvioLabelFile(
   orderId: string,
-  format: LabelFileFormat,
 ): Promise<Response> {
   const shipment = await getShipmentForOperation(orderId);
   return melhorEnvioFileRequest(
-    `/api/v2/me/imprimir/${format}/${shipment.melhorEnvioId}`,
+    `/api/v2/me/imprimir/jpeg/${shipment.melhorEnvioId}`,
   );
 }
 
@@ -318,29 +315,6 @@ export async function generateMelhorEnvioLabel(orderId: string) {
       where: { orderId },
       data: { status: "generated", geradoEm: new Date(), ultimoErro: null },
     });
-  } catch (error) {
-    await recordShipmentError(orderId, error);
-    throw error;
-  }
-}
-
-export async function printMelhorEnvioLabel(orderId: string): Promise<string> {
-  const shipment = await getShipmentForOperation(orderId);
-  try {
-    const response = await melhorEnvioRequest("/api/v2/me/shipment/print", {
-      method: "POST",
-      body: { mode: "public", orders: [shipment.melhorEnvioId] },
-    });
-    const data = asObject(response);
-    const url = optionalString(data?.url);
-    if (!url || !url.startsWith("https://")) {
-      throw new Error("O Melhor Envio ainda não disponibilizou o link de impressão. Tente novamente em instantes.");
-    }
-    await prisma.shipment.update({
-      where: { orderId },
-      data: { urlEtiqueta: url, ultimoErro: null },
-    });
-    return url;
   } catch (error) {
     await recordShipmentError(orderId, error);
     throw error;
