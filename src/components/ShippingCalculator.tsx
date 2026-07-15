@@ -6,6 +6,7 @@ import { Loader2, Truck } from "lucide-react";
 type ShippingCalculatorProps = {
   variantId: string;
   quantity: number;
+  onCalculatedCep?: (cep: string) => void;
 };
 
 type ShippingOption = {
@@ -24,7 +25,11 @@ const formatPrice = (price: number) =>
 // variante, zerando tudo. Mudança de QUANTIDADE não remonta: se o cliente já
 // calculou um frete, o resultado é recalculado sozinho (mesmo CEP, nova
 // quantidade) com debounce — sem exigir novo clique em "Calcular".
-export default function ShippingCalculator({ variantId, quantity }: ShippingCalculatorProps) {
+export default function ShippingCalculator({
+  variantId,
+  quantity,
+  onCalculatedCep,
+}: ShippingCalculatorProps) {
   const [cep, setCep] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [options, setOptions] = useState<ShippingOption[]>([]);
@@ -56,6 +61,7 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
         }
 
         lastCalculatedCep.current = targetCep;
+        onCalculatedCep?.(targetCep.replace(/\D/g, ""));
         setOptions(data.options);
         setStatus("success");
       } catch {
@@ -65,7 +71,7 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
         setRecalculating(false);
       }
     },
-    [variantId, quantity],
+    [onCalculatedCep, quantity, variantId],
   );
 
   // runQuote muda quando a quantidade muda → este efeito reroda e agenda o

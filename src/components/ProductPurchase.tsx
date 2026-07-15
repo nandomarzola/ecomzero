@@ -31,6 +31,7 @@ export default function ProductPurchase({
   const [quantity, setQuantity] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [submittingAction, setSubmittingAction] = useState<"add" | "buy" | null>(null);
+  const [calculatedCep, setCalculatedCep] = useState("");
   const { refreshCartCount } = useCartCount();
 
   const selectedVariant =
@@ -45,8 +46,6 @@ export default function ProductPurchase({
     setQuantity(1);
   };
 
-  // "add" fica na página com toast de sucesso; "buy" adiciona e vai pro carrinho
-  // (ainda não há checkout próprio — destino provisório é /carrinho).
   const addToCart = (action: "add" | "buy") => {
     setSubmittingAction(action);
     startTransition(async () => {
@@ -58,7 +57,10 @@ export default function ProductPurchase({
       if (result.success) {
         refreshCartCount();
         if (action === "buy") {
-          router.push("/carrinho");
+          const checkoutUrl = calculatedCep
+            ? `/checkout?cep=${encodeURIComponent(calculatedCep)}`
+            : "/checkout";
+          router.push(checkoutUrl);
         } else {
           toast.success("Produto adicionado ao carrinho", {
             description: productName,
@@ -167,6 +169,7 @@ export default function ProductPurchase({
               key={selectedVariant.id}
               variantId={selectedVariant.id}
               quantity={quantity}
+              onCalculatedCep={setCalculatedCep}
             />
           </div>
         </div>

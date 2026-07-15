@@ -13,13 +13,13 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
-  ChevronRight,
   LoaderCircle,
   LockKeyhole,
   MapPin,
   ShieldCheck,
   Truck,
 } from "lucide-react";
+import CheckoutShippingStep from "@/components/CheckoutShippingStep";
 import PaymentBadges from "@/components/PaymentBadges";
 import {
   clearCheckoutShippingSelection,
@@ -34,6 +34,8 @@ type CheckoutFormProps = {
   isLoggedIn: boolean;
   sessionName: string;
   sessionEmail: string;
+  cartSubtotal: number;
+  initialCep: string;
 };
 
 type FormValues = {
@@ -161,6 +163,8 @@ export default function CheckoutForm({
   isLoggedIn,
   sessionName,
   sessionEmail,
+  cartSubtotal,
+  initialCep,
 }: CheckoutFormProps) {
   const [values, setValues] = useState<FormValues>({
     ...emptyForm,
@@ -187,10 +191,24 @@ export default function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [cepLookupStatus, setCepLookupStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [cepLookupMessage, setCepLookupMessage] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
-  const selection = storedSelection ?? null;
+  const selectionMatchesCart = Boolean(
+    storedSelection &&
+      Math.abs(storedSelection.cartSubtotal - cartSubtotal) < 0.005,
+  );
+  const selection = selectionMatchesCart ? (storedSelection ?? null) : null;
   const storageReady = storedSelection !== undefined;
+
+  useEffect(() => {
+    if (storedSelection && !selectionMatchesCart) {
+      clearCheckoutShippingSelection();
+    }
+  }, [selectionMatchesCart, storedSelection]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -235,6 +253,7 @@ export default function CheckoutForm({
     storedSelection && isCheckoutShippingExpired(storedSelection, now),
   );
   const effectiveCep = cepOverride ?? formatCep(selection?.cep ?? "");
+  const cepDigits = onlyDigits(effectiveCep);
   const cepMatchesShipping = selection
     ? onlyDigits(effectiveCep) === selection.cep
     : false;
@@ -248,6 +267,69 @@ export default function CheckoutForm({
     [effectiveCep, selection, values],
   );
   const total = (selection?.cartSubtotal ?? 0) + (selection?.preco ?? 0);
+
+  useEffect(() => {
+    if (cepDigits.length !== 8 || selectedAddressId) {
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setCepLookupStatus("loading");
+      setCepLookupMessage("");
+      try {
+        const response = await fetch(`/api/address/cep/${cepDigits}`, {
+          signal: controller.signal,
+        });
+        const data = (await response.json().catch(() => null)) as
+          | {
+              logradouro?: string;
+              bairro?: string;
+              cidade?: string;
+              uf?: string;
+              error?: string;
+            }
+          | null;
+        if (!response.ok || !data) {
+          throw new Error(data?.error ?? "Não foi possível consultar o CEP.");
+        }
+
+        setValues((current) => ({
+          ...current,
+          logradouro: data.logradouro ?? "",
+          bairro: data.bairro ?? "",
+          cidade: data.cidade ?? "",
+          uf: data.uf ?? "",
+        }));
+        setErrors((current) => ({
+          ...current,
+          cep: undefined,
+          logradouro: undefined,
+          bairro: undefined,
+          cidade: undefined,
+          uf: undefined,
+        }));
+        setCepLookupStatus("success");
+        setCepLookupMessage("Endereço encontrado. Confira e informe o número.");
+        window.setTimeout(() => {
+          document.getElementById("numero")?.focus();
+        }, 100);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setCepLookupStatus("error");
+        setCepLookupMessage(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível consultar o CEP.",
+        );
+      }
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [cepDigits, selectedAddressId]);
 
   const updateField = (field: FormField, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
@@ -290,6 +372,8 @@ export default function CheckoutForm({
     setCepOverride(formatCep(address.cep));
     setErrors({});
     setStatusMessage("");
+    setCepLookupStatus("idle");
+    setCepLookupMessage("");
   };
 
   const createPaymentPreference = async (orderId: string) => {
@@ -383,24 +467,7 @@ export default function CheckoutForm({
 
   if (!selection) {
     return (
-      <div className="mx-auto flex min-h-[60vh] max-w-xl items-center px-4 py-16">
-        <section className="w-full rounded-xl border border-white/[0.11] bg-[#0D0D0D] p-8 text-center">
-          <Truck className="mx-auto h-9 w-9 text-[#A9EC17]" />
-          <h1 className="font-display mt-5 text-2xl font-extrabold text-white">
-            Escolha o frete antes de continuar
-          </h1>
-          <p className="mt-2 text-sm leading-6 text-white/55">
-            A opção de entrega vincula o valor e o prazo corretos ao seu pedido.
-          </p>
-          <Link
-            href="/carrinho"
-            className="font-display mt-6 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-6 text-xs font-extrabold uppercase text-black"
-          >
-            Voltar ao carrinho
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </section>
-      </div>
+      <CheckoutShippingStep subtotal={cartSubtotal} initialCep={initialCep} />
     );
   }
 
@@ -487,7 +554,7 @@ export default function CheckoutForm({
 
             <div className="mt-5 grid gap-4 sm:grid-cols-6">
               <div className="sm:col-span-2">
-                <Field id="cep" label="CEP" value={effectiveCep} error={errors.cep} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} onChange={(value) => { setCepOverride(formatCep(value)); setErrors((current) => ({ ...current, cep: undefined })); setStatusMessage(""); setSelectedAddressId(""); }} onBlur={() => validateField("cep")} />
+                <Field id="cep" label="CEP" value={effectiveCep} error={errors.cep} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} onChange={(value) => { setCepOverride(formatCep(value)); setValues((current) => ({ ...current, logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" })); setErrors((current) => ({ ...current, cep: undefined })); setStatusMessage(""); setSelectedAddressId(""); setCepLookupStatus("idle"); setCepLookupMessage(""); }} onBlur={() => validateField("cep")} />
               </div>
               <div className="sm:col-span-4">
                 <Field id="logradouro" label="Logradouro" value={values.logradouro} error={errors.logradouro} autoComplete="address-line1" placeholder="Rua, avenida..." onChange={(value) => updateField("logradouro", value)} onBlur={() => validateField("logradouro")} />
@@ -508,6 +575,30 @@ export default function CheckoutForm({
                 <Field id="uf" label="UF" value={values.uf} error={errors.uf} autoComplete="address-level1" placeholder="SP" maxLength={2} onChange={(value) => updateField("uf", value.replace(/[^A-Za-z]/g, "").toUpperCase())} onBlur={() => validateField("uf")} />
               </div>
             </div>
+
+            {cepLookupStatus !== "idle" && (
+              <p
+                role={cepLookupStatus === "error" ? "alert" : "status"}
+                className={`mt-4 flex items-center gap-2 text-[11px] leading-5 ${
+                  cepLookupStatus === "error"
+                    ? "text-red-300"
+                    : cepLookupStatus === "success"
+                      ? "text-[#A9EC17]"
+                      : "text-white/50"
+                }`}
+              >
+                {cepLookupStatus === "loading" ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : cepLookupStatus === "error" ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                {cepLookupStatus === "loading"
+                  ? "Buscando endereço pelo CEP..."
+                  : cepLookupMessage}
+              </p>
+            )}
 
             {!cepMatchesShipping && (
               <p role="alert" className="mt-4 flex gap-2 rounded-md border border-amber-300/20 bg-amber-300/[0.06] p-3 text-[11px] leading-5 text-amber-200">
