@@ -8,12 +8,13 @@ type ImageUploaderProps = {
   value: string[];
   onChange: (urls: string[]) => void;
   max?: number;
+  scope?: "produtos" | "categorias";
 };
 
 // Sobe cada arquivo para /api/upload (Vercel Blob) e guarda as URLs. Usa <img>
 // puro (não next/image) de propósito — é painel interno e evita configurar
 // remotePatterns aqui.
-export default function ImageUploader({ label, value, onChange, max }: ImageUploaderProps) {
+export default function ImageUploader({ label, value, onChange, max, scope = "produtos" }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,7 @@ export default function ImageUploader({ label, value, onChange, max }: ImageUplo
         if (max !== undefined && value.length + uploaded.length >= max) break;
         const fd = new FormData();
         fd.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const res = await fetch(`/api/upload?scope=${scope}`, { method: "POST", body: fd });
         const data = (await res.json()) as { url?: string; error?: string };
         if (!res.ok || !data.url) throw new Error(data.error ?? "Falha no upload");
         uploaded.push(data.url);

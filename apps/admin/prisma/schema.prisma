@@ -73,17 +73,21 @@ model Product {
 }
 
 model Category {
-  id        String     @id @default(uuid())
-  nome      String
-  slug      String     @unique
-  descricao String?
-  parentId  String?
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
-  children  Category[] @relation("CategoryHierarchy")
-  ativo     Boolean    @default(true)
-  ordem     Int        @default(0)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id            String     @id @default(uuid())
+  nome          String
+  slug          String     @unique
+  descricao     String?
+  imagemUrl     String?
+  destaque      Boolean    @default(false)
+  metaTitulo    String?
+  metaDescricao String?
+  parentId      String?
+  parent        Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children      Category[] @relation("CategoryHierarchy")
+  ativo         Boolean    @default(true)
+  ordem         Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   produtos Product[]
 

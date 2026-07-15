@@ -39,6 +39,15 @@ type ShippingPackage = {
   weight: number;
 };
 
+// IDs de serviços do Melhor Envio a cotar. SEM este parâmetro, a conta só
+// devolve Correios no /calculate — Jadlog/Loggi/J&T ficam de fora do padrão
+// (não é peso/dimensão nem ativação: comprovado que passando `services` elas
+// cotam normalmente). Lista: Correios PAC(1)/SEDEX(2)/Mini Envios(17),
+// Jadlog .Package(3)/.Com(4)/.Package Centralizado(27), Loggi Express(31)/
+// Coleta(32), J&T Standard(33). IDs indisponíveis/sem atendimento são
+// filtrados na resposta (vêm com `error`).
+const MELHOR_ENVIO_SERVICES = "1,2,3,4,17,27,31,32,33";
+
 // Cache (10 min) e rate limit (20 req/min por identificador) da rota
 // POST /api/shipping/quote — em Postgres, não em memória, porque a rota
 // roda em funções serverless sem estado compartilhado entre instâncias.
@@ -142,6 +151,7 @@ async function requestShippingQuote(
         from: { postal_code: cepOrigem },
         to: { postal_code: cepDestino },
         package: shippingPackage,
+        services: MELHOR_ENVIO_SERVICES,
       }),
       signal: AbortSignal.timeout(8000),
     });

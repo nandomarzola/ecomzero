@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/db";
-import type { CategoryInput } from "@/lib/validation/category";
+import type { CategoryInput, CategoryReorderInput } from "@/lib/validation/category";
 
 export type CategoryListItem = {
   id: string;
   nome: string;
   slug: string;
   descricao: string | null;
+  imagemUrl: string | null;
+  destaque: boolean;
+  metaTitulo: string | null;
+  metaDescricao: string | null;
   parentId: string | null;
   ativo: boolean;
   ordem: number;
@@ -69,6 +73,10 @@ export async function listCategories(): Promise<CategoryListItem[]> {
         nome: row.nome,
         slug: row.slug,
         descricao: row.descricao,
+        imagemUrl: row.imagemUrl,
+        destaque: row.destaque,
+        metaTitulo: row.metaTitulo,
+        metaDescricao: row.metaDescricao,
         parentId: row.parentId,
         ativo: row.ativo,
         ordem: row.ordem,
@@ -87,6 +95,14 @@ export async function listCategories(): Promise<CategoryListItem[]> {
   }
 
   return result;
+}
+
+async function nextCategoryOrder(parentId?: string) {
+  const result = await prisma.category.aggregate({
+    where: { parentId: parentId ?? null },
+    _max: { ordem: true },
+  });
+  return (result._max.ordem ?? -1) + 1;
 }
 
 async function assertValidParent(categoryId: string | undefined, parentId?: string) {
@@ -117,8 +133,12 @@ export async function createCategory(input: CategoryInput) {
       nome: input.nome,
       slug: await uniqueSlug(input.nome),
       descricao: input.descricao ?? null,
+      imagemUrl: input.imagemUrl ?? null,
+      destaque: input.destaque,
+      metaTitulo: input.metaTitulo ?? null,
+      metaDescricao: input.metaDescricao ?? null,
       parentId: input.parentId ?? null,
-      ordem: input.ordem,
+      ordem: await nextCategoryOrder(input.parentId),
       ativo: input.ativo,
     },
     select: { id: true },
@@ -126,9 +146,17 @@ export async function createCategory(input: CategoryInput) {
 }
 
 export async function updateCategory(id: string, input: CategoryInput) {
-  const existing = await prisma.category.findUnique({ where: { id }, select: { id: true } });
+  const existing = await prisma.category.findUnique({
+    where: { id },
+    select: { id: true, parentId: true, ordem: true },
+  });
   if (!existing) throw new CategoryAdminError("Categoria não encontrada.");
   await assertValidParent(id, input.parentId);
+
+  const parentId = input.parentId ?? null;
+  const ordem = existing.parentId === parentId
+    ? existing.ordem
+    : await nextCategoryOrder(input.parentId);
 
   return prisma.category.update({
     where: { id },
@@ -136,12 +164,42 @@ export async function updateCategory(id: string, input: CategoryInput) {
       nome: input.nome,
       slug: await uniqueSlug(input.nome, id),
       descricao: input.descricao ?? null,
-      parentId: input.parentId ?? null,
-      ordem: input.ordem,
+      imagemUrl: input.imagemUrl ?? null,
+      destaque: input.destaque,
+      metaTitulo: input.metaTitulo ?? null,
+      metaDescricao: input.metaDescricao ?? null,
+      parentId,
+      ordem,
       ativo: input.ativo,
     },
     select: { id: true },
   });
+}
+
+export async function reorderCategories(input: CategoryReorderInput): Promise<void> {
+  const parentId = input.parentId ?? null;
+  const siblings = await prisma.category.findMany({
+    where: { parentId },
+    select: { id: true },
+  });
+
+  const currentIds = new Set(siblings.map((category) => category.id));
+  const orderedIds = new Set(input.orderedIds);
+  const isCompleteSiblingSet = input.orderedIds.length === orderedIds.size
+    && currentIds.size === orderedIds.size
+    && input.orderedIds.every((id) => currentIds.has(id));
+
+  if (!isCompleteSiblingSet) {
+    throw new CategoryAdminError("A lista de categorias mudou. Recarregue a página e tente novamente.");
+  }
+
+  await prisma.$transaction(
+    input.orderedIds.map((id, ordem) => prisma.category.update({
+      where: { id },
+      data: { ordem },
+      select: { id: true },
+    })),
+  );
 }
 
 export async function deleteCategory(id: string): Promise<void> {

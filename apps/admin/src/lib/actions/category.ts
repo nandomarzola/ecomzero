@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { categoryInputSchema } from "@/lib/validation/category";
+import { categoryInputSchema, categoryReorderSchema } from "@/lib/validation/category";
 import * as categoryService from "@/lib/services/categoryAdminService";
 
 export type CategoryActionResult =
@@ -41,5 +41,19 @@ export async function deleteCategoryAction(id: string): Promise<CategoryActionRe
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Erro ao excluir categoria." };
+  }
+}
+
+export async function reorderCategoriesAction(input: unknown): Promise<CategoryActionResult> {
+  if (!(await hasAdminSession())) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  const parsed = categoryReorderSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Ordem inválida." };
+
+  try {
+    await categoryService.reorderCategories(parsed.data);
+    revalidatePath("/categorias");
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Erro ao reordenar categorias." };
   }
 }

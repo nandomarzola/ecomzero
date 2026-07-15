@@ -1,11 +1,8 @@
 import { put } from "@vercel/blob";
 import { config } from "@/lib/config";
 
-// Upload de imagem de produto para o Vercel Blob. Devolve a URL pública
-// ABSOLUTA (https://…blob.vercel-storage.com/…). A loja (ecomzero raiz) trata
-// URLs absolutas nas imagens de produto além dos caminhos relativos legados
-// de public/ (ver toImageUrl no storefront + remotePatterns do next.config).
-export async function uploadImage(file: File, folder: "produtos" | "banners"): Promise<string> {
+// Upload de mídia do catálogo para o Vercel Blob, devolvendo a URL pública.
+export async function uploadImage(file: File, folder: "produtos" | "banners" | "categorias"): Promise<string> {
   if (!config.blobReadWriteToken) {
     throw new Error("Upload indisponível: BLOB_READ_WRITE_TOKEN não configurado.");
   }

@@ -2,8 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { uploadImage } from "@/lib/blob";
 
-// Upload de imagem de produto → Vercel Blob. Protegido por sessão de admin.
-// O ImageUploader (client) chama isto a cada arquivo e guarda a URL retornada.
+// Upload de mídia do catálogo no Vercel Blob, protegido por sessão de admin.
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user) {
@@ -17,7 +16,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const scope = request.nextUrl.searchParams.get("scope") === "banners" ? "banners" : "produtos";
+    const requestedScope = request.nextUrl.searchParams.get("scope");
+    const scope = requestedScope === "banners" || requestedScope === "categorias"
+      ? requestedScope
+      : "produtos";
     const url = await uploadImage(file, scope);
     return NextResponse.json({ url });
   } catch (error) {
