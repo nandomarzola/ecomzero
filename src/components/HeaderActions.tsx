@@ -30,13 +30,13 @@ type HeaderActionsProps = {
 };
 
 const accountItems = [
-  { label: "Meus pedidos", icon: ClipboardList, comingSoon: false },
-  { label: "Meus dados", icon: UserRound, comingSoon: false },
-  { label: "Endereços", icon: MapPin, comingSoon: false },
-  { label: "Formas de pagamento", icon: CreditCard, comingSoon: true },
-  { label: "Favoritos", icon: Heart, comingSoon: true },
-  { label: "Cupons e benefícios", icon: Tag, comingSoon: true },
-  { label: "Notificações", icon: Bell, comingSoon: true },
+  { label: "Meus pedidos", icon: ClipboardList, href: "/conta/pedidos", comingSoon: false },
+  { label: "Meus dados", icon: UserRound, href: "/conta/dados", comingSoon: false },
+  { label: "Endereços", icon: MapPin, href: "/conta/enderecos", comingSoon: false },
+  { label: "Formas de pagamento", icon: CreditCard, href: null, comingSoon: true },
+  { label: "Favoritos", icon: Heart, href: null, comingSoon: true },
+  { label: "Cupons e benefícios", icon: Tag, href: null, comingSoon: true },
+  { label: "Notificações", icon: Bell, href: null, comingSoon: true },
 ];
 
 const guestItems = accountItems.slice(0, 5).filter(
@@ -195,27 +195,39 @@ export default function HeaderActions({
 
           <div className="py-2">
             {(isAuthenticated ? accountItems : guestItems).map(
-              ({ label, icon: Icon, comingSoon }) => (
-                <button
-                  key={label}
-                  type="button"
-                  disabled
-                  title={
-                    comingSoon
-                      ? `${label} — em breve`
-                      : `${label} terá uma tela em uma próxima etapa`
-                  }
-                  className={`flex w-full cursor-not-allowed items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] ${comingSoon ? "text-white/30" : "text-white/65"}`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-                  <span className="min-w-0 flex-1 truncate">{label}</span>
-                  {comingSoon && (
+              ({ label, icon: Icon, href, comingSoon }) => {
+                const destination = isAuthenticated ? href : href ? "/login" : null;
+
+                if (destination && !comingSoon) {
+                  return (
+                    <Link
+                      key={label}
+                      href={destination}
+                      onClick={closeAccountMenu}
+                      className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.05] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+                    >
+                      <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                      <span className="min-w-0 flex-1 truncate">{label}</span>
+                    </Link>
+                  );
+                }
+
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    disabled
+                    title={`${label} — em breve`}
+                    className="flex w-full cursor-not-allowed items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/30"
+                  >
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                    <span className="min-w-0 flex-1 truncate">{label}</span>
                     <span className="rounded border border-white/10 px-1 py-0.5 text-[7px] uppercase tracking-wide text-white/30">
                       Em breve
                     </span>
-                  )}
-                </button>
-              ),
+                  </button>
+                );
+              },
             )}
           </div>
 

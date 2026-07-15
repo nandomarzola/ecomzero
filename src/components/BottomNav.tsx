@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid2X2, Home, Info, ShoppingCart } from "lucide-react";
+import { Grid2X2, Home, Info, ShoppingCart, UserRound } from "lucide-react";
 import CartBadgeCount from "@/components/CartBadgeCount";
 
 // usePathname() não é uma Dynamic API (ao contrário de useSearchParams()) —
@@ -11,6 +11,7 @@ const tabs = [
   { label: "Início", href: "/", icon: Home, matchExact: true },
   { label: "Categorias", href: "/#vitrine", icon: Grid2X2, matchExact: false },
   { label: "Carrinho", href: "/carrinho", icon: ShoppingCart, matchExact: true },
+  { label: "Conta", href: "/conta/pedidos", icon: UserRound, matchExact: false },
   { label: "Sobre", href: "/#sobre", icon: Info, matchExact: false },
 ];
 
@@ -25,7 +26,9 @@ export default function BottomNav() {
     >
       <ul className="flex items-stretch justify-around">
         {tabs.map(({ label, href, icon: Icon, matchExact }) => {
-          const isActive = matchExact && pathname === href;
+          const isActive = matchExact
+            ? pathname === href
+            : href.startsWith("/conta/") && pathname.startsWith("/conta/");
           const isCarrinho = label === "Carrinho";
 
           return (

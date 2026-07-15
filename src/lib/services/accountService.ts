@@ -37,7 +37,7 @@ const addressSelect = {
 
 export async function getOrdersByUser(userId: string) {
   const orders = await prisma.order.findMany({
-    where: { userId },
+    where: { userId, status: { not: "draft" } },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -59,7 +59,7 @@ export async function getOrdersByUser(userId: string) {
 
   return orders.map((order) => ({
     id: order.id,
-    status: order.status,
+    status: order.status as "aguardando_pagamento" | "pago" | "cancelado",
     total: order.total.toNumber(),
     createdAt: order.createdAt,
     produtos: order.items.map((item) => ({
