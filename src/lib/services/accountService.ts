@@ -44,6 +44,15 @@ export async function getOrdersByUser(userId: string) {
       status: true,
       total: true,
       createdAt: true,
+      shipment: {
+        select: {
+          status: true,
+          transportadora: true,
+          servico: true,
+          codigoRastreio: true,
+          urlRastreio: true,
+        },
+      },
       items: {
         select: {
           quantidade: true,
@@ -62,12 +71,79 @@ export async function getOrdersByUser(userId: string) {
     status: order.status as "aguardando_pagamento" | "pago" | "cancelado",
     total: order.total.toNumber(),
     createdAt: order.createdAt,
+    shipment: order.shipment,
     produtos: order.items.map((item) => ({
       nome: item.variant.product.nome,
       quantidade: item.quantidade,
       imagem: item.variant.product.imagem,
     })),
   }));
+}
+
+export async function getOrderByUser(userId: string, orderId: string) {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId, status: { not: "draft" } },
+    select: {
+      id: true,
+      status: true,
+      nomeCliente: true,
+      emailCliente: true,
+      telefoneCliente: true,
+      cepDestino: true,
+      logradouro: true,
+      numero: true,
+      complemento: true,
+      bairro: true,
+      cidade: true,
+      uf: true,
+      subtotal: true,
+      valorFrete: true,
+      total: true,
+      pagoEm: true,
+      createdAt: true,
+      shipment: {
+        select: {
+          status: true,
+          transportadora: true,
+          servico: true,
+          codigoRastreio: true,
+          urlRastreio: true,
+          postadoEm: true,
+          entregueEm: true,
+          updatedAt: true,
+        },
+      },
+      items: {
+        select: {
+          id: true,
+          quantidade: true,
+          precoUnitario: true,
+          variant: {
+            select: {
+              label: true,
+              product: { select: { nome: true, imagem: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) return null;
+  return {
+    ...order,
+    subtotal: order.subtotal.toNumber(),
+    valorFrete: order.valorFrete.toNumber(),
+    total: order.total.toNumber(),
+    items: order.items.map((item) => ({
+      id: item.id,
+      nome: item.variant.product.nome,
+      imagem: item.variant.product.imagem,
+      variante: item.variant.label,
+      quantidade: item.quantidade,
+      precoUnitario: item.precoUnitario.toNumber(),
+    })),
+  };
 }
 
 export async function getProfile(userId: string) {

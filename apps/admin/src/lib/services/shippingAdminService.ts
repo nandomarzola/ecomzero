@@ -9,6 +9,7 @@ export type ShippingIntegrationStatus = {
   expiresAt: string | null;
   expired: boolean;
   updatedAt: string | null;
+  oauthConfigured: boolean;
 };
 
 export async function getShippingIntegrationStatus(): Promise<ShippingIntegrationStatus> {
@@ -25,5 +26,8 @@ export async function getShippingIntegrationStatus(): Promise<ShippingIntegratio
     expiresAt: credential?.expiraEm.toISOString() ?? null,
     expired: credential ? credential.expiraEm <= new Date() : false,
     updatedAt: credential?.atualizadoEm.toISOString() ?? null,
+    oauthConfigured: Boolean(
+      config.melhorEnvioClientId && config.melhorEnvioClientSecret,
+    ),
   };
 }

@@ -78,13 +78,18 @@ export default async function AccountOrdersPage() {
       ) : (
         <div className="mt-5 space-y-4">
           {orders.map((order) => {
-            const status = statusDetails[order.status];
+            const shipmentStatus = order.shipment?.status;
+            const status = shipmentStatus === "delivered"
+              ? { label: "Entregue", className: "border-[#A9EC17]/25 bg-[#A9EC17]/[0.08] text-[#D5FF7B]" }
+              : shipmentStatus === "posted" || shipmentStatus === "received"
+                ? { label: "Em trânsito", className: "border-sky-300/25 bg-sky-300/[0.08] text-sky-200" }
+                : shipmentStatus
+                  ? { label: "Preparando envio", className: "border-violet-300/25 bg-violet-300/[0.08] text-violet-200" }
+                  : statusDetails[order.status];
             const action =
               order.status === "aguardando_pagamento"
                 ? { href: `/checkout/pagamento/${order.id}`, label: "Continuar pagamento" }
-                : order.status === "pago"
-                  ? { href: `/pedido/${order.id}/sucesso`, label: "Ver confirmação" }
-                  : { href: `/pedido/${order.id}/falha`, label: "Ver pedido" };
+                : { href: `/conta/pedidos/${order.id}`, label: "Ver detalhes" };
 
             return (
               <article key={order.id} className="overflow-hidden rounded-xl border border-white/[0.1] bg-[#0D0D0D]">

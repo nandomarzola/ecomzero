@@ -230,6 +230,7 @@ model Order {
   shippingQuote         CheckoutShippingQuote? @relation("CartShippingQuote")
   selectedShippingQuote CheckoutShippingQuote? @relation("SelectedShippingQuote", fields: [shippingQuoteId], references: [id], onDelete: SetNull)
   couponRedemption      CouponRedemption?
+  shipment              Shipment?
 
   @@index([userId])
 }
@@ -369,6 +370,49 @@ model MelhorEnvioCredential {
   refreshToken String
   expiraEm     DateTime
   atualizadoEm DateTime @updatedAt
+}
+
+model ShippingSettings {
+  id                 String   @id @default("singleton")
+  nomeRemetente      String
+  emailRemetente     String
+  telefoneRemetente  String
+  cpfCnpjRemetente   String
+  inscricaoEstadual  String?
+  atividadeEconomica String?
+  cepOrigem          String
+  logradouroOrigem   String
+  numeroOrigem       String
+  complementoOrigem  String?
+  bairroOrigem       String
+  cidadeOrigem       String
+  ufOrigem           String
+  updatedAt          DateTime @updatedAt
+}
+
+model Shipment {
+  id                  String    @id @default(uuid())
+  orderId             String    @unique
+  order               Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  melhorEnvioId       String?   @unique
+  melhorEnvioProtocol String?
+  status              String    @default("creating")
+  transportadora      String?
+  servico             String?
+  codigoRastreio      String?
+  urlRastreio         String?
+  urlEtiqueta         String?
+  tipoDocumentoFiscal String?
+  chaveNotaFiscal     String?
+  ultimoErro          String?
+  compradoEm          DateTime?
+  geradoEm            DateTime?
+  postadoEm           DateTime?
+  entregueEm          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([status])
 }
 
 // Usuário do painel administrativo (apps/admin). Single-user, separado do

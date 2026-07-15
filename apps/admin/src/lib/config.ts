@@ -10,6 +10,9 @@ const envSchema = z.object({
   BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
   MELHOR_ENVIO_BASE_URL: z.string().url().optional(),
   MELHOR_ENVIO_CEP_ORIGEM: z.string().min(8).optional(),
+  MELHOR_ENVIO_CLIENT_ID: z.string().min(1).optional(),
+  MELHOR_ENVIO_CLIENT_SECRET: z.string().min(1).optional(),
+  NEXT_PUBLIC_STOREFRONT_URL: z.string().url().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -28,4 +31,7 @@ export const config = {
   blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,
   melhorEnvioBaseUrl: parsed.data.MELHOR_ENVIO_BASE_URL,
   melhorEnvioCepOrigem: parsed.data.MELHOR_ENVIO_CEP_ORIGEM,
+  melhorEnvioClientId: parsed.data.MELHOR_ENVIO_CLIENT_ID,
+  melhorEnvioClientSecret: parsed.data.MELHOR_ENVIO_CLIENT_SECRET,
+  storefrontUrl: parsed.data.NEXT_PUBLIC_STOREFRONT_URL,
 } as const;
