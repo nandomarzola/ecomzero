@@ -1,6 +1,9 @@
 import { config } from "@/lib/config";
 import { prisma } from "@/lib/db";
-import { melhorEnvioRequest } from "@/lib/services/melhorEnvioAdminService";
+import {
+  melhorEnvioFileRequest,
+  melhorEnvioRequest,
+} from "@/lib/services/melhorEnvioAdminService";
 import type {
   CreateShipmentInput,
   ShippingSettingsInput,
@@ -273,6 +276,18 @@ async function getShipmentForOperation(orderId: string) {
     throw new Error("Envie o pedido ao carrinho do Melhor Envio primeiro.");
   }
   return shipment;
+}
+
+export type LabelFileFormat = "jpeg" | "pdf" | "zpl";
+
+export async function getMelhorEnvioLabelFile(
+  orderId: string,
+  format: LabelFileFormat,
+): Promise<Response> {
+  const shipment = await getShipmentForOperation(orderId);
+  return melhorEnvioFileRequest(
+    `/api/v2/me/imprimir/${format}/${shipment.melhorEnvioId}`,
+  );
 }
 
 export async function purchaseMelhorEnvioShipment(orderId: string) {

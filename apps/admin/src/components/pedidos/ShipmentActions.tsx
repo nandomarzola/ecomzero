@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Loader2, PackageCheck, Printer, RefreshCw, ShoppingCart, WandSparkles } from "lucide-react";
+import { Download, ExternalLink, Loader2, PackageCheck, Printer, RefreshCw, ShoppingCart, WandSparkles } from "lucide-react";
 import {
   createShipmentAction,
   generateLabelAction,
@@ -109,6 +109,18 @@ export default function ShipmentActions({
   }
 
   const noRemoteShipment = !shipment?.melhorEnvioId;
+  const canPrintThermal = Boolean(
+    shipment &&
+      [
+        "generated",
+        "received",
+        "posted",
+        "delivered",
+        "undelivered",
+        "paused",
+        "suspended",
+      ].includes(shipment.status),
+  );
 
   return (
     <section className="rounded-xl border border-white/[0.08] bg-[#111111] p-5">
@@ -176,12 +188,25 @@ export default function ShipmentActions({
                 {operation === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />} Gerar etiqueta
               </button>
             ) : null}
-            {shipment.urlEtiqueta ? (
-              <a href={shipment.urlEtiqueta} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black"><Printer className="h-4 w-4" /> Imprimir etiqueta</a>
-            ) : shipment.status === "generated" || shipment.status === "posted" || shipment.status === "delivered" ? (
-              <button type="button" disabled={pending} onClick={print} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60">
-                {operation === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />} Obter impressão
-              </button>
+            {canPrintThermal ? (
+              <>
+                <a href={`/pedidos/${orderId}/etiqueta?autoprint=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black">
+                  <Printer className="h-4 w-4" /> Imprimir etiqueta
+                </a>
+                <a href={`/api/orders/${orderId}/label/pdf`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">
+                  <Download className="h-4 w-4" /> PDF
+                </a>
+                <a href={`/api/orders/${orderId}/label/zpl`} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">
+                  <Download className="h-4 w-4" /> ZPL
+                </a>
+                {shipment.urlEtiqueta ? (
+                  <a href={shipment.urlEtiqueta} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">Formato padrão <ExternalLink className="h-4 w-4" /></a>
+                ) : (
+                  <button type="button" disabled={pending} onClick={print} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-60">
+                    {operation === "print" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />} Formato padrão
+                  </button>
+                )}
+              </>
             ) : null}
             <button type="button" disabled={pending} onClick={() => run("sync", () => syncTrackingAction(orderId))} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-60">
               <RefreshCw className={`h-4 w-4 ${operation === "sync" ? "animate-spin" : ""}`} /> Atualizar status

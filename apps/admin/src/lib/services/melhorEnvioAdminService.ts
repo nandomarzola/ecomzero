@@ -139,6 +139,30 @@ export async function melhorEnvioRequest(
   return data;
 }
 
+export async function melhorEnvioFileRequest(path: string): Promise<Response> {
+  const token = await getMelhorEnvioAccessToken();
+  const response = await fetch(`${apiBaseUrl()}${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "*/*",
+      "User-Agent": USER_AGENT,
+    },
+    signal: AbortSignal.timeout(20_000),
+  }).catch(() => null);
+
+  if (!response) {
+    throw new MelhorEnvioAdminError("Não foi possível baixar a etiqueta do Melhor Envio.");
+  }
+  if (!response.ok) {
+    const data = await response.clone().json().catch(() => null);
+    throw new MelhorEnvioAdminError(
+      responseMessage(data, "O Melhor Envio não disponibilizou este arquivo de etiqueta."),
+      response.status,
+    );
+  }
+  return response;
+}
+
 export function getMelhorEnvioOAuthConfig() {
   return {
     baseUrl: apiBaseUrl(),
