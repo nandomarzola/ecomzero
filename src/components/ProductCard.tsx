@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   Check,
   Heart,
@@ -28,11 +27,10 @@ const formatPrice = (price: number) =>
   });
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<"idle" | "added">("idle");
   const [pendingAction, setPendingAction] = useState<"buy" | "cart" | null>(null);
+  const isPending = pendingAction !== null;
   const { refreshCartCount } = useCartCount();
-  const router = useRouter();
 
   const href = `/produto/${product.slug}`;
   const orderedVariants = [...product.variantes].sort(
@@ -59,11 +57,11 @@ export default function ProductCard({ product }: ProductCardProps) {
       ? "/images/hero-sensor-cutout.png"
       : product.imagem;
 
-  const handleCartAction = (action: "buy" | "cart") => {
+  const handleCartAction = async (action: "buy" | "cart") => {
     if (!defaultVariant || isPending) return;
 
     setPendingAction(action);
-    startTransition(async () => {
+    try {
       const result = await addToCartAction({
         variantId: defaultVariant.id,
         quantidade: 1,
@@ -71,22 +69,24 @@ export default function ProductCard({ product }: ProductCardProps) {
 
       if (!result.success) {
         toast.error(result.error);
-        setPendingAction(null);
         return;
       }
 
       refreshCartCount();
 
       if (action === "buy") {
-        router.push("/carrinho");
+        window.location.assign("/carrinho");
         return;
       }
 
       setFeedback("added");
-      setPendingAction(null);
       toast.success("Produto adicionado ao carrinho");
       window.setTimeout(() => setFeedback("idle"), 1800);
-    });
+    } catch {
+      toast.error("Não foi possível adicionar o produto ao carrinho");
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   return (

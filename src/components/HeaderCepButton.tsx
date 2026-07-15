@@ -13,7 +13,10 @@ import {
 // Botão "Informe seu CEP" do header. Lê o CEP salvo reativamente (o modal da
 // home e outras abas atualizam na hora). No SSR renderiza o estado "sem CEP"
 // (snapshot do server é null) — após a hidratação mostra o CEP salvo.
-export default function HeaderCepButton() {
+// Estilo alinhado ao design system do header (ícone + principal bold + secundário
+// muted, igual "Minha conta"). `className` controla a visibilidade responsiva
+// conforme o contexto (cluster de ações no desktop, linha própria no mobile).
+export default function HeaderCepButton({ className = "" }: { className?: string }) {
   const savedCep = useSyncExternalStore(subscribeUserCep, getUserCepSnapshot, () => null);
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
@@ -59,25 +62,27 @@ export default function HeaderCepButton() {
   };
 
   return (
-    <div ref={containerRef} className="relative shrink-0">
+    <div ref={containerRef} className={`relative shrink-0 ${className}`}>
       <button
         type="button"
         onClick={toggleOpen}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left transition hover:bg-white/5"
+        className="header-action flex items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-white/[0.04] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
       >
-        <MapPin className="h-4 w-4 shrink-0 text-[#A9EC17]" strokeWidth={1.8} />
-        <span className="flex flex-col leading-tight">
+        <MapPin className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.8} />
+        <span className="min-w-0">
           {savedCep ? (
             <>
-              <span className="text-[9px] uppercase tracking-wide text-white/45">Enviar para</span>
-              <span className="text-[11px] font-semibold text-white">CEP: {formatCep(savedCep)}</span>
+              <span className="block text-[11px] font-semibold leading-4 text-white">
+                CEP: {formatCep(savedCep)}
+              </span>
+              <span className="block text-[9px] font-normal leading-3 text-white/45">Enviar para</span>
             </>
           ) : (
             <>
-              <span className="text-[11px] font-semibold text-white">Informe seu CEP</span>
-              <span className="text-[9px] text-white/45">Calcular frete</span>
+              <span className="block text-[11px] font-semibold leading-4 text-white">Informe seu CEP</span>
+              <span className="block text-[9px] font-normal leading-3 text-white/45">Calcular frete</span>
             </>
           )}
         </span>

@@ -31,7 +31,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [itemCount, setItemCount] = useState(0);
 
   const refreshCartCount = useCallback(() => {
-    getCartSummaryAction().then((summary) => setItemCount(summary.itemCount));
+    void getCartSummaryAction()
+      .then((summary) => setItemCount(summary.itemCount))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

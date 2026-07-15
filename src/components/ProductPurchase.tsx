@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
 import { useCartCount } from "@/components/CartProvider";
@@ -26,11 +25,10 @@ export default function ProductPurchase({
   productName,
   productImage,
 }: ProductPurchaseProps) {
-  const router = useRouter();
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
-  const [isPending, startTransition] = useTransition();
   const [submittingAction, setSubmittingAction] = useState<"add" | "buy" | null>(null);
+  const isPending = submittingAction !== null;
   const { refreshCartCount } = useCartCount();
 
   const selectedVariant =
@@ -45,9 +43,11 @@ export default function ProductPurchase({
     setQuantity(1);
   };
 
-  const addToCart = (action: "add" | "buy") => {
+  const addToCart = async (action: "add" | "buy") => {
+    if (isPending) return;
+
     setSubmittingAction(action);
-    startTransition(async () => {
+    try {
       const result = await addToCartAction({
         variantId: selectedVariant.id,
         quantidade: quantity,
@@ -56,7 +56,7 @@ export default function ProductPurchase({
       if (result.success) {
         refreshCartCount();
         if (action === "buy") {
-          router.push("/carrinho");
+          window.location.assign("/carrinho");
         } else {
           toast.success("Produto adicionado ao carrinho", {
             description: productName,
@@ -69,9 +69,11 @@ export default function ProductPurchase({
       } else {
         toast.error(result.error);
       }
-
+    } catch {
+      toast.error("Não foi possível adicionar o produto ao carrinho");
+    } finally {
       setSubmittingAction(null);
-    });
+    }
   };
 
   return (

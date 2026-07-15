@@ -70,8 +70,6 @@ export default function Header() {
           <Accessibility className="h-6 w-6" strokeWidth={1.8} />
         </button>
 
-        <HeaderCepButton />
-
         <div className={usesStorefrontHeader ? "header-search max-w-[660px] flex-1" : "header-search max-w-xl flex-1"}>
           <SearchBar />
         </div>

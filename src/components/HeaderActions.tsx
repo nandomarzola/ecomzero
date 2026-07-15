@@ -17,6 +17,7 @@ import {
   UserRound,
 } from "lucide-react";
 import CartBadgeCount from "@/components/CartBadgeCount";
+import HeaderCepButton from "@/components/HeaderCepButton";
 
 type HeaderAccount = {
   name: string;
@@ -122,17 +123,7 @@ export default function HeaderActions({
 
   return (
     <div className={`header-actions flex shrink-0 items-center ${compact ? "ml-0 gap-0" : "ml-auto gap-4 lg:gap-6"}`}>
-      <button
-        type="button"
-        title="Informar CEP — em breve"
-        className={`header-action header-action-cep items-center gap-2 text-left transition hover:text-[#A9EC17] ${compact ? "hidden" : "hidden xl:flex"}`}
-      >
-        <MapPin className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.8} />
-        <span>
-          <span className="block text-[11px] font-semibold leading-4 text-white">Informe seu CEP</span>
-          <span className="block text-[9px] font-normal leading-3 text-white/45">Calcular frete</span>
-        </span>
-      </button>
+      <HeaderCepButton className={compact ? "hidden" : "hidden xl:block"} />
 
       <details
         ref={accountMenuRef}
