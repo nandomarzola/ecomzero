@@ -29,6 +29,12 @@ const envSchema = z.object({
       typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().min(1).optional(),
   ),
+  MERCADOPAGO_WEBHOOK_SECRET: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().min(1).optional(),
+  ),
+  MERCADOPAGO_ENVIRONMENT: z.enum(["test", "production"]).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -55,6 +61,10 @@ export const config = {
   },
   mercadoPago: {
     accessToken: parsed.data.MERCADOPAGO_ACCESS_TOKEN,
+    webhookSecret: parsed.data.MERCADOPAGO_WEBHOOK_SECRET,
+    environment:
+      parsed.data.MERCADOPAGO_ENVIRONMENT ??
+      (parsed.data.NODE_ENV === "production" ? "production" : "test"),
   },
 } as const;
 

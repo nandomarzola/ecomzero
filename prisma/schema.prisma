@@ -221,6 +221,9 @@ model Order {
   mercadoPagoPreferenceId        String?     @unique
   mercadoPagoInitPoint           String?
   mercadoPagoPreferenceExpiresAt DateTime?
+  mercadoPagoPaymentId           String?     @unique
+  mercadoPagoPaymentStatus       String?
+  pagoEm                         DateTime?
   createdAt                      DateTime    @default(now())
 
   items                 OrderItem[]

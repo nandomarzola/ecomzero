@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   Clock3,
@@ -12,6 +15,12 @@ type OrderReturnStatusProps = {
   title: string;
   description: string;
   orderId: string;
+  initialOrderStatus:
+    | "draft"
+    | "aguardando_pagamento"
+    | "pago"
+    | "cancelado"
+    | null;
 };
 
 const styles: Record<
@@ -40,9 +49,51 @@ export default function OrderReturnStatus({
   title,
   description,
   orderId,
+  initialOrderStatus,
 }: OrderReturnStatusProps) {
-  const style = styles[tone];
+  const [orderStatus, setOrderStatus] = useState(initialOrderStatus);
+  const effectiveTone =
+    orderStatus === "pago"
+      ? "success"
+      : orderStatus === "cancelado"
+        ? "failure"
+        : tone;
+  const effectiveTitle =
+    orderStatus === "pago" ? "Pagamento confirmado" : title;
+  const effectiveDescription =
+    orderStatus === "pago"
+      ? "Seu pagamento foi aprovado pelo Mercado Pago e o pedido já está confirmado."
+      : description;
+  const style = styles[effectiveTone];
   const Icon = style.icon;
+
+  useEffect(() => {
+    if (orderStatus !== "aguardando_pagamento") return;
+
+    const controller = new AbortController();
+    const refreshStatus = async () => {
+      try {
+        const response = await fetch(`/api/orders/${orderId}/status`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          status?: OrderReturnStatusProps["initialOrderStatus"];
+        };
+        if (data.status) setOrderStatus(data.status);
+      } catch {
+        return;
+      }
+    };
+
+    void refreshStatus();
+    const interval = window.setInterval(refreshStatus, 3_000);
+    return () => {
+      controller.abort();
+      window.clearInterval(interval);
+    };
+  }, [orderId, orderStatus]);
 
   return (
     <div className="min-h-[65vh] bg-[#050505] px-4 py-16 sm:py-24">
@@ -53,13 +104,13 @@ export default function OrderReturnStatus({
           <Icon className={`h-7 w-7 ${style.color}`} strokeWidth={1.8} />
         </span>
         <p className={`mt-6 text-[10px] font-bold uppercase tracking-[0.22em] ${style.color}`}>
-          Pedido recebido
+          {orderStatus === "pago" ? "Pagamento aprovado" : "Pedido recebido"}
         </p>
         <h1 className="font-display mt-2 text-[28px] font-extrabold leading-tight text-white sm:text-[34px]">
-          {title}
+          {effectiveTitle}
         </h1>
         <p className="mx-auto mt-4 max-w-[480px] text-sm leading-6 text-white/55">
-          {description}
+          {effectiveDescription}
         </p>
         <div className="mt-7 rounded-lg border border-white/[0.08] bg-black/30 px-4 py-3">
           <p className="text-[9px] font-semibold uppercase tracking-wider text-white/35">
@@ -68,7 +119,9 @@ export default function OrderReturnStatus({
           <p className="mt-1 break-all font-mono text-[11px] text-white/65">{orderId}</p>
         </div>
         <p className="mt-5 text-[11px] leading-5 text-white/38">
-          Esta tela não confirma o pagamento. O status definitivo será atualizado somente após a confirmação segura do provedor.
+          {orderStatus === "pago"
+            ? "Confirmação validada diretamente com o Mercado Pago."
+            : "O status definitivo será atualizado somente após a confirmação segura do provedor."}
         </p>
         <Link
           href="/"

@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import { config } from "@/lib/config";
 
 export const PAYMENT_PREFERENCE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -42,6 +42,17 @@ export type CreatedPaymentPreference = {
   preferenceId: string;
   initPoint: string;
   expiresAt: Date;
+};
+
+export type MercadoPagoPaymentSnapshot = {
+  id: string;
+  status: string;
+  statusDetail: string | null;
+  externalReference: string | null;
+  transactionAmount: number;
+  currencyId: string | null;
+  liveMode: boolean;
+  approvedAt: Date | null;
 };
 
 const absoluteUrl = (value: string, siteUrl: string) => {
@@ -125,6 +136,10 @@ export async function createPaymentPreference(
           pending: new URL(`/pedido/${order.id}/pendente`, siteUrl).toString(),
           failure: new URL(`/pedido/${order.id}/falha`, siteUrl).toString(),
         },
+        notification_url: new URL(
+          "/api/webhooks/mercadopago",
+          siteUrl,
+        ).toString(),
         payer: {
           name: order.nomeCliente,
           email: order.emailCliente,
@@ -159,7 +174,7 @@ export async function createPaymentPreference(
         idempotencyKey: `ecomzero-order-${order.id}`,
       },
     });
-    const initPoint = accessToken.startsWith("TEST-")
+    const initPoint = config.mercadoPago.environment === "test"
       ? response.sandbox_init_point ?? response.init_point
       : response.init_point ?? response.sandbox_init_point;
 
@@ -176,6 +191,58 @@ export async function createPaymentPreference(
     if (error instanceof MercadoPagoServiceError) throw error;
     throw new MercadoPagoServiceError(
       "Não foi possível iniciar o pagamento. Tente novamente.",
+      502,
+    );
+  }
+}
+
+export async function getMercadoPagoPayment(
+  paymentId: string,
+): Promise<MercadoPagoPaymentSnapshot> {
+  const accessToken = config.mercadoPago.accessToken;
+  if (!accessToken) {
+    throw new MercadoPagoServiceError(
+      "Pagamento temporariamente indisponível",
+      503,
+    );
+  }
+
+  try {
+    const client = new MercadoPagoConfig({
+      accessToken,
+      options: { timeout: 10_000 },
+    });
+    const response = await new Payment(client).get({ id: paymentId });
+    const amount = response.transaction_amount;
+
+    if (
+      response.id === undefined ||
+      !response.status ||
+      typeof amount !== "number" ||
+      !Number.isFinite(amount)
+    ) {
+      throw new Error("Pagamento incompleto");
+    }
+
+    const approvedAt = response.date_approved
+      ? new Date(response.date_approved)
+      : null;
+
+    return {
+      id: String(response.id),
+      status: response.status,
+      statusDetail: response.status_detail ?? null,
+      externalReference: response.external_reference ?? null,
+      transactionAmount: amount,
+      currencyId: response.currency_id ?? null,
+      liveMode: response.live_mode === true,
+      approvedAt:
+        approvedAt && !Number.isNaN(approvedAt.getTime()) ? approvedAt : null,
+    };
+  } catch (error) {
+    if (error instanceof MercadoPagoServiceError) throw error;
+    throw new MercadoPagoServiceError(
+      "Não foi possível confirmar o pagamento",
       502,
     );
   }
