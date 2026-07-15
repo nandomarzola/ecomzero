@@ -61,6 +61,9 @@ const truncateAtWord = (value: string, limit: number) => {
   return `${truncated.slice(0, lastSpace > limit * 0.7 ? lastSpace : limit).trim()}…`;
 };
 
+const finishSentence = (value: string) =>
+  /[.!?]$/.test(value) ? value : `${value}.`;
+
 export function shouldShowProductSubtitle(productName: string, subtitle: string) {
   const normalizedSubtitle = normalizeForComparison(subtitle);
   return Boolean(
@@ -115,7 +118,12 @@ export function parseProductDescription({
     if (/^[-–—•]/.test(rawLine.trim())) {
       current.items.push(line);
     } else {
-      current.paragraphs.push(line);
+      const previousParagraph = current.paragraphs.at(-1);
+      if (previousParagraph) {
+        current.paragraphs[current.paragraphs.length - 1] = `${previousParagraph} ${line}`;
+      } else {
+        current.paragraphs.push(line);
+      }
     }
   }
 
@@ -133,10 +141,28 @@ export function parseProductDescription({
 
 export function getProductSummary(props: ProductDescriptionProps) {
   const sections = parseProductDescription(props);
-  const preferredSection =
-    sections.find((section) => section.title === "Sobre o produto") ?? sections[0];
-  const summarySource =
-    preferredSection?.paragraphs[0] ?? preferredSection?.items[0] ?? "";
+  const sectionPriority = [
+    "Sobre o produto",
+    "Diferenciais",
+    "Características",
+    "Indicado para",
+    "Especificações",
+    "Conteúdo da caixa",
+  ];
+  const orderedSections = [...sections].sort(
+    (sectionA, sectionB) =>
+      sectionPriority.indexOf(sectionA.title) - sectionPriority.indexOf(sectionB.title),
+  );
+  const seen = new Set<string>();
+  const summaryParts = orderedSections.flatMap((section) =>
+    [...section.paragraphs, ...section.items].filter((part) => {
+      const normalized = normalizeForComparison(part);
+      if (!normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    }),
+  );
+  const summarySource = summaryParts.map(finishSentence).join(" ");
   return truncateAtWord(summarySource, 320);
 }
 

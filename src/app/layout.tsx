@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Montserrat } from "next/font/google";
+import { Toaster } from "sonner";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
 import BottomNav from "@/components/BottomNav";
 import { CartProvider } from "@/components/CartProvider";
@@ -115,6 +116,8 @@ export default async function RootLayout({
             </ProductFiltersProvider>
           </CartProvider>
         </AuthSessionProvider>
+
+        <Toaster position="top-center" theme="dark" richColors closeButton />
       </body>
     </html>
   );

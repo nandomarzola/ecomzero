@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import {
-  Minus,
-  Plus,
-  ShoppingCart,
-} from "lucide-react";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
 import { useCartCount } from "@/components/CartProvider";
 import ShippingCalculator from "@/components/ShippingCalculator";
 import { addToCartAction } from "@/lib/actions/cartActions";
@@ -13,12 +11,9 @@ import type { ProductVariant } from "@/types/product";
 
 type ProductPurchaseProps = {
   variants: ProductVariant[];
+  productName: string;
+  productImage: string;
 };
-
-type PurchaseFeedback =
-  | { type: "idle" }
-  | { type: "added" }
-  | { type: "error"; message: string };
 
 const formatPrice = (price: number) =>
   price.toLocaleString("pt-BR", {
@@ -26,11 +21,16 @@ const formatPrice = (price: number) =>
     currency: "BRL",
   });
 
-export default function ProductPurchase({ variants }: ProductPurchaseProps) {
+export default function ProductPurchase({
+  variants,
+  productName,
+  productImage,
+}: ProductPurchaseProps) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
   const [isPending, startTransition] = useTransition();
-  const [feedback, setFeedback] = useState<PurchaseFeedback>({ type: "idle" });
+  const [submittingAction, setSubmittingAction] = useState<"add" | "buy" | null>(null);
   const { refreshCartCount } = useCartCount();
 
   const selectedVariant =
@@ -43,27 +43,36 @@ export default function ProductPurchase({ variants }: ProductPurchaseProps) {
   const handleSelectVariant = (variantId: string) => {
     setSelectedId(variantId);
     setQuantity(1);
-    setFeedback({ type: "idle" });
   };
 
-  useEffect(() => {
-    if (feedback.type !== "added") return;
-    const timer = window.setTimeout(() => setFeedback({ type: "idle" }), 2500);
-    return () => window.clearTimeout(timer);
-  }, [feedback]);
-
-  const handleAddToCart = () => {
+  // "add" fica na página com toast de sucesso; "buy" adiciona e vai pro carrinho
+  // (ainda não há checkout próprio — destino provisório é /carrinho).
+  const addToCart = (action: "add" | "buy") => {
+    setSubmittingAction(action);
     startTransition(async () => {
       const result = await addToCartAction({
         variantId: selectedVariant.id,
         quantidade: quantity,
       });
+
       if (result.success) {
-        setFeedback({ type: "added" });
         refreshCartCount();
+        if (action === "buy") {
+          router.push("/carrinho");
+        } else {
+          toast.success("Produto adicionado ao carrinho", {
+            description: productName,
+            icon: (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={productImage} alt="" className="h-8 w-8 rounded object-cover" />
+            ),
+          });
+        }
       } else {
-        setFeedback({ type: "error", message: result.error });
+        toast.error(result.error);
       }
+
+      setSubmittingAction(null);
     });
   };
 
@@ -155,33 +164,32 @@ export default function ProductPurchase({ variants }: ProductPurchaseProps) {
 
           <div className="flex flex-col rounded-lg border border-white/[0.08] bg-[#111111] p-4">
             <ShippingCalculator
-              key={`${selectedVariant.id}-${quantity}`}
+              key={selectedVariant.id}
               variantId={selectedVariant.id}
               quantity={quantity}
             />
           </div>
         </div>
-        <div className="border-t border-white/[0.07] px-3 pb-3 sm:px-4 sm:pb-4">
+        <div className="flex flex-col gap-2 border-t border-white/[0.07] px-3 pb-3 sm:px-4 sm:pb-4">
           <button
             type="button"
-            onClick={handleAddToCart}
+            onClick={() => addToCart("add")}
             disabled={isPending}
             className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-black transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#B8FF28] hover:shadow-[0_8px_24px_rgba(169,236,23,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
           >
             <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-            {isPending
-              ? "Adicionando..."
-              : feedback.type === "added"
-                ? "Adicionado ao carrinho ✓"
-                : "Adicionar ao carrinho"}
+            {submittingAction === "add" && isPending ? "Adicionando..." : "Adicionar ao carrinho"}
           </button>
-          <div aria-live="polite">
-            {feedback.type === "error" && (
-              <p className="mt-2 text-center text-[10px] text-red-400">
-                {feedback.message}
-              </p>
-            )}
-          </div>
+
+          <button
+            type="button"
+            onClick={() => addToCart("buy")}
+            disabled={isPending}
+            className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#A9EC17]/40 bg-transparent px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-[#A9EC17] transition duration-[250ms] hover:border-[#A9EC17] hover:bg-[#A9EC17]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 motion-reduce:transition-none"
+          >
+            <Zap className="h-4 w-4" strokeWidth={2} />
+            {submittingAction === "buy" && isPending ? "Processando..." : "Comprar agora"}
+          </button>
         </div>
       </section>
     </div>

@@ -254,7 +254,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
               })}
             </div>
 
-            <ProductPurchase variants={product.variantes} />
+            <ProductPurchase
+              variants={product.variantes}
+              productName={product.nome}
+              productImage={product.imagem}
+            />
           </div>
         </section>
 
