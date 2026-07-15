@@ -12,6 +12,10 @@ import {
   Tag,
 } from "lucide-react";
 import CategoryStrip from "@/components/CategoryStrip";
+import ProductDescription, {
+  getProductSummary,
+  shouldShowProductSubtitle,
+} from "@/components/ProductDescription";
 import ProductGallery from "@/components/ProductGallery";
 import ProductMarketplaces from "@/components/ProductMarketplaces";
 import ProductPurchase from "@/components/ProductPurchase";
@@ -62,14 +66,19 @@ export async function generateMetadata({
 
   const productUrl = `${siteUrl}/produto/${product.slug}`;
   const imageUrl = toAbsoluteImage(product.imagem);
+  const productSummary = getProductSummary({
+    productName: product.nome,
+    subtitle: product.subtitulo,
+    description: product.descricao,
+  });
 
   return {
     title: product.nome,
-    description: product.descricao,
+    description: productSummary,
     alternates: { canonical: productUrl },
     openGraph: {
       title: product.nome,
-      description: product.descricao,
+      description: productSummary,
       url: productUrl,
       siteName: "EcomZero",
       locale: "pt_BR",
@@ -88,12 +97,17 @@ export async function generateMetadata({
 
 const buildProductJsonLd = (product: Product) => {
   const prices = product.variantes.map((variant) => variant.precoPor);
+  const productSummary = getProductSummary({
+    productName: product.nome,
+    subtitle: product.subtitulo,
+    description: product.descricao,
+  });
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.nome,
-    description: product.descricao,
+    description: productSummary,
     image: product.imagens.map(toAbsoluteImage),
     category: product.categoria,
     url: `${siteUrl}/produto/${product.slug}`,
@@ -137,6 +151,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const relatedProducts = getRelatedProducts(product, allProducts);
   const categoryLabel = findCategoryLabel(product.categoria) ?? product.categoria;
+  const showSubtitle = shouldShowProductSubtitle(product.nome, product.subtitulo);
+  const productSummary = getProductSummary({
+    productName: product.nome,
+    subtitle: product.subtitulo,
+    description: product.descricao,
+  });
 
   return (
     <div className="product-detail-page min-h-screen bg-black">
@@ -192,7 +212,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {categoryLabel}
             </p>
 
-            <h1 className="font-display mt-2 max-w-full break-words text-[28px] font-extrabold leading-[1.08] text-white sm:text-4xl lg:text-balance lg:text-[40px]">
+            <h1
+              title={product.nome}
+              className="font-display mt-2 line-clamp-3 max-w-[760px] break-words text-[27px] font-extrabold leading-[1.08] text-white sm:text-[32px] lg:text-balance xl:text-[36px]"
+            >
               {product.nome}
             </h1>
 
@@ -201,13 +224,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
               Produto selecionado pela EcomZero
             </div>
 
-            <p className="mt-6 text-sm leading-6 text-white/72 sm:text-[15px]">
-              {product.subtitulo}
-            </p>
-
-            <p className="mt-1.5 max-w-2xl text-[13px] leading-6 text-white/52 sm:text-sm">
-              {product.descricao}
-            </p>
+            <div className="mt-5 max-w-2xl border-l-2 border-[#A9EC17]/55 pl-4">
+              {showSubtitle && (
+                <p className="line-clamp-2 text-sm font-medium leading-6 text-white/74 sm:text-[15px]">
+                  {product.subtitulo}
+                </p>
+              )}
+              {productSummary && (
+                <p className={`${showSubtitle ? "mt-1.5" : ""} line-clamp-4 text-[13px] leading-6 text-white/52 sm:text-sm`}>
+                  {productSummary}
+                </p>
+              )}
+            </div>
 
             <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-y border-white/[0.08] py-5 sm:grid-cols-3 xl:grid-cols-5">
               {product.caracteristicas.map((feature, index) => {
@@ -242,6 +270,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <TrustBadges
           items={trustBadges}
           className="mt-5 grid-cols-2 lg:grid-cols-4"
+        />
+
+        <ProductDescription
+          productName={product.nome}
+          subtitle={product.subtitulo}
+          description={product.descricao}
         />
 
         {relatedProducts.length > 0 && (
