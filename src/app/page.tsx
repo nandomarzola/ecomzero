@@ -1,4 +1,5 @@
 import CategoryStrip from "@/components/CategoryStrip";
+import CepCaptureModal from "@/components/CepCaptureModal";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import FeatureBar from "@/components/FeatureBar";
 import HomeInstitutional from "@/components/HomeInstitutional";
@@ -28,6 +29,8 @@ export default async function HomePage() {
 
   return (
     <div className="bg-black">
+      <CepCaptureModal />
+
       <CategoryStrip categories={categories} />
 
       <FeatureBar />

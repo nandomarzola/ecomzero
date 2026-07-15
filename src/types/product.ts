@@ -23,6 +23,8 @@ export type Product = {
   linkMercadoLivre: string | null;
   linkTiktokShop: string | null;
   linkShein: string | null;
+  avaliacaoMedia: number | null;
+  totalAvaliacoes: number;
   ativo: boolean;
   variantes: ProductVariant[];
 };

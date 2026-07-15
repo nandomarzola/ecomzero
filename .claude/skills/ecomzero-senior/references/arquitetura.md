@@ -38,7 +38,8 @@ src/components/
 ├── SearchBar.tsx                # Busca client-side (filtra por nome, sem backend novo)
 ├── CategoryStrip.tsx / Showcase.tsx / ProductCard.tsx / HeroShowcase.tsx / FeatureBar.tsx
 ├── ProductPurchase.tsx          # Página de produto: "Adicionar ao carrinho" + "Comprar na Shopee"
-├── ShippingCalculator.tsx       # CEP + cotação de frete, dentro de ProductPurchase (ver seção própria abaixo)
+├── HeaderCepButton.tsx          # botão "Informe seu CEP" no Header + dropdown (localStorage, ver seção frete)
+├── CepCaptureModal.tsx          # modal de captura de CEP na home (só visitante deslogado, 1x por navegador)
 ├── CartItemRow.tsx              # Linha de item no /carrinho — truncate no título (já causou bug de layout)
 ├── RelatedProductsCarousel.tsx  # Carrossel "também pode te interessar" — usa ProductCard layout="grid"
 └── PaymentBadges.tsx            # Selos de pagamento decorativos (texto, não logo — ver roadmap)

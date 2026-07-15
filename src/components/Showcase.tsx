@@ -85,7 +85,7 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
           {products.map((product, index) => (
             <div
               key={`${title}-${product.id}-${index}`}
-              className="w-[calc((100%-0.75rem)/2)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
+              className="w-[84%] shrink-0 snap-start sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]"
             >
               <ProductCard product={product} layout="grid" />
             </div>
@@ -201,7 +201,7 @@ export default function Showcase({
               .
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} layout="grid" />
               ))}

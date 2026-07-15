@@ -44,6 +44,8 @@ function toProduct(
     linkMercadoLivre: record.linkMercadoLivre,
     linkTiktokShop: record.linkTiktokShop,
     linkShein: record.linkShein,
+    avaliacaoMedia: record.avaliacaoMedia,
+    totalAvaliacoes: record.totalAvaliacoes,
     ativo: record.ativo,
     variantes: record.variantes.map(toVariant),
   };

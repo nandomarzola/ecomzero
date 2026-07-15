@@ -6,6 +6,7 @@ import { Accessibility, ShoppingCart } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import CartBadgeCount from "@/components/CartBadgeCount";
 import HeaderActions from "@/components/HeaderActions";
+import HeaderCepButton from "@/components/HeaderCepButton";
 import MobileMenu from "@/components/MobileMenu";
 import SearchBar from "@/components/SearchBar";
 
@@ -47,8 +48,9 @@ export default function Header() {
       </div>
 
       {usesStorefrontHeader && (
-        <div className="px-4 pb-3 md:hidden">
+        <div className="flex flex-col gap-2 px-4 pb-3 md:hidden">
           <SearchBar />
+          <HeaderCepButton />
         </div>
       )}
 
@@ -67,6 +69,8 @@ export default function Header() {
         >
           <Accessibility className="h-6 w-6" strokeWidth={1.8} />
         </button>
+
+        <HeaderCepButton />
 
         <div className={usesStorefrontHeader ? "header-search max-w-[660px] flex-1" : "header-search max-w-xl flex-1"}>
           <SearchBar />

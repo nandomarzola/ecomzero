@@ -75,7 +75,7 @@ export default function RelatedProductsCarousel({
           {produtos.map((produto) => (
             <div
               key={produto.id}
-              className="w-[calc((100%-0.75rem)/2)] shrink-0 snap-start sm:w-[calc((100%-2rem)/3)] lg:w-[calc((100%-4rem)/5)]"
+              className="w-[84%] shrink-0 snap-start sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]"
             >
               <ProductCard product={produto} layout="grid" />
             </div>

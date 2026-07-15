@@ -13,6 +13,7 @@ import {
   subscribeCheckoutShippingSelection,
   type CheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
+import { formatCep, getUserCepSnapshot, subscribeUserCep } from "@/lib/client/cepStorage";
 
 type ShippingOption = {
   id: string;
@@ -61,12 +62,18 @@ export default function CartCheckoutPanel({
   const [errorMessage, setErrorMessage] = useState("");
   const [now, setNow] = useState(() => Date.now());
 
+  // CEP salvo pelo visitante no header/modal — pré-preenche o campo (sem
+  // disparar cálculo sozinho), com prioridade menor que o que o cliente
+  // digitou aqui ou a cotação já selecionada.
+  const savedUserCep = useSyncExternalStore(subscribeUserCep, getUserCepSnapshot, () => null);
+
   const storedSelectionIsValid = Boolean(
     storedSelection &&
       Math.abs(storedSelection.cartSubtotal - subtotal) < 0.005,
   );
   const selection = storedSelectionIsValid ? storedSelection : null;
-  const cep = cepDraft ?? selection?.cep ?? "";
+  const cep =
+    cepDraft ?? selection?.cep ?? (savedUserCep ? formatCep(savedUserCep) : "");
 
   useEffect(() => {
     if (storedSelection && !storedSelectionIsValid) {
