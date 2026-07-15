@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
 import { useCartCount } from "@/components/CartProvider";
-import ShippingCalculator from "@/components/ShippingCalculator";
 import { addToCartAction } from "@/lib/actions/cartActions";
 import type { ProductVariant } from "@/types/product";
 
@@ -31,7 +30,6 @@ export default function ProductPurchase({
   const [quantity, setQuantity] = useState(1);
   const [isPending, startTransition] = useTransition();
   const [submittingAction, setSubmittingAction] = useState<"add" | "buy" | null>(null);
-  const [calculatedCep, setCalculatedCep] = useState("");
   const { refreshCartCount } = useCartCount();
 
   const selectedVariant =
@@ -57,10 +55,7 @@ export default function ProductPurchase({
       if (result.success) {
         refreshCartCount();
         if (action === "buy") {
-          const checkoutUrl = calculatedCep
-            ? `/checkout?cep=${encodeURIComponent(calculatedCep)}`
-            : "/checkout";
-          router.push(checkoutUrl);
+          router.push("/carrinho");
         } else {
           toast.success("Produto adicionado ao carrinho", {
             description: productName,
@@ -117,10 +112,11 @@ export default function ProductPurchase({
           Comprar na EcomZero
         </h2>
 
-        <div className="grid gap-3 p-3 sm:grid-cols-[0.88fr_1.12fr] sm:p-4">
-          <div className="flex flex-col rounded-lg border border-white/[0.08] bg-[#111111] p-4">
-            <p className="text-[11px] font-medium text-white/65">Quantidade</p>
-            <div className="mt-2 flex h-10 w-[138px] items-center justify-between rounded-md border border-white/15 bg-[#090909] px-1">
+        <div className="p-3 sm:p-4">
+          <div className="flex items-end justify-between gap-4 rounded-lg border border-white/[0.08] bg-[#111111] p-4">
+            <div>
+              <p className="text-[11px] font-medium text-white/65">Quantidade</p>
+              <div className="mt-2 flex h-10 w-[138px] items-center justify-between rounded-md border border-white/15 bg-[#090909] px-1">
               <button
                 type="button"
                 disabled={quantity <= 1}
@@ -142,9 +138,10 @@ export default function ProductPurchase({
               >
                 <Plus className="h-4 w-4" />
               </button>
+              </div>
             </div>
 
-            <div className="mt-auto pt-4" aria-live="polite">
+            <div className="text-right" aria-live="polite">
               {hasDiscount && (
                 <p className="text-[10px] text-white/40">
                   De {" "}
@@ -162,15 +159,6 @@ export default function ProductPurchase({
                 )}
               </p>
             </div>
-          </div>
-
-          <div className="flex flex-col rounded-lg border border-white/[0.08] bg-[#111111] p-4">
-            <ShippingCalculator
-              key={selectedVariant.id}
-              variantId={selectedVariant.id}
-              quantity={quantity}
-              onCalculatedCep={setCalculatedCep}
-            />
           </div>
         </div>
         <div className="flex flex-col gap-2 border-t border-white/[0.07] px-3 pb-3 sm:px-4 sm:pb-4">

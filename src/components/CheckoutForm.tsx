@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -19,7 +20,6 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
-import CheckoutShippingStep from "@/components/CheckoutShippingStep";
 import PaymentBadges from "@/components/PaymentBadges";
 import {
   clearCheckoutShippingSelection,
@@ -35,7 +35,6 @@ type CheckoutFormProps = {
   sessionName: string;
   sessionEmail: string;
   cartSubtotal: number;
-  initialCep: string;
 };
 
 type FormValues = {
@@ -164,8 +163,8 @@ export default function CheckoutForm({
   sessionName,
   sessionEmail,
   cartSubtotal,
-  initialCep,
 }: CheckoutFormProps) {
+  const router = useRouter();
   const [values, setValues] = useState<FormValues>({
     ...emptyForm,
     nome: sessionName,
@@ -210,6 +209,12 @@ export default function CheckoutForm({
       clearCheckoutShippingSelection();
     }
   }, [selectionMatchesCart, storedSelection]);
+
+  useEffect(() => {
+    if (storageReady && !selection && !createdOrderId) {
+      router.replace("/carrinho");
+    }
+  }, [createdOrderId, router, selection, storageReady]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -467,7 +472,9 @@ export default function CheckoutForm({
 
   if (!selection) {
     return (
-      <CheckoutShippingStep subtotal={cartSubtotal} initialCep={initialCep} />
+      <div className="flex min-h-[55vh] items-center justify-center">
+        <LoaderCircle className="h-7 w-7 animate-spin text-[#A9EC17]" />
+      </div>
     );
   }
 

@@ -9,18 +9,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default async function CheckoutPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ cep?: string }>;
-}) {
-  const [session, sessionId, params] = await Promise.all([
+export default async function CheckoutPage() {
+  const [session, sessionId] = await Promise.all([
     auth(),
     getCartSessionId(),
-    searchParams,
   ]);
   const cart = await getCart(sessionId);
-  const initialCep = params.cep?.replace(/\D/g, "").slice(0, 8) ?? "";
 
   return (
     <div className="min-h-screen bg-[#050505]">
@@ -29,7 +23,6 @@ export default async function CheckoutPage({
         sessionName={session?.user?.name ?? ""}
         sessionEmail={session?.user?.email ?? ""}
         cartSubtotal={cart.total}
-        initialCep={initialCep}
       />
     </div>
   );
