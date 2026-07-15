@@ -12,6 +12,8 @@ import type { Product } from "@/types/product";
 type ShowcaseProps = {
   produtos: Product[];
   categories: StoreCategory[];
+  bestSellers: Product[];
+  releases: Product[];
 };
 
 type ProductShelfProps = {
@@ -103,26 +105,12 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
   );
 }
 
-function completeShelf(products: Product[], catalog: Product[], length: number) {
-  if (products.length >= length || catalog.length === 0) {
-    return products.slice(0, length);
-  }
-
-  const completed = [...products];
-  let index = 0;
-
-  while (completed.length < length) {
-    const candidate = catalog[index % catalog.length];
-    if (!completed.some((product) => product.id === candidate.id) || catalog.length < length) {
-      completed.push(candidate);
-    }
-    index += 1;
-  }
-
-  return completed;
-}
-
-export default function Showcase({ produtos: allProdutos, categories }: ShowcaseProps) {
+export default function Showcase({
+  produtos: allProdutos,
+  categories,
+  bestSellers,
+  releases,
+}: ShowcaseProps) {
   const { cat, searchQuery, setSearchQuery } = useProductFilters();
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const isFirstRender = useRef(true);
@@ -168,8 +156,6 @@ export default function Showcase({ produtos: allProdutos, categories }: Showcase
   }
 
   const hasFilter = Boolean((cat && cat !== "tudo") || trimmedSearch);
-  const bestSellers = completeShelf(allProdutos.slice(0, 5), allProdutos, 5);
-  const releases = completeShelf(allProdutos.slice(5, 10), allProdutos, 5);
 
   return (
     <div

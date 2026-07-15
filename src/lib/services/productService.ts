@@ -59,6 +59,73 @@ export async function getAllProducts(): Promise<Product[]> {
   return records.map(toProduct);
 }
 
+export async function getBestSellingProducts(limit = 5): Promise<Product[]> {
+  if (limit <= 0) return [];
+
+  const salesByVariant = await prisma.orderItem.groupBy({
+    by: ["variantId"],
+    where: { order: { status: "pago" } },
+    _sum: { quantidade: true },
+  });
+
+  if (salesByVariant.length === 0) return [];
+
+  const variants = await prisma.productVariant.findMany({
+    where: {
+      id: { in: salesByVariant.map((sale) => sale.variantId) },
+      product: { ativo: true },
+    },
+    select: { id: true, productId: true },
+  });
+  const productIdByVariantId = new Map(
+    variants.map((variant) => [variant.id, variant.productId]),
+  );
+  const quantityByProductId = new Map<string, number>();
+
+  for (const sale of salesByVariant) {
+    const productId = productIdByVariantId.get(sale.variantId);
+    if (!productId) continue;
+
+    quantityByProductId.set(
+      productId,
+      (quantityByProductId.get(productId) ?? 0) + (sale._sum.quantidade ?? 0),
+    );
+  }
+
+  const rankedProductIds = [...quantityByProductId.entries()]
+    .sort(([productIdA, quantityA], [productIdB, quantityB]) =>
+      quantityB - quantityA || productIdA.localeCompare(productIdB),
+    )
+    .slice(0, limit)
+    .map(([productId]) => productId);
+
+  if (rankedProductIds.length === 0) return [];
+
+  const records = await prisma.product.findMany({
+    where: { id: { in: rankedProductIds }, ativo: true },
+    include: { variantes: { orderBy: { id: "asc" } } },
+  });
+  const productById = new Map(records.map((record) => [record.id, toProduct(record)]));
+
+  return rankedProductIds.flatMap((productId) => {
+    const product = productById.get(productId);
+    return product ? [product] : [];
+  });
+}
+
+export async function getLatestProducts(limit = 5): Promise<Product[]> {
+  if (limit <= 0) return [];
+
+  const records = await prisma.product.findMany({
+    where: { ativo: true },
+    include: { variantes: { orderBy: { id: "asc" } } },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+    take: limit,
+  });
+
+  return records.map(toProduct);
+}
+
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   const parsedSlug = productSlugSchema.safeParse(slug);
   if (!parsedSlug.success) return null;

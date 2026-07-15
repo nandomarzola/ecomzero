@@ -4,14 +4,24 @@ import FeatureBar from "@/components/FeatureBar";
 import HomeInstitutional from "@/components/HomeInstitutional";
 import NewsletterBanner from "@/components/NewsletterBanner";
 import Showcase from "@/components/Showcase";
-import { getAllProducts } from "@/lib/services/productService";
+import {
+  getAllProducts,
+  getBestSellingProducts,
+  getLatestProducts,
+} from "@/lib/services/productService";
 import { getActiveBanners, getActiveCategories } from "@/lib/services/storeContentService";
 import { ManagedBannerSection, ManagedHero } from "@/components/ManagedBanners";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [produtos, categories, banners] = await Promise.all([getAllProducts(), getActiveCategories(), getActiveBanners()]);
+  const [produtos, categories, banners, bestSellers, releases] = await Promise.all([
+    getAllProducts(),
+    getActiveCategories(),
+    getActiveBanners(),
+    getBestSellingProducts(),
+    getLatestProducts(),
+  ]);
   const hero = banners.filter((banner) => banner.posicao === "hero_slide");
   const middle = banners.filter((banner) => banner.posicao === "home_middle");
   const bottom = banners.filter((banner) => banner.posicao === "home_bottom");
@@ -24,7 +34,12 @@ export default async function HomePage() {
 
       <ManagedHero banners={hero} />
 
-      <Showcase produtos={produtos} categories={categories} />
+      <Showcase
+        produtos={produtos}
+        categories={categories}
+        bestSellers={bestSellers}
+        releases={releases}
+      />
 
       <ManagedBannerSection banners={middle} position="home_middle" />
 

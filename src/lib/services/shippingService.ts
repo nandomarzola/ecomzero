@@ -191,7 +191,20 @@ async function requestShippingQuote(
     throw new ShippingServiceError("CEP não atendido para este produto", 422);
   }
 
-  return options;
+  // O Melhor Envio pode devolver vários serviços da MESMA transportadora (ex.:
+  // Jadlog .Package, .Com e .Package Centralizado). Enviamos todos os IDs em
+  // `services` de propósito (maior chance de a API cotar), mas para o cliente
+  // mantemos só a opção mais barata de cada transportadora — no máximo 1 linha
+  // por transportadora — ordenadas da mais barata para a mais cara.
+  const cheapestByCarrier = new Map<string, (typeof options)[number]>();
+  for (const option of options) {
+    const current = cheapestByCarrier.get(option.transportadora);
+    if (!current || option.preco < current.preco) {
+      cheapestByCarrier.set(option.transportadora, option);
+    }
+  }
+
+  return [...cheapestByCarrier.values()].sort((a, b) => a.preco - b.preco);
 }
 
 export async function calculateShipping(
