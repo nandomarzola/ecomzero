@@ -68,6 +68,7 @@ export type OrderPaymentPageData = {
     image: string;
     variant: string;
     quantity: number;
+    lineTotal: number;
   }>;
 };
 
@@ -253,6 +254,7 @@ export async function getOrderPaymentPageData(
       image: item.productImage,
       variant: item.variantLabel,
       quantity: item.quantidade,
+      lineTotal: item.precoUnitario * item.quantidade,
     })),
   };
 }

@@ -11,7 +11,7 @@ export default async function Footer() {
   const categories = allCategories.filter((category) => category.depth === 0).slice(0, 8);
 
   return (
-    <footer className="border-t border-white/[0.08] bg-[#080808] text-white">
+    <footer className="site-footer border-t border-white/[0.08] bg-[#080808] text-white">
       <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-10 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.45fr_0.8fr_0.9fr_0.8fr_0.95fr] lg:px-10 lg:py-12">
         <div>
           <Link

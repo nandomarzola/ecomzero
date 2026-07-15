@@ -37,3 +37,8 @@ a,
 button {
   -webkit-tap-highlight-color: transparent;
 }
+
+body:has(.payment-checkout-page) .site-footer,
+body:has(.payment-checkout-page) .site-bottom-nav {
+  display: none;
+}
