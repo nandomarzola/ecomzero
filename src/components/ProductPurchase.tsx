@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   ShoppingCart,
+  Store,
 } from "lucide-react";
 import { useCartCount } from "@/components/CartProvider";
 import ShippingCalculator from "@/components/ShippingCalculator";
@@ -17,7 +18,12 @@ import type { ProductVariant } from "@/types/product";
 
 type ProductPurchaseProps = {
   variants: ProductVariant[];
-  fallbackShopeeUrl: string | null;
+  marketplaceLinks: {
+    shopee: string | null;
+    mercadoLivre: string | null;
+    tiktokShop: string | null;
+    shein: string | null;
+  };
 };
 
 type PurchaseFeedback =
@@ -33,7 +39,7 @@ const formatPrice = (price: number) =>
 
 export default function ProductPurchase({
   variants,
-  fallbackShopeeUrl,
+  marketplaceLinks,
 }: ProductPurchaseProps) {
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
@@ -44,7 +50,7 @@ export default function ProductPurchase({
   const selectedVariant =
     variants.find((variant) => variant.id === selectedId) ?? variants[0];
   const hasDiscount = selectedVariant.precoDe > selectedVariant.precoPor;
-  const shopeeUrl = selectedVariant.linkShopee ?? fallbackShopeeUrl;
+  const shopeeUrl = marketplaceLinks.shopee;
 
   const handleSelectVariant = (variantId: string) => {
     setSelectedId(variantId);
@@ -73,9 +79,9 @@ export default function ProductPurchase({
     });
   };
 
-  const handleBuyOnShopee = () => {
-    if (!shopeeUrl) return;
-    window.open(shopeeUrl, "_blank", "noopener,noreferrer");
+  const openMarketplace = (url: string | null) => {
+    if (!url) return;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -208,10 +214,10 @@ export default function ProductPurchase({
           </p>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <button
             type="button"
-            onClick={handleBuyOnShopee}
+            onClick={() => openMarketplace(shopeeUrl)}
             disabled={!shopeeUrl}
             aria-disabled={!shopeeUrl}
             title={shopeeUrl ? undefined : "Este produto não está disponível na Shopee"}
@@ -234,10 +240,11 @@ export default function ProductPurchase({
 
           <button
             type="button"
-            disabled
-            aria-disabled="true"
-            title="Integração com o Mercado Livre em breve"
-            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] disabled:cursor-not-allowed"
+            onClick={() => openMarketplace(marketplaceLinks.mercadoLivre)}
+            disabled={!marketplaceLinks.mercadoLivre}
+            aria-disabled={!marketplaceLinks.mercadoLivre}
+            title={marketplaceLinks.mercadoLivre ? undefined : "Este produto não está disponível no Mercado Livre"}
+            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] hover:-translate-y-0.5 hover:border-[#FFE600]/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
           >
             <span className="flex h-8 items-center gap-1.5 text-sm font-bold text-white">
               <span className="inline-flex h-7 w-10 items-center justify-center rounded-[50%] border-2 border-[#2D3277] bg-[#FFE600] text-[#2D3277]">
@@ -255,10 +262,11 @@ export default function ProductPurchase({
 
           <button
             type="button"
-            disabled
-            aria-disabled="true"
-            title="Integração com o TikTok Shop em breve"
-            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] disabled:cursor-not-allowed"
+            onClick={() => openMarketplace(marketplaceLinks.tiktokShop)}
+            disabled={!marketplaceLinks.tiktokShop}
+            aria-disabled={!marketplaceLinks.tiktokShop}
+            title={marketplaceLinks.tiktokShop ? undefined : "Este produto não está disponível no TikTok Shop"}
+            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] hover:-translate-y-0.5 hover:border-[#4DE8E8]/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
           >
             <span className="flex h-8 items-center gap-1.5 text-sm font-bold text-white">
               <Music2 className="h-7 w-7 text-white [filter:drop-shadow(-2px_0_0_#25F4EE)_drop-shadow(2px_0_0_#FE2C55)]" strokeWidth={2.4} />
@@ -270,6 +278,19 @@ export default function ProductPurchase({
             <span className="mt-auto flex h-8 w-full items-center justify-center rounded-md border border-[#4DE8E8] px-2 text-[9px] font-bold uppercase text-[#61E9E9] transition group-hover:bg-[#4DE8E8]/10">
               Comprar no TikTok
             </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => openMarketplace(marketplaceLinks.shein)}
+            disabled={!marketplaceLinks.shein}
+            aria-disabled={!marketplaceLinks.shein}
+            title={marketplaceLinks.shein ? undefined : "Este produto não está disponível na Shein"}
+            className="group flex min-h-[140px] flex-col items-center rounded-xl border border-white/[0.08] bg-[#111111] p-3 text-center transition duration-[250ms] hover:-translate-y-0.5 hover:border-white/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0"
+          >
+            <span className="flex h-8 items-center gap-1.5 text-sm font-black tracking-widest text-white"><Store className="h-7 w-7" /> SHEIN</span>
+            <span className="font-display mt-1.5 text-sm font-bold text-white">{formatPrice(selectedVariant.precoPor)}</span>
+            <span className="mt-auto flex h-8 w-full items-center justify-center rounded-md border border-white/70 px-2 text-[9px] font-bold uppercase text-white transition group-hover:bg-white/10">Comprar na Shein</span>
           </button>
         </div>
       </div>

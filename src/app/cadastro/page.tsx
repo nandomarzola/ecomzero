@@ -12,12 +12,15 @@ import {
 import CategoryStrip from "@/components/CategoryStrip";
 import RegistrationForm from "@/components/RegistrationForm";
 import TrustBadges from "@/components/TrustBadges";
+import { getActiveCategories } from "@/lib/services/storeContentService";
 
 export const metadata: Metadata = {
   title: "Cadastro",
   description: "Crie sua conta EcomZero.",
   robots: { index: false, follow: false },
 };
+
+export const dynamic = "force-dynamic";
 
 const benefits = [
   {
@@ -70,10 +73,11 @@ const trustBadges = [
   },
 ];
 
-export default function RegistrationPage() {
+export default async function RegistrationPage() {
+  const categories = await getActiveCategories();
   return (
     <div className="bg-[#050505]">
-      <CategoryStrip />
+      <CategoryStrip categories={categories} />
 
       <div className="mx-auto max-w-[1320px] px-4 pb-12 pt-5 sm:px-6 sm:pt-6 lg:px-8 lg:pb-16">
         <nav

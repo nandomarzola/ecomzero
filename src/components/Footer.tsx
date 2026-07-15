@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ExternalLink, ShieldCheck, ShoppingBag } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
-import categoriasData from "@/data/categorias.json";
+import { getActiveCategories, getStoreSettings } from "@/lib/services/storeContentService";
 
 const linkClass =
   "text-[11px] text-white/50 transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]";
 
-export default function Footer() {
-  const categories = categoriasData.categorias.filter((category) => category.id !== "tudo");
+export default async function Footer() {
+  const [allCategories, settings] = await Promise.all([getActiveCategories(), getStoreSettings()]);
+  const categories = allCategories.filter((category) => category.depth === 0).slice(0, 8);
 
   return (
     <footer className="border-t border-white/[0.08] bg-[#080808] text-white">
@@ -21,10 +22,11 @@ export default function Footer() {
             <BrandLogo />
           </Link>
           <p className="mt-4 max-w-[250px] text-[11px] leading-5 text-white/50">
-            Produtos inteligentes, úteis e de qualidade para transformar sua rotina.
+            {settings.descricaoFooter}
           </p>
+          {settings.linkShopee ? (
           <a
-            href="https://shopee.com.br/shop/611286890"
+            href={settings.linkShopee}
             target="_blank"
             rel="noreferrer"
             className="mt-5 inline-flex items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-[10px] font-semibold text-white/70 transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
@@ -33,6 +35,7 @@ export default function Footer() {
             Loja oficial na Shopee
             <ExternalLink className="h-3 w-3" />
           </a>
+          ) : null}
         </div>
 
         <nav aria-label="Links institucionais">
@@ -53,8 +56,8 @@ export default function Footer() {
           <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-1">
             {categories.map((category) => (
               <li key={category.id}>
-                <Link href={`/?cat=${category.id}#vitrine`} className={linkClass}>
-                  {category.label}
+                <Link href={`/?cat=${category.slug}#vitrine`} className={linkClass}>
+                  {category.nome}
                 </Link>
               </li>
             ))}
@@ -93,7 +96,7 @@ export default function Footer() {
       <div className="border-t border-white/[0.07]">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-2 px-5 py-5 text-[10px] text-white/35 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
           <p>© {new Date().getFullYear()} ECOMZERO. Todos os direitos reservados.</p>
-          <p>Produtos úteis para facilitar o seu dia a dia.</p>
+          <p>{settings.mensagemFooter}</p>
         </div>
       </div>
     </footer>

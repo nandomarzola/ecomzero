@@ -3,6 +3,8 @@ import { getAllProducts } from "@/lib/services/productService";
 
 const siteUrl = "https://www.ecomzero.com.br";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await getAllProducts();
   const productEntries: MetadataRoute.Sitemap = products.map((product) => ({

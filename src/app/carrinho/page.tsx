@@ -20,6 +20,7 @@ import {
   getOtherProducts,
 } from "@/lib/services/productService";
 import { getCartSessionId } from "@/lib/session";
+import { getActiveCategories } from "@/lib/services/storeContentService";
 
 export const metadata: Metadata = {
   title: "Carrinho",
@@ -58,7 +59,7 @@ const trustBadges = [
 export default async function CartPage() {
   const sessionId = await getCartSessionId();
   const cart = await getCart(sessionId);
-  const allProducts = await getAllProducts();
+  const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const otherProducts = getOtherProducts(
     allProducts,
     cart.items.map((item) => item.productSlug),
@@ -67,7 +68,7 @@ export default async function CartPage() {
 
   return (
     <div className="min-h-screen bg-[#050505]">
-      <CategoryStrip />
+      <CategoryStrip categories={categories} />
 
       <div className="mx-auto max-w-[1320px] px-4 pb-36 pt-5 sm:px-6 sm:pt-6 md:pb-16 lg:px-8">
         <nav

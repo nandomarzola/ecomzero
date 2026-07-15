@@ -5,6 +5,8 @@ import BottomNav from "@/components/BottomNav";
 import { CartProvider } from "@/components/CartProvider";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import AnnouncementBar from "@/components/AnnouncementBar";
+import { getStoreSettings } from "@/lib/services/storeContentService";
 import { ProductFiltersProvider } from "@/components/ProductFiltersProvider";
 import "./globals.css";
 
@@ -70,11 +72,12 @@ const webSiteJsonLd = {
   inLanguage: "pt-BR",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const settings = await getStoreSettings();
   return (
     <html
       lang="pt-BR"
@@ -101,6 +104,7 @@ export default function RootLayout({
         <AuthSessionProvider>
           <CartProvider>
             <ProductFiltersProvider>
+              {settings.barraAnuncioAtiva && settings.barraAnuncioTexto ? <AnnouncementBar text={settings.barraAnuncioTexto} href={settings.barraAnuncioLink} /> : null}
               <Header />
 
               <main className="flex-1 pb-16 md:pb-0">{children}</main>

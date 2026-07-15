@@ -1,29 +1,38 @@
 import CategoryStrip from "@/components/CategoryStrip";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import FeatureBar from "@/components/FeatureBar";
-import HeroShowcase from "@/components/HeroShowcase";
 import HomeInstitutional from "@/components/HomeInstitutional";
 import NewsletterBanner from "@/components/NewsletterBanner";
 import Showcase from "@/components/Showcase";
-import heroSlides from "@/data/hero-slides.json";
 import { getAllProducts } from "@/lib/services/productService";
+import { getActiveBanners, getActiveCategories } from "@/lib/services/storeContentService";
+import { ManagedBannerSection, ManagedHero } from "@/components/ManagedBanners";
+
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const produtos = await getAllProducts();
+  const [produtos, categories, banners] = await Promise.all([getAllProducts(), getActiveCategories(), getActiveBanners()]);
+  const hero = banners.filter((banner) => banner.posicao === "hero_slide");
+  const middle = banners.filter((banner) => banner.posicao === "home_middle");
+  const bottom = banners.filter((banner) => banner.posicao === "home_bottom");
 
   return (
     <div className="bg-black">
-      <CategoryStrip />
+      <CategoryStrip categories={categories} />
 
       <FeatureBar />
 
-      <HeroShowcase slides={heroSlides} />
+      <ManagedHero banners={hero} />
 
-      <Showcase produtos={produtos} />
+      <Showcase produtos={produtos} categories={categories} />
+
+      <ManagedBannerSection banners={middle} position="home_middle" />
 
       <DeliveryBanner />
 
       <HomeInstitutional />
+
+      <ManagedBannerSection banners={bottom} position="home_bottom" />
 
       <NewsletterBanner />
     </div>

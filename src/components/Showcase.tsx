@@ -2,15 +2,16 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, XCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, PackageOpen, XCircle } from "lucide-react";
 
 import ProductCard from "@/components/ProductCard";
 import { useProductFilters } from "@/components/ProductFiltersProvider";
-import categoriasData from "@/data/categorias.json";
+import type { StoreCategory } from "@/lib/services/storeContentService";
 import type { Product } from "@/types/product";
 
 type ShowcaseProps = {
   produtos: Product[];
+  categories: StoreCategory[];
 };
 
 type ProductShelfProps = {
@@ -121,7 +122,7 @@ function completeShelf(products: Product[], catalog: Product[], length: number) 
   return completed;
 }
 
-export default function Showcase({ produtos: allProdutos }: ShowcaseProps) {
+export default function Showcase({ produtos: allProdutos, categories }: ShowcaseProps) {
   const { cat, searchQuery, setSearchQuery } = useProductFilters();
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const isFirstRender = useRef(true);
@@ -149,10 +150,11 @@ export default function Showcase({ produtos: allProdutos }: ShowcaseProps) {
   let subtitle: ReactNode = "Produtos selecionados para facilitar sua rotina.";
 
   if (cat && cat !== "tudo") {
-    const category = categoriasData.categorias.find((item) => item.id === cat);
-    products = products.filter((product) => product.categoria === cat);
-    title = category?.label ?? cat;
-    subtitle = `Produtos da categoria ${category?.label ?? cat}.`;
+    const category = categories.find((item) => item.slug === cat);
+    const categoryIds = new Set(category ? [category.id, ...category.descendantIds] : []);
+    products = products.filter((product) => product.categoryId && categoryIds.has(product.categoryId));
+    title = category?.nome ?? cat;
+    subtitle = `Produtos da categoria ${category?.nome ?? cat}.`;
   }
 
   const trimmedSearch = searchQuery.trim();
@@ -175,7 +177,13 @@ export default function Showcase({ produtos: allProdutos }: ShowcaseProps) {
       ref={sectionRef}
       className="mx-auto max-w-[1440px] scroll-mt-24 px-4 py-12 sm:px-6 sm:py-16 lg:px-10 lg:py-20"
     >
-      {hasFilter ? (
+      {allProdutos.length === 0 ? (
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#0D0D0D] px-6 text-center">
+          <PackageOpen className="h-11 w-11 text-[#A9EC17]/45" strokeWidth={1.4} />
+          <h2 className="font-display mt-4 text-lg font-bold uppercase text-white">Novos produtos em breve</h2>
+          <p className="mt-2 max-w-md text-sm leading-6 text-white/45">Estamos preparando uma seleção renovada para a loja EcomZero.</p>
+        </div>
+      ) : hasFilter ? (
         <section aria-labelledby="filtered-products-title">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
             <div>

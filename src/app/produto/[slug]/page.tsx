@@ -23,6 +23,7 @@ import {
   getRelatedProducts,
 } from "@/lib/services/productService";
 import type { Product } from "@/types/product";
+import { getActiveCategories } from "@/lib/services/storeContentService";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -132,7 +133,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const allProducts = await getAllProducts();
+  const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const relatedProducts = getRelatedProducts(product, allProducts);
   const categoryLabel = findCategoryLabel(product.categoria) ?? product.categoria;
 
@@ -152,7 +153,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         }}
       />
 
-      <CategoryStrip />
+      <CategoryStrip categories={categories} />
 
       <div className="mx-auto max-w-[1440px] px-4 pb-14 pt-5 sm:px-6 sm:pb-16 sm:pt-7 lg:px-10 lg:pb-20">
         <nav
@@ -224,7 +225,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               })}
             </div>
 
-            <ProductPurchase variants={product.variantes} fallbackShopeeUrl={product.linkShopee} />
+            <ProductPurchase variants={product.variantes} marketplaceLinks={{ shopee: product.linkShopee, mercadoLivre: product.linkMercadoLivre, tiktokShop: product.linkTiktokShop, shein: product.linkShein }} />
           </div>
         </section>
 

@@ -12,11 +12,9 @@ import {
   SprayCan,
   Wrench,
 } from "lucide-react";
-
-import categoriasData from "@/data/categorias.json";
+import type { StoreCategory } from "@/lib/services/storeContentService";
 
 const iconMap = {
-  tudo: Menu,
   iluminacao: Lightbulb,
   seguranca: ShieldCheck,
   ferramentas: Wrench,
@@ -25,21 +23,23 @@ const iconMap = {
   limpeza: SprayCan,
 };
 
-export default function CategoryStrip() {
+export default function CategoryStrip({ categories }: { categories: StoreCategory[] }) {
   const { cat } = useProductFilters();
   const active = cat ?? "tudo";
+  const roots = categories.filter((category) => category.depth === 0);
+  const items = [{ id: "tudo", nome: "Todas as categorias", slug: "tudo" }, ...roots];
 
   return (
     <section className="border-y border-white/[0.08] bg-[#080808]">
       <div className="mx-auto flex h-[58px] max-w-[1440px] items-stretch gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:px-6 lg:px-8 [&::-webkit-scrollbar]:hidden">
-        {categoriasData.categorias.map((categoria) => {
+        {items.map((categoria) => {
           const Icon =
-            iconMap[categoria.id as keyof typeof iconMap] ?? Grid2X2;
-          const isActive = active === categoria.id;
+            categoria.id === "tudo" ? Menu : iconMap[categoria.slug as keyof typeof iconMap] ?? Grid2X2;
+          const isActive = active === categoria.slug;
           const href =
             categoria.id === "tudo"
               ? "/#vitrine"
-              : `/?cat=${categoria.id}#vitrine`;
+              : `/?cat=${categoria.slug}#vitrine`;
 
           return (
             <Link
@@ -66,7 +66,7 @@ export default function CategoryStrip() {
                     : "text-white/68 group-hover:text-[#A9EC17]"
                 }`}
               >
-                {categoria.id === "tudo" ? "Todas as categorias" : categoria.label}
+                {categoria.nome}
               </span>
 
               {isActive && (

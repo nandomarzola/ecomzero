@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { productSlugSchema } from "@/lib/validation/product";
 import type { SyncProductInput } from "@/lib/validation/sync";
-import categoriasData from "@/data/categorias.json";
 import type { Product, ProductVariant } from "@/types/product";
 import type {
   Product as ProductRecord,
@@ -28,17 +27,23 @@ const cleanCatalogText = (value: string) =>
 function toProduct(
   record: ProductRecord & { variantes: ProductVariantRecord[] },
 ): Product {
+  const images = [record.imagem, ...record.imagens.filter((image) => image !== record.imagem)];
   return {
     id: record.id,
     slug: record.slug,
     categoria: record.categoria,
+    categoryId: record.categoryId,
+    tipo: record.tipo,
     nome: record.nome,
     subtitulo: record.subtitulo,
     descricao: cleanCatalogText(record.descricao),
     imagem: record.imagem,
-    imagens: record.imagens,
+    imagens: images,
     caracteristicas: record.caracteristicas,
     linkShopee: record.linkShopee,
+    linkMercadoLivre: record.linkMercadoLivre,
+    linkTiktokShop: record.linkTiktokShop,
+    linkShein: record.linkShein,
     ativo: record.ativo,
     variantes: record.variantes.map(toVariant),
   };
@@ -68,45 +73,20 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   return toProduct(record);
 }
 
-const normalizeCategory = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase();
-
-// Label de exibi\u00e7\u00e3o da categoria (src/data/categorias.json) a partir do id cru salvo no produto
 export function findCategoryLabel(categoria: string): string | null {
-  const match = categoriasData.categorias.find(
-    (category) => normalizeCategory(category.id) === normalizeCategory(categoria),
-  );
-  return match?.label ?? null;
+  return categoria.split(" / ").filter(Boolean).at(-1) ?? null;
 }
 
-// Produtos da mesma categoria ou de categorias relacionadas (src/data/categorias.json)
 export function getRelatedProducts(
   product: Product,
   allProducts: Product[],
   limit = 5,
 ): Product[] {
-  const currentCategory = categoriasData.categorias.find(
-    (category) =>
-      normalizeCategory(category.id) === normalizeCategory(product.categoria),
-  );
-
-  const relatedCategoryIds = currentCategory?.relacionadas ?? [];
-  const currentCategoryNormalized = normalizeCategory(product.categoria);
-
   const prioritized = allProducts.filter((candidate) => {
     if (candidate.slug === product.slug) return false;
-
-    const candidateCategory = normalizeCategory(candidate.categoria);
-    const isSameCategory = candidateCategory === currentCategoryNormalized;
-    const isRelatedCategory = relatedCategoryIds.some(
-      (categoryId) => normalizeCategory(categoryId) === candidateCategory,
-    );
-
-    return isSameCategory || isRelatedCategory;
+    return product.categoryId
+      ? candidate.categoryId === product.categoryId
+      : candidate.categoria === product.categoria;
   });
 
   const prioritizedSlugs = new Set(prioritized.map((candidate) => candidate.slug));

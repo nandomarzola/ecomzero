@@ -19,6 +19,22 @@ enum OrderStatus {
   cancelado
 }
 
+enum ProductKind {
+  simples
+  variacoes
+}
+
+enum CouponDiscountType {
+  percentual
+  valor_fixo
+}
+
+enum BannerPosition {
+  hero_slide
+  home_middle
+  home_bottom
+}
+
 model User {
   id              String    @id @default(uuid())
   name            String?   @map("nome")
@@ -31,10 +47,11 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  accounts  Account[]
-  sessions  Session[]
-  orders    Order[]
-  addresses Address[]
+  accounts          Account[]
+  sessions          Session[]
+  orders            Order[]
+  addresses         Address[]
+  couponRedemptions CouponRedemption[]
 }
 
 model Account {
@@ -97,21 +114,24 @@ model Address {
 // Sem controle de estoque: todo produto/variante cadastrado é sempre
 // considerado disponível para compra (decisão de produto, não é bug).
 model Product {
-  id               String   @id @default(uuid())
-  slug             String   @unique
+  id               String      @id @default(uuid())
+  slug             String      @unique
   categoria        String
   nome             String
   subtitulo        String
   descricao        String
   imagem           String
   imagens          String[]
-  videos           String[] @default([])
+  videos           String[]    @default([])
   caracteristicas  String[]
   linkShopee       String?
   linkMercadoLivre String?
   linkTiktokShop   String?
   linkShein        String?
-  ativo            Boolean  @default(true)
+  ativo            Boolean     @default(true)
+  tipo             ProductKind @default(simples)
+  categoryId       String?
+  category         Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   // Avaliação/comentários digitados manualmente no admin do Hub — não é um
   // sistema de avaliação de cliente real (decisão de produto, ver skill).
@@ -125,6 +145,25 @@ model Product {
   variantes ProductVariant[]
 
   @@index([categoria])
+  @@index([categoryId])
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  nome      String
+  slug      String     @unique
+  descricao String?
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[] @relation("CategoryHierarchy")
+  ativo     Boolean    @default(true)
+  ordem     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  produtos Product[]
+
+  @@index([parentId, ordem])
 }
 
 model ProductVariant {
@@ -180,8 +219,84 @@ model Order {
   items                 OrderItem[]
   shippingQuote         CheckoutShippingQuote? @relation("CartShippingQuote")
   selectedShippingQuote CheckoutShippingQuote? @relation("SelectedShippingQuote", fields: [shippingQuoteId], references: [id], onDelete: SetNull)
+  couponRedemption      CouponRedemption?
 
   @@index([userId])
+}
+
+model Coupon {
+  id                  String             @id @default(uuid())
+  codigo              String             @unique
+  descricao           String?
+  tipo                CouponDiscountType
+  valor               Decimal            @db.Decimal(10, 2)
+  valorMinimoPedido   Decimal?           @db.Decimal(10, 2)
+  descontoMaximo      Decimal?           @db.Decimal(10, 2)
+  limiteUsoTotal      Int?
+  limiteUsoPorCliente Int                @default(1)
+  usos                Int                @default(0)
+  inicioEm            DateTime?
+  expiraEm            DateTime?
+  ativo               Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  redemptions CouponRedemption[]
+
+  @@index([ativo, inicioEm, expiraEm])
+}
+
+model CouponRedemption {
+  id            String   @id @default(uuid())
+  couponId      String
+  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderId       String   @unique
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customerKey   String
+  valorDesconto Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+
+  @@index([couponId, customerKey])
+  @@index([userId])
+}
+
+model Banner {
+  id        String         @id @default(uuid())
+  nome      String
+  imagemUrl String
+  altText   String
+  linkUrl   String?
+  posicao   BannerPosition
+  largura   Int
+  altura    Int
+  ordem     Int            @default(0)
+  ativo     Boolean        @default(true)
+  inicioEm  DateTime?
+  expiraEm  DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([posicao, ativo, ordem])
+}
+
+model StoreSettings {
+  id                String   @id @default("singleton")
+  nomeLoja          String   @default("EcomZero")
+  descricaoFooter   String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
+  mensagemFooter    String   @default("Produtos úteis para facilitar o seu dia a dia.")
+  barraAnuncioAtiva Boolean  @default(false)
+  barraAnuncioTexto String?
+  barraAnuncioLink  String?
+  emailSuporte      String?
+  telefoneSuporte   String?
+  whatsapp          String?
+  linkShopee        String?
+  linkInstagram     String?
+  linkFacebook      String?
+  linkTiktok        String?
+  updatedAt         DateTime @updatedAt
 }
 
 model OrderItem {

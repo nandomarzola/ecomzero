@@ -1,7 +1,7 @@
 import { getAllProducts } from "@/lib/services/productService";
 import type { Product, ProductVariant } from "@/types/product";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 const SITE_URL = "https://www.ecomzero.com.br";
 const BRAND = "EcomZero";
