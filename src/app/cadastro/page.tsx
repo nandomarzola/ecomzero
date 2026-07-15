@@ -73,7 +73,17 @@ const trustBadges = [
   },
 ];
 
-export default async function RegistrationPage() {
+type RegistrationPageProps = {
+  searchParams: Promise<{
+    email?: string | string[];
+    retorno?: string | string[];
+  }>;
+};
+
+export default async function RegistrationPage({ searchParams }: RegistrationPageProps) {
+  const params = await searchParams;
+  const initialEmail = typeof params.email === "string" ? params.email.slice(0, 160) : "";
+  const returnTo = params.retorno === "/checkout" ? "/checkout" : "/";
   const categories = await getActiveCategories();
   return (
     <div className="bg-[#050505]">
@@ -92,7 +102,7 @@ export default async function RegistrationPage() {
         </nav>
 
         <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:items-stretch">
-          <RegistrationForm />
+          <RegistrationForm initialEmail={initialEmail} returnTo={returnTo} />
 
           <aside
             aria-labelledby="registration-benefits-title"

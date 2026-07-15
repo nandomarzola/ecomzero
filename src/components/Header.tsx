@@ -23,8 +23,13 @@ export default function Header() {
   const isCartPage = pathname === "/carrinho";
   const isRegistrationPage = pathname === "/cadastro";
   const isLoginPage = pathname === "/login";
+  const isCheckoutIdentificationPage = pathname === "/checkout/identificacao";
   const usesStorefrontHeader =
-    isHomePage || isProductPage || isRegistrationPage || isLoginPage;
+    isHomePage ||
+    isProductPage ||
+    isRegistrationPage ||
+    isLoginPage ||
+    isCheckoutIdentificationPage;
 
   return (
     <header

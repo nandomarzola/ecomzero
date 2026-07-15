@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import CheckoutForm from "@/components/CheckoutForm";
 import { auth } from "@/lib/auth";
 import { getCart } from "@/lib/services/cartService";
@@ -16,10 +17,14 @@ export default async function CheckoutPage() {
   ]);
   const cart = await getCart(sessionId);
 
+  if (!session?.user?.id) {
+    redirect("/checkout/identificacao");
+  }
+
   return (
     <div className="min-h-screen bg-[#050505]">
       <CheckoutForm
-        isLoggedIn={Boolean(session?.user?.id)}
+        isLoggedIn
         sessionName={session?.user?.name ?? ""}
         sessionEmail={session?.user?.email ?? ""}
         cartSubtotal={cart.total}

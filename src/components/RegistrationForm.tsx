@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
 import { Check, Eye, EyeOff } from "lucide-react";
@@ -31,10 +30,17 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
-export default function RegistrationForm() {
-  const router = useRouter();
+type RegistrationFormProps = {
+  initialEmail?: string;
+  returnTo?: "/" | "/checkout";
+};
+
+export default function RegistrationForm({
+  initialEmail = "",
+  returnTo = "/",
+}: RegistrationFormProps) {
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(initialEmail);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -155,8 +161,7 @@ export default function RegistrationForm() {
       }
 
       setStatusMessage("Conta criada com sucesso.");
-      router.replace("/");
-      router.refresh();
+      window.location.assign(returnTo);
     } catch {
       setStatusMessage("Não foi possível criar a conta agora. Tente novamente.");
       setStatusIsError(true);

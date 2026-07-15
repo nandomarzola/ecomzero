@@ -12,6 +12,7 @@ import CartItemRow from "@/components/CartItemRow";
 import CategoryStrip from "@/components/CategoryStrip";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import TrustBadges from "@/components/TrustBadges";
+import { auth } from "@/lib/auth";
 import { getCart } from "@/lib/services/cartService";
 import {
   getAllProducts,
@@ -55,7 +56,7 @@ const trustBadges = [
 ];
 
 export default async function CartPage() {
-  const sessionId = await getCartSessionId();
+  const [sessionId, session] = await Promise.all([getCartSessionId(), auth()]);
   const cart = await getCart(sessionId);
   const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const otherProducts = getOtherProducts(
@@ -135,6 +136,7 @@ export default async function CartPage() {
               <CartCheckoutPanel
                 subtotal={cart.total}
                 productCount={productCount}
+                isLoggedIn={Boolean(session?.user?.id)}
               />
             </div>
 

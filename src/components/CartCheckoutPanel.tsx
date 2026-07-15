@@ -37,6 +37,7 @@ type QuoteResponse = {
 type CartCheckoutPanelProps = {
   subtotal: number;
   productCount: number;
+  isLoggedIn: boolean;
 };
 
 const formatPrice = (price: number) =>
@@ -50,6 +51,7 @@ const onlyDigits = (value: string) => value.replace(/\D/g, "");
 export default function CartCheckoutPanel({
   subtotal,
   productCount,
+  isLoggedIn,
 }: CartCheckoutPanelProps) {
   const router = useRouter();
   const storedRaw = useSyncExternalStore(
@@ -197,7 +199,7 @@ export default function CartCheckoutPanel({
       }, 350);
       return;
     }
-    router.push("/checkout");
+    router.push(isLoggedIn ? "/checkout" : "/checkout/identificacao");
   };
 
   return (
