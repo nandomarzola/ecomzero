@@ -39,15 +39,17 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { variantId, cep } = parsed.data;
-  const cacheKey = `${variantId}:${cep}`;
+  const { variantId, cep, quantidade } = parsed.data;
+  // Cache inclui a quantidade: o resultado depende dela (peso × quantidade),
+  // então quantidades diferentes NÃO podem colidir na mesma chave.
+  const cacheKey = `${variantId}:${cep}:${quantidade}`;
   const cached = await getCachedShippingQuote(cacheKey);
   if (cached) {
     return NextResponse.json({ options: cached });
   }
 
   try {
-    const options = await calculateShipping(variantId, cep);
+    const options = await calculateShipping(variantId, cep, quantidade);
     await setCachedShippingQuote(cacheKey, options);
     return NextResponse.json({ options });
   } catch (error) {

@@ -210,6 +210,7 @@ async function requestShippingQuote(
 export async function calculateShipping(
   variantId: string,
   cepDestino: string,
+  quantidade = 1,
 ): Promise<ShippingOption[]> {
   const variant = await prisma.productVariant.findUnique({
     where: { id: variantId },
@@ -219,11 +220,14 @@ export async function calculateShipping(
     throw new ShippingServiceError("Variante não encontrada", 422);
   }
 
+  // Mesma simplificação do carrinho: peso = pesoKg × quantidade; as dimensões
+  // seguem as da embalagem única (aproximação de empacotamento do MVP, sem
+  // bin-packing). O arredondamento evita ruído de ponto flutuante.
   return requestShippingQuote(cepDestino, {
     height: variant.alturaCm,
     width: variant.larguraCm,
     length: variant.comprimentoCm,
-    weight: variant.pesoKg,
+    weight: Math.round(variant.pesoKg * quantidade * 1000) / 1000,
   });
 }
 

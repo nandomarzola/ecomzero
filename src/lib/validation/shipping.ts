@@ -12,6 +12,9 @@ export const cepSchema = z
 export const shippingQuoteSchema = z.object({
   variantId: z.string().uuid("variantId inválido"),
   cep: cepSchema,
+  // Quantidade selecionada na página. Opcional (default 1) — o peso enviado à
+  // API é pesoKg × quantidade, então quantidades diferentes cotam diferente.
+  quantidade: z.coerce.number().int().min(1, "Quantidade mínima é 1").default(1),
 });
 
 export const cartShippingQuoteSchema = z

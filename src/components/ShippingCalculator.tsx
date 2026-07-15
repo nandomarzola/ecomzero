@@ -5,6 +5,7 @@ import { Truck } from "lucide-react";
 
 type ShippingCalculatorProps = {
   variantId: string;
+  quantity: number;
 };
 
 type ShippingOption = {
@@ -17,9 +18,10 @@ type ShippingOption = {
 const formatPrice = (price: number) =>
   price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Chave prop (variantId) no componente pai reseta esse estado ao trocar de
-// variante, em vez de um useEffect ouvindo a mudança.
-export default function ShippingCalculator({ variantId }: ShippingCalculatorProps) {
+// A `key` no componente pai (variantId + quantidade) reseta esse estado ao
+// trocar de variante OU de quantidade — invalidando o frete já calculado e
+// exigindo novo cálculo, em vez de um useEffect ouvindo a mudança.
+export default function ShippingCalculator({ variantId, quantity }: ShippingCalculatorProps) {
   const [cep, setCep] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [options, setOptions] = useState<ShippingOption[]>([]);
@@ -32,7 +34,7 @@ export default function ShippingCalculator({ variantId }: ShippingCalculatorProp
       const response = await fetch("/api/shipping/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variantId, cep }),
+        body: JSON.stringify({ variantId, cep, quantidade: quantity }),
       });
       const data = await response.json();
 

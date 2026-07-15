@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import CategoryStrip from "@/components/CategoryStrip";
 import ProductGallery from "@/components/ProductGallery";
+import ProductMarketplaces from "@/components/ProductMarketplaces";
 import ProductPurchase from "@/components/ProductPurchase";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import TrustBadges from "@/components/TrustBadges";
@@ -225,9 +226,18 @@ export default async function ProductPage({ params }: ProductPageProps) {
               })}
             </div>
 
-            <ProductPurchase variants={product.variantes} marketplaceLinks={{ shopee: product.linkShopee, mercadoLivre: product.linkMercadoLivre, tiktokShop: product.linkTiktokShop, shein: product.linkShein }} />
+            <ProductPurchase variants={product.variantes} />
           </div>
         </section>
+
+        <ProductMarketplaces
+          links={{
+            shopee: product.linkShopee,
+            mercadoLivre: product.linkMercadoLivre,
+            tiktokShop: product.linkTiktokShop,
+            shein: product.linkShein,
+          }}
+        />
 
         <TrustBadges
           items={trustBadges}
