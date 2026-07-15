@@ -7,23 +7,47 @@ const marketplaceUrl = z.preprocess(
   z.string().url("URL inválida").optional(),
 );
 
-const precoField = z.coerce.number().nonnegative("Preço não pode ser negativo");
-const dimField = z.coerce.number().positive("Precisa ser maior que zero");
+function parseLocalizedNumber(value: unknown) {
+  if (typeof value !== "string") return value;
+
+  const compact = value.trim().replace(/\s+/g, "");
+  if (!compact) return undefined;
+
+  const commaIndex = compact.lastIndexOf(",");
+  const dotIndex = compact.lastIndexOf(".");
+  if (commaIndex >= 0 && dotIndex >= 0) {
+    return commaIndex > dotIndex
+      ? Number(compact.replace(/\./g, "").replace(",", "."))
+      : Number(compact.replace(/,/g, ""));
+  }
+
+  return Number(compact.replace(",", "."));
+}
+
+const precoField = (label: string) => z.preprocess(
+  parseLocalizedNumber,
+  z.number({ error: `${label}: informe um valor numérico válido` }).nonnegative(`${label} não pode ser negativo`),
+);
+
+const dimField = (label: string) => z.preprocess(
+  parseLocalizedNumber,
+  z.number({ error: `${label}: informe um valor numérico válido` }).positive(`${label} deve ser maior que zero`),
+);
 
 export const variantSchema = z.object({
   // Presente ao editar uma variante existente; ausente ao criar uma nova.
   id: z.string().uuid().optional(),
   label: z.string().trim().min(1, "Informe o rótulo da variante"),
-  precoDe: precoField,
-  precoPor: precoField,
+  precoDe: precoField("Preço de"),
+  precoPor: precoField("Preço por"),
   skuInterno: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
     z.string().trim().optional(),
   ),
-  pesoKg: dimField,
-  comprimentoCm: dimField,
-  larguraCm: dimField,
-  alturaCm: dimField,
+  pesoKg: dimField("Peso"),
+  comprimentoCm: dimField("Comprimento"),
+  larguraCm: dimField("Largura"),
+  alturaCm: dimField("Altura"),
 });
 
 export const productInputSchema = z.object({

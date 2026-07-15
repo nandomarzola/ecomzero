@@ -79,6 +79,8 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
               <input
                 className={inputClass}
                 inputMode="decimal"
+                placeholder="0,00"
+                required
                 value={row.precoDe}
                 onChange={(e) => update(index, { precoDe: e.target.value })}
               />
@@ -88,6 +90,8 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
               <input
                 className={inputClass}
                 inputMode="decimal"
+                placeholder="0,00"
+                required
                 value={row.precoPor}
                 onChange={(e) => update(index, { precoPor: e.target.value })}
               />
@@ -105,6 +109,7 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
               <input
                 className={inputClass}
                 inputMode="decimal"
+                required
                 value={row.pesoKg}
                 onChange={(e) => update(index, { pesoKg: e.target.value })}
               />
@@ -114,6 +119,7 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
               <input
                 className={inputClass}
                 inputMode="decimal"
+                required
                 value={row.comprimentoCm}
                 onChange={(e) => update(index, { comprimentoCm: e.target.value })}
               />
@@ -123,6 +129,7 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
               <input
                 className={inputClass}
                 inputMode="decimal"
+                required
                 value={row.larguraCm}
                 onChange={(e) => update(index, { larguraCm: e.target.value })}
               />
@@ -132,6 +139,7 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
               <input
                 className={inputClass}
                 inputMode="decimal"
+                required
                 value={row.alturaCm}
                 onChange={(e) => update(index, { alturaCm: e.target.value })}
               />
