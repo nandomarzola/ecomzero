@@ -1,11 +1,16 @@
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
 import {
+  createMercadoPagoPayment,
   createPaymentPreference,
   getMercadoPagoPayment,
+  type MercadoPagoPaymentSnapshot,
   type PaymentOrderSnapshot,
 } from "@/lib/services/mercadoPagoService";
-import { paymentOrderIdSchema } from "@/lib/validation/payment";
+import {
+  paymentOrderIdSchema,
+  type BrickPaymentInput,
+} from "@/lib/validation/payment";
 
 type OrderPaymentErrorCode =
   | "ORDER_NOT_FOUND"
@@ -43,7 +48,332 @@ export type ReconciledPayment = {
   orderStatus: "aguardando_pagamento" | "pago" | "cancelado";
   paymentStatus: string;
   changed: boolean;
+  payment: MercadoPagoPaymentSnapshot;
 };
+
+export type OrderPaymentPageData = {
+  orderId: string;
+  status: "aguardando_pagamento" | "pago" | "cancelado";
+  subtotal: number;
+  shipping: number;
+  total: number;
+  customer: {
+    name: string;
+    email: string;
+    document: string;
+  };
+  items: Array<{
+    id: string;
+    name: string;
+    image: string;
+    variant: string;
+    quantity: number;
+  }>;
+};
+
+export type OrderBrickPaymentResult = {
+  orderId: string;
+  orderStatus: "aguardando_pagamento" | "pago" | "cancelado";
+  payment: null | {
+    id: string;
+    status: string;
+    statusDetail: string | null;
+    paymentMethodId: string | null;
+    paymentTypeId: string | null;
+    qrCode: string | null;
+    qrCodeBase64: string | null;
+    ticketUrl: string | null;
+    expiresAt: Date | null;
+    threeDsExternalResourceUrl: string | null;
+    threeDsCreq: string | null;
+  };
+};
+
+const assertOrderAccess = (
+  order: { userId: string | null },
+  access: { userId: string | null; hasGuestAccess: boolean },
+) => {
+  const belongsToUser = Boolean(
+    access.userId && order.userId === access.userId,
+  );
+  if (!belongsToUser && !access.hasGuestAccess) {
+    throw new OrderPaymentServiceError(
+      "Você não tem acesso a este pedido",
+      "FORBIDDEN",
+      403,
+    );
+  }
+};
+
+const toPaymentResult = (
+  orderId: string,
+  orderStatus: OrderBrickPaymentResult["orderStatus"],
+  payment: Awaited<ReturnType<typeof getMercadoPagoPayment>> | null,
+): OrderBrickPaymentResult => ({
+  orderId,
+  orderStatus,
+  payment: payment
+    ? {
+        id: payment.id,
+        status: payment.status,
+        statusDetail: payment.statusDetail,
+        paymentMethodId: payment.paymentMethodId,
+        paymentTypeId: payment.paymentTypeId,
+        qrCode: payment.qrCode,
+        qrCodeBase64: payment.qrCodeBase64,
+        ticketUrl: payment.ticketUrl,
+        expiresAt: payment.expiresAt,
+        threeDsExternalResourceUrl: payment.threeDsExternalResourceUrl,
+        threeDsCreq: payment.threeDsCreq,
+      }
+    : null,
+});
+
+const buildPaymentSnapshot = (order: {
+  id: string;
+  total: { toNumber(): number };
+  nomeCliente: string | null;
+  emailCliente: string | null;
+  telefoneCliente: string | null;
+  cpfCnpj: string | null;
+  cepDestino: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  uf: string | null;
+  valorFrete: { toNumber(): number };
+  items: Array<{
+    id: string;
+    variantId: string;
+    quantidade: number;
+    precoUnitario: { toNumber(): number };
+    variant: {
+      label: string;
+      product: { nome: string; imagem: string };
+    };
+  }>;
+}): PaymentOrderSnapshot => {
+  const requiredFields = [
+    order.nomeCliente,
+    order.emailCliente,
+    order.telefoneCliente,
+    order.cpfCnpj,
+    order.cepDestino,
+    order.logradouro,
+    order.numero,
+    order.bairro,
+    order.cidade,
+    order.uf,
+  ];
+  if (requiredFields.some((field) => !field) || order.items.length === 0) {
+    throw new OrderPaymentServiceError(
+      "Pedido incompleto para pagamento",
+      "INVALID_STATUS",
+      409,
+    );
+  }
+
+  return {
+    id: order.id,
+    total: order.total.toNumber(),
+    nomeCliente: order.nomeCliente!,
+    emailCliente: order.emailCliente!,
+    telefoneCliente: order.telefoneCliente!,
+    cpfCnpj: order.cpfCnpj!,
+    cepDestino: order.cepDestino!,
+    logradouro: order.logradouro!,
+    numero: order.numero!,
+    complemento: order.complemento,
+    bairro: order.bairro!,
+    cidade: order.cidade!,
+    uf: order.uf!,
+    valorFrete: order.valorFrete.toNumber(),
+    items: order.items.map((item) => ({
+      id: item.id,
+      variantId: item.variantId,
+      productName: item.variant.product.nome,
+      productImage: item.variant.product.imagem,
+      variantLabel: item.variant.label,
+      quantidade: item.quantidade,
+      precoUnitario: item.precoUnitario.toNumber(),
+    })),
+  };
+};
+
+export async function getOrderPaymentPageData(
+  orderId: string,
+  access: { userId: string | null; hasGuestAccess: boolean },
+): Promise<OrderPaymentPageData> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: {
+        include: {
+          variant: { include: { product: true } },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new OrderPaymentServiceError(
+      "Pedido não encontrado",
+      "ORDER_NOT_FOUND",
+      404,
+    );
+  }
+  assertOrderAccess(order, access);
+
+  if (order.status === "draft") {
+    throw new OrderPaymentServiceError(
+      "Este pedido ainda não foi finalizado",
+      "INVALID_STATUS",
+      409,
+    );
+  }
+
+  const snapshot = buildPaymentSnapshot(order);
+
+  return {
+    orderId: order.id,
+    status: order.status,
+    subtotal: order.subtotal.toNumber(),
+    shipping: order.valorFrete.toNumber(),
+    total: order.total.toNumber(),
+    customer: {
+      name: snapshot.nomeCliente,
+      email: snapshot.emailCliente,
+      document: snapshot.cpfCnpj,
+    },
+    items: snapshot.items.map((item) => ({
+      id: item.id,
+      name: item.productName,
+      image: item.productImage,
+      variant: item.variantLabel,
+      quantity: item.quantidade,
+    })),
+  };
+}
+
+export async function getOrderBrickPayment(
+  orderId: string,
+  access: { userId: string | null; hasGuestAccess: boolean },
+): Promise<OrderBrickPaymentResult> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      mercadoPagoPaymentId: true,
+    },
+  });
+
+  if (!order) {
+    throw new OrderPaymentServiceError(
+      "Pedido não encontrado",
+      "ORDER_NOT_FOUND",
+      404,
+    );
+  }
+  assertOrderAccess(order, access);
+
+  if (order.status === "draft") {
+    throw new OrderPaymentServiceError(
+      "Este pedido ainda não foi finalizado",
+      "INVALID_STATUS",
+      409,
+    );
+  }
+
+  if (!order.mercadoPagoPaymentId) {
+    return toPaymentResult(order.id, order.status, null);
+  }
+
+  const reconciliation = await reconcileMercadoPagoPayment(
+    order.mercadoPagoPaymentId,
+  );
+
+  return toPaymentResult(
+    order.id,
+    reconciliation.orderStatus,
+    reconciliation.payment,
+  );
+}
+
+export async function processOrderBrickPayment(
+  orderId: string,
+  access: { userId: string | null; hasGuestAccess: boolean },
+  input: BrickPaymentInput,
+  siteUrl: string,
+): Promise<OrderBrickPaymentResult> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: {
+        include: {
+          variant: { include: { product: true } },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new OrderPaymentServiceError(
+      "Pedido não encontrado",
+      "ORDER_NOT_FOUND",
+      404,
+    );
+  }
+  assertOrderAccess(order, access);
+
+  if (order.status === "pago") {
+    const payment = order.mercadoPagoPaymentId
+      ? await getMercadoPagoPayment(order.mercadoPagoPaymentId)
+      : null;
+    return toPaymentResult(order.id, "pago", payment);
+  }
+
+  if (order.status !== "aguardando_pagamento") {
+    throw new OrderPaymentServiceError(
+      "Este pedido não está disponível para pagamento",
+      "INVALID_STATUS",
+      409,
+    );
+  }
+
+  if (order.mercadoPagoPaymentId) {
+    const currentPayment = await getMercadoPagoPayment(
+      order.mercadoPagoPaymentId,
+    );
+    const reusableStatuses = new Set([
+      "approved",
+      "authorized",
+      "in_process",
+      "pending",
+    ]);
+
+    if (reusableStatuses.has(currentPayment.status)) {
+      const reconciliation = await reconcilePayment(currentPayment);
+      return toPaymentResult(
+        order.id,
+        reconciliation.orderStatus,
+        currentPayment,
+      );
+    }
+  }
+
+  const payment = await createMercadoPagoPayment(
+    buildPaymentSnapshot(order),
+    input,
+    siteUrl,
+  );
+  const reconciliation = await reconcilePayment(payment);
+
+  return toPaymentResult(order.id, reconciliation.orderStatus, payment);
+}
 
 export async function getOrCreateOrderPaymentPreference(
   orderId: string,
@@ -132,6 +462,7 @@ export async function getOrCreateOrderPaymentPreference(
     logradouro: order.logradouro!,
     numero: order.numero!,
     complemento: order.complemento,
+    bairro: order.bairro!,
     cidade: order.cidade!,
     uf: order.uf!,
     valorFrete: order.valorFrete.toNumber(),
@@ -166,10 +497,9 @@ export async function getOrCreateOrderPaymentPreference(
   return { ...preference, reused: false };
 }
 
-export async function reconcileMercadoPagoPayment(
-  paymentId: string,
+async function reconcilePayment(
+  payment: MercadoPagoPaymentSnapshot,
 ): Promise<ReconciledPayment> {
-  const payment = await getMercadoPagoPayment(paymentId);
   const parsedOrderId = paymentOrderIdSchema.safeParse(
     payment.externalReference,
   );
@@ -246,6 +576,7 @@ export async function reconcileMercadoPagoPayment(
       orderStatus: order.status,
       paymentStatus: payment.status,
       changed: false,
+      payment,
     };
   }
 
@@ -291,7 +622,14 @@ export async function reconcileMercadoPagoPayment(
     orderStatus: "pago",
     paymentStatus: payment.status,
     changed: updated.count === 1,
+    payment,
   };
+}
+
+export async function reconcileMercadoPagoPayment(
+  paymentId: string,
+): Promise<ReconciledPayment> {
+  return reconcilePayment(await getMercadoPagoPayment(paymentId));
 }
 
 export async function getOrderPaymentStatus(

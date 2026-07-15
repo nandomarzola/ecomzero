@@ -382,35 +382,13 @@ export default function CheckoutForm({
     setCepLookupMessage("");
   };
 
-  const createPaymentPreference = async (orderId: string) => {
-    const response = await fetch(`/api/orders/${orderId}/payment-preference`, {
-      method: "POST",
-    });
-    const data = (await response.json().catch(() => null)) as
-      | { initPoint?: string; error?: string }
-      | null;
-    if (!response.ok || !data?.initPoint) {
-      throw new Error(
-        data?.error ?? "Não foi possível abrir o pagamento. Tente novamente.",
-      );
-    }
-    window.location.assign(data.initPoint);
-  };
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatusMessage("");
 
     if (createdOrderId) {
       setIsSubmitting(true);
-      try {
-        await createPaymentPreference(createdOrderId);
-      } catch (error) {
-        setStatusMessage(
-          error instanceof Error ? error.message : "Não foi possível iniciar o pagamento.",
-        );
-        setIsSubmitting(false);
-      }
+      router.push(`/checkout/pagamento/${createdOrderId}`);
       return;
     }
 
@@ -453,7 +431,7 @@ export default function CheckoutForm({
       }
 
       setCreatedOrderId(orderData.orderId);
-      await createPaymentPreference(orderData.orderId);
+      router.push(`/checkout/pagamento/${orderData.orderId}`);
     } catch (error) {
       setStatusMessage(
         error instanceof Error ? error.message : "Não foi possível finalizar o pedido.",
@@ -496,7 +474,7 @@ export default function CheckoutForm({
           Finalize sua compra
         </h1>
         <p className="mt-2 text-sm text-white/50">
-          Confira seus dados antes de seguir para o ambiente do Mercado Pago.
+          Confira seus dados antes de escolher a forma de pagamento.
         </p>
       </header>
 
@@ -662,20 +640,20 @@ export default function CheckoutForm({
               {isSubmitting ? (
                 <>
                   <LoaderCircle className="h-4 w-4 animate-spin" />
-                  Abrindo pagamento
+                  Preparando pagamento
                 </>
               ) : createdOrderId ? (
-                "Tentar pagamento novamente"
+                "Continuar para pagamento"
               ) : (
                 <>
-                  Ir para pagamento
+                  Continuar para pagamento
                   <LockKeyhole className="h-4 w-4" />
                 </>
               )}
             </button>
             <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[10px] text-white/38">
               <ShieldCheck className="h-3.5 w-3.5 text-[#A9EC17]" />
-              Pagamento processado no ambiente seguro do Mercado Pago.
+              Você finaliza o pagamento sem sair da EcomZero.
             </p>
           </section>
           <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5">

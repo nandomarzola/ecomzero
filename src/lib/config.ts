@@ -29,6 +29,11 @@ const envSchema = z.object({
       typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().min(1).optional(),
   ),
+  NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().min(1).optional(),
+  ),
   MERCADOPAGO_WEBHOOK_SECRET: z.preprocess(
     (value) =>
       typeof value === "string" && value.trim() === "" ? undefined : value,
@@ -61,6 +66,7 @@ export const config = {
   },
   mercadoPago: {
     accessToken: parsed.data.MERCADOPAGO_ACCESS_TOKEN,
+    publicKey: parsed.data.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
     webhookSecret: parsed.data.MERCADOPAGO_WEBHOOK_SECRET,
     environment:
       parsed.data.MERCADOPAGO_ENVIRONMENT ??
@@ -70,6 +76,11 @@ export const config = {
 
 export const isMercadoPagoConfigurado = Boolean(
   parsed.data.MERCADOPAGO_ACCESS_TOKEN,
+);
+
+export const isMercadoPagoBrickConfigurado = Boolean(
+  parsed.data.MERCADOPAGO_ACCESS_TOKEN &&
+    parsed.data.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY,
 );
 
 // true quando o frete aponta para a API de produção do Melhor Envio (não sandbox).
