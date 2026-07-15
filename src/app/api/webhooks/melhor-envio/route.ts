@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
   }
   const data = body?.data;
   if (!data || typeof data.id !== "string") {
-    return NextResponse.json({ error: "Notificação inválida" }, { status: 400 });
+    return NextResponse.json({ received: true, ignored: true });
   }
 
   const tagOrderId = Array.isArray(data.tags)
