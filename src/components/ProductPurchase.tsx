@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
 import { useCartCount } from "@/components/CartProvider";
+import ShippingCalculator from "@/components/ShippingCalculator";
 import { addToCartAction } from "@/lib/actions/cartActions";
 import type { ProductVariant } from "@/types/product";
 
@@ -159,6 +160,10 @@ export default function ProductPurchase({
                 )}
               </p>
             </div>
+          </div>
+
+          <div className="mt-3 rounded-lg border border-white/[0.08] bg-[#111111] p-4">
+            <ShippingCalculator variantId={selectedVariant.id} quantity={quantity} />
           </div>
         </div>
         <div className="flex flex-col gap-2 border-t border-white/[0.07] px-3 pb-3 sm:px-4 sm:pb-4">

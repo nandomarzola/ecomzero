@@ -7,11 +7,8 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   Heart,
-  RefreshCw,
-  ShieldCheck,
   ShoppingCart,
   Star,
-  Truck,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -212,29 +209,6 @@ export default function ProductCard({ product }: ProductCardProps) {
             </button>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 divide-x divide-white/10 border-t border-white/8 pt-4">
-            <div className="flex min-w-0 items-start gap-2 pr-2">
-              <ShieldCheck className="h-6 w-6 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold text-white sm:text-[10px]">Compra segura</p>
-                <p className="mt-0.5 hidden text-[8px] leading-3 text-white/45 sm:block">Dados protegidos</p>
-              </div>
-            </div>
-            <div className="flex min-w-0 items-start gap-2 px-2">
-              <Truck className="h-6 w-6 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold text-white sm:text-[10px]">Envio rápido</p>
-                <p className="mt-0.5 hidden text-[8px] leading-3 text-white/45 sm:block">Para todo o Brasil</p>
-              </div>
-            </div>
-            <div className="flex min-w-0 items-start gap-2 pl-2">
-              <RefreshCw className="h-6 w-6 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
-              <div className="min-w-0">
-                <p className="text-[9px] font-semibold text-white sm:text-[10px]">Troca garantida</p>
-                <p className="mt-0.5 hidden text-[8px] leading-3 text-white/45 sm:block">Até 7 dias</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </article>

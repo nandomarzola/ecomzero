@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight, Info, LoaderCircle, Truck } from "lucide-react";
 import PaymentBadges from "@/components/PaymentBadges";
@@ -13,7 +13,12 @@ import {
   subscribeCheckoutShippingSelection,
   type CheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
-import { formatCep, getUserCepSnapshot, subscribeUserCep } from "@/lib/client/cepStorage";
+import {
+  formatCep,
+  getUserCepSnapshot,
+  isValidCep,
+  subscribeUserCep,
+} from "@/lib/client/cepStorage";
 
 type ShippingOption = {
   id: string;
@@ -60,11 +65,13 @@ export default function CartCheckoutPanel({
   const [quote, setQuote] = useState<QuoteResponse | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
+  const [autoLoading, setAutoLoading] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  // CEP salvo pelo visitante no header/modal — pré-preenche o campo (sem
-  // disparar cálculo sozinho), com prioridade menor que o que o cliente
-  // digitou aqui ou a cotação já selecionada.
+  // CEP salvo pelo visitante no header/modal — pré-preenche o campo e, se
+  // válido, dispara a cotação SOZINHO (ao abrir o carrinho e quando o
+  // conteúdo/peso muda), com prioridade menor que o que o cliente digitou
+  // aqui ou a cotação já selecionada.
   const savedUserCep = useSyncExternalStore(subscribeUserCep, getUserCepSnapshot, () => null);
 
   const storedSelectionIsValid = Boolean(
@@ -93,11 +100,16 @@ export default function CartCheckoutPanel({
   const total = subtotal + shippingPrice;
   const canCheckout = Boolean(selection && !selectionExpired);
 
-  const calculateShipping = async () => {
-    setStatus("loading");
+  const calculateShipping = async (mode: "manual" | "auto" = "manual") => {
+    if (mode === "manual") {
+      setStatus("loading");
+      setQuote(null);
+      clearCheckoutShippingSelection();
+    } else {
+      // Auto: mantém a lista anterior visível (esmaecida) em vez de limpar.
+      setAutoLoading(true);
+    }
     setErrorMessage("");
-    setQuote(null);
-    clearCheckoutShippingSelection();
 
     try {
       const response = await fetch("/api/cart/shipping-quote", {
@@ -119,8 +131,35 @@ export default function CartCheckoutPanel({
     } catch {
       setErrorMessage("Não foi possível calcular o frete. Tente novamente.");
       setStatus("error");
+    } finally {
+      setAutoLoading(false);
     }
   };
+
+  const hasValidSelection = Boolean(selection && !isCheckoutShippingExpired(selection, now));
+
+  // Auto-cotação: dispara ao abrir o carrinho com CEP preenchido (salvo no
+  // header/modal) e re-dispara quando o conteúdo muda (adicionar/remover item,
+  // mudar quantidade → subtotal/productCount mudam e invalidam a seleção).
+  // Debounce agrupa mudanças em sequência rápida numa chamada só. Nunca roda
+  // por cima de uma seleção válida nem enquanto o cliente digita o CEP —
+  // digitação manual continua no botão "Calcular".
+  const autoQuoteRef = useRef<() => void>(() => {});
+  // Sem array de deps de propósito: mantém a closure sempre fresca (padrão
+  // "latest ref"); escrever ref dentro de efeito, nunca no render.
+  useEffect(() => {
+    autoQuoteRef.current = () => {
+      if (status === "loading" || autoLoading) return;
+      if (!isValidCep(cep)) return;
+      void calculateShipping("auto");
+    };
+  });
+
+  useEffect(() => {
+    if (productCount === 0 || hasValidSelection) return;
+    const timer = window.setTimeout(() => autoQuoteRef.current(), 600);
+    return () => window.clearTimeout(timer);
+  }, [productCount, subtotal, savedUserCep, hasValidSelection]);
 
   const selectShipping = (option: ShippingOption) => {
     if (!quote) return;
@@ -242,7 +281,7 @@ export default function CartCheckoutPanel({
             />
             <button
               type="submit"
-              disabled={status === "loading" || onlyDigits(cep).length !== 8}
+              disabled={status === "loading" || autoLoading || onlyDigits(cep).length !== 8}
               className="h-11 shrink-0 rounded-md bg-[#A9EC17] px-4 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {status === "loading" ? (
@@ -252,6 +291,13 @@ export default function CartCheckoutPanel({
               )}
             </button>
           </form>
+
+          {autoLoading && !quote && (
+            <p className="mt-3 flex items-center gap-1.5 text-[10px] text-white/45">
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[#A9EC17]" />
+              Calculando frete para o seu CEP...
+            </p>
+          )}
 
           {errorMessage && (
             <p role="alert" className="mt-3 flex gap-2 text-[10px] leading-4 text-red-400">
@@ -268,7 +314,9 @@ export default function CartCheckoutPanel({
           )}
 
           {quote && quote.options.length > 0 && (
-            <fieldset className="mt-4 space-y-2">
+            <fieldset
+              className={`mt-4 space-y-2 transition-opacity ${autoLoading ? "pointer-events-none opacity-40" : "opacity-100"}`}
+            >
               <legend className="mb-2 text-[10px] font-semibold uppercase text-white/50">
                 Escolha uma opção
               </legend>
