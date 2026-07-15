@@ -15,23 +15,49 @@ datasource db {
   provider = "postgresql"
 }
 
+enum ProductKind {
+  simples
+  variacoes
+}
+
+enum CouponDiscountType {
+  percentual
+  valor_fixo
+}
+
+enum BannerPosition {
+  hero_slide
+  home_middle
+  home_bottom
+}
+
+enum OrderStatus {
+  draft
+  aguardando_pagamento
+  pago
+  cancelado
+}
+
 // Espelho de ../../prisma/schema.prisma (raiz). Mantido em sincronia manual.
 model Product {
-  id               String   @id @default(uuid())
-  slug             String   @unique
+  id               String      @id @default(uuid())
+  slug             String      @unique
   categoria        String
   nome             String
   subtitulo        String
   descricao        String
   imagem           String
   imagens          String[]
-  videos           String[] @default([])
+  videos           String[]    @default([])
   caracteristicas  String[]
   linkShopee       String?
   linkMercadoLivre String?
   linkTiktokShop   String?
   linkShein        String?
-  ativo            Boolean  @default(true)
+  ativo            Boolean     @default(true)
+  tipo             ProductKind @default(simples)
+  categoryId       String?
+  category         Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   avaliacaoMedia  Float?
   totalAvaliacoes Int    @default(0)
@@ -43,6 +69,25 @@ model Product {
   variantes ProductVariant[]
 
   @@index([categoria])
+  @@index([categoryId])
+}
+
+model Category {
+  id        String     @id @default(uuid())
+  nome      String
+  slug      String     @unique
+  descricao String?
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[] @relation("CategoryHierarchy")
+  ativo     Boolean    @default(true)
+  ordem     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  produtos Product[]
+
+  @@index([parentId, ordem])
 }
 
 model ProductVariant {
@@ -70,4 +115,94 @@ model AdminUser {
   senhaHash String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model User {
+  id              String    @id @default(uuid())
+  name            String?   @map("nome")
+  email           String    @unique
+  emailVerified   DateTime?
+  image           String?
+  telefone        String?
+  aceitaMarketing Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  status          OrderStatus @default(draft)
+  userId          String?
+  nomeCliente     String?
+  emailCliente    String?
+  telefoneCliente String?
+  total           Decimal     @default(0) @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now())
+
+  @@index([userId])
+}
+
+model Coupon {
+  id                  String             @id @default(uuid())
+  codigo              String             @unique
+  descricao           String?
+  tipo                CouponDiscountType
+  valor               Decimal            @db.Decimal(10, 2)
+  valorMinimoPedido   Decimal?           @db.Decimal(10, 2)
+  descontoMaximo      Decimal?           @db.Decimal(10, 2)
+  limiteUsoTotal      Int?
+  limiteUsoPorCliente Int                @default(1)
+  usos                Int                @default(0)
+  inicioEm            DateTime?
+  expiraEm            DateTime?
+  ativo               Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  @@index([ativo, inicioEm, expiraEm])
+}
+
+model Banner {
+  id        String         @id @default(uuid())
+  nome      String
+  imagemUrl String
+  altText   String
+  linkUrl   String?
+  posicao   BannerPosition
+  largura   Int
+  altura    Int
+  ordem     Int            @default(0)
+  ativo     Boolean        @default(true)
+  inicioEm  DateTime?
+  expiraEm  DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([posicao, ativo, ordem])
+}
+
+model StoreSettings {
+  id                String   @id @default("singleton")
+  nomeLoja          String   @default("EcomZero")
+  descricaoFooter   String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
+  mensagemFooter    String   @default("Produtos úteis para facilitar o seu dia a dia.")
+  barraAnuncioAtiva Boolean  @default(false)
+  barraAnuncioTexto String?
+  barraAnuncioLink  String?
+  emailSuporte      String?
+  telefoneSuporte   String?
+  whatsapp          String?
+  linkShopee        String?
+  linkInstagram     String?
+  linkFacebook      String?
+  linkTiktok        String?
+  updatedAt         DateTime @updatedAt
+}
+
+model MelhorEnvioCredential {
+  id           String   @id @default("singleton")
+  accessToken  String
+  refreshToken String
+  expiraEm     DateTime
+  atualizadoEm DateTime @updatedAt
 }

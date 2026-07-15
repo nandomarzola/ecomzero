@@ -8,6 +8,8 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   // Upload de imagens de produto. Opcional: sem ela, só o upload fica indisponível.
   BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+  MELHOR_ENVIO_BASE_URL: z.string().url().optional(),
+  MELHOR_ENVIO_CEP_ORIGEM: z.string().min(8).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -24,4 +26,6 @@ export const config = {
   authSecret: parsed.data.AUTH_SECRET,
   nodeEnv: parsed.data.NODE_ENV,
   blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,
+  melhorEnvioBaseUrl: parsed.data.MELHOR_ENVIO_BASE_URL,
+  melhorEnvioCepOrigem: parsed.data.MELHOR_ENVIO_CEP_ORIGEM,
 } as const;

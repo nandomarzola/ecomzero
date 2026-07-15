@@ -1,5 +1,8 @@
-import PlaceholderPage from "@/components/PlaceholderPage";
+import BannerManager from "@/components/banners/BannerManager";
+import { listBanners } from "@/lib/services/bannerAdminService";
 
-export default function BannersPage() {
-  return <PlaceholderPage title="Banners" />;
+export const dynamic = "force-dynamic";
+
+export default async function BannersPage() {
+  return <BannerManager banners={await listBanners()} />;
 }

@@ -1,5 +1,8 @@
-import PlaceholderPage from "@/components/PlaceholderPage";
+import CouponManager from "@/components/cupons/CouponManager";
+import { listCoupons } from "@/lib/services/couponAdminService";
 
-export default function CuponsPage() {
-  return <PlaceholderPage title="Cupons" />;
+export const dynamic = "force-dynamic";
+
+export default async function CuponsPage() {
+  return <CouponManager coupons={await listCoupons()} />;
 }

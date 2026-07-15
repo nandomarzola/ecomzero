@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProductById } from "@/lib/services/productAdminService";
 import ProductForm, { type ProductFormInitial } from "@/components/produtos/ProductForm";
+import { listCategories } from "@/lib/services/categoryAdminService";
 
 export const metadata: Metadata = { title: "Editar produto" };
 export const dynamic = "force-dynamic";
@@ -14,15 +15,18 @@ export default async function EditarProdutoPage({
   const { id } = await params;
   const product = await getProductById(id);
   if (!product) notFound();
+  const categories = await listCategories();
 
   const initial: ProductFormInitial = {
     nome: product.nome,
-    categoria: product.categoria,
+    tipo: product.tipo,
+    categoryId: product.categoryId ?? "",
     subtitulo: product.subtitulo,
     descricao: product.descricao,
     ativo: product.ativo,
     imagem: product.imagem,
     imagens: product.imagens,
+    linkShopee: product.linkShopee ?? "",
     linkMercadoLivre: product.linkMercadoLivre ?? "",
     linkTiktokShop: product.linkTiktokShop ?? "",
     linkShein: product.linkShein ?? "",
@@ -32,7 +36,6 @@ export default async function EditarProdutoPage({
       precoDe: String(v.precoDe),
       precoPor: String(v.precoPor),
       skuInterno: v.skuInterno ?? "",
-      linkShopee: v.linkShopee ?? "",
       pesoKg: String(v.pesoKg),
       comprimentoCm: String(v.comprimentoCm),
       larguraCm: String(v.larguraCm),
@@ -43,7 +46,7 @@ export default async function EditarProdutoPage({
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-display text-lg font-bold text-white">Editar produto</h1>
-      <ProductForm mode="edit" productId={id} initial={initial} />
+      <ProductForm mode="edit" productId={id} initial={initial} categories={categories} />
     </div>
   );
 }

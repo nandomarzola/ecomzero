@@ -9,15 +9,18 @@ import VariantListEditor, {
   type VariantFormRow,
 } from "@/components/produtos/VariantListEditor";
 import { createProductAction, updateProductAction } from "@/lib/actions/product";
+import type { CategoryListItem } from "@/lib/services/categoryAdminService";
 
 export type ProductFormInitial = {
   nome: string;
-  categoria: string;
+  tipo: "simples" | "variacoes";
+  categoryId: string;
   subtitulo: string;
   descricao: string;
   ativo: boolean;
   imagem: string;
   imagens: string[];
+  linkShopee: string;
   linkMercadoLivre: string;
   linkTiktokShop: string;
   linkShein: string;
@@ -25,8 +28,8 @@ export type ProductFormInitial = {
 };
 
 type ProductFormProps =
-  | { mode: "create"; productId?: undefined; initial?: undefined }
-  | { mode: "edit"; productId: string; initial: ProductFormInitial };
+  | { mode: "create"; productId?: undefined; initial?: undefined; categories: CategoryListItem[] }
+  | { mode: "edit"; productId: string; initial: ProductFormInitial; categories: CategoryListItem[] };
 
 const inputClass =
   "rounded-md border border-white/10 bg-[#0a0a0a] px-3 py-2 text-sm text-white outline-none focus:border-[#A9EC17]/40";
@@ -34,16 +37,18 @@ const inputClass =
 function blankInitial(): ProductFormInitial {
   return {
     nome: "",
-    categoria: "",
+    tipo: "simples",
+    categoryId: "",
     subtitulo: "",
     descricao: "",
     ativo: true,
     imagem: "",
     imagens: [],
+    linkShopee: "",
     linkMercadoLivre: "",
     linkTiktokShop: "",
     linkShein: "",
-    variantes: [emptyVariant()],
+    variantes: [{ ...emptyVariant(), label: "Produto único" }],
   };
 }
 
@@ -54,12 +59,14 @@ export default function ProductForm(props: ProductFormProps) {
 
   const start = props.mode === "edit" ? props.initial : blankInitial();
   const [nome, setNome] = useState(start.nome);
-  const [categoria, setCategoria] = useState(start.categoria);
+  const [tipo, setTipo] = useState<"simples" | "variacoes">(start.tipo);
+  const [categoryId, setCategoryId] = useState(start.categoryId);
   const [subtitulo, setSubtitulo] = useState(start.subtitulo);
   const [descricao, setDescricao] = useState(start.descricao);
   const [ativo, setAtivo] = useState(start.ativo);
   const [cover, setCover] = useState<string[]>(start.imagem ? [start.imagem] : []);
   const [galeria, setGaleria] = useState<string[]>(start.imagens);
+  const [linkShopee, setLinkShopee] = useState(start.linkShopee);
   const [linkMercadoLivre, setLinkMercadoLivre] = useState(start.linkMercadoLivre);
   const [linkTiktokShop, setLinkTiktokShop] = useState(start.linkTiktokShop);
   const [linkShein, setLinkShein] = useState(start.linkShein);
@@ -71,22 +78,23 @@ export default function ProductForm(props: ProductFormProps) {
 
     const payload = {
       nome,
-      categoria,
+      tipo,
+      categoryId,
       subtitulo,
       descricao,
       ativo,
       imagem: cover[0] ?? "",
       imagens: galeria,
+      linkShopee,
       linkMercadoLivre,
       linkTiktokShop,
       linkShein,
       variantes: variantes.map((v) => ({
         id: v.id,
-        label: v.label,
+        label: tipo === "simples" ? "Produto único" : v.label,
         precoDe: v.precoDe,
         precoPor: v.precoPor,
         skuInterno: v.skuInterno,
-        linkShopee: v.linkShopee,
         pesoKg: v.pesoKg,
         comprimentoCm: v.comprimentoCm,
         larguraCm: v.larguraCm,
@@ -109,23 +117,43 @@ export default function ProductForm(props: ProductFormProps) {
     });
   }
 
+  function changeKind(next: "simples" | "variacoes") {
+    setTipo(next);
+    if (next === "simples") {
+      setVariantes([{ ...(variantes[0] ?? emptyVariant()), label: "Produto único" }]);
+      return;
+    }
+    const first = { ...(variantes[0] ?? emptyVariant()), label: variantes[0]?.label === "Produto único" ? "" : variantes[0]?.label ?? "" };
+    setVariantes(variantes.length >= 2 ? [first, ...variantes.slice(1)] : [first, emptyVariant()]);
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex max-w-3xl flex-col gap-6">
       <section className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#111111] p-4">
         <h2 className="text-sm font-semibold text-white">Dados básicos</h2>
+        <div className="grid grid-cols-2 gap-2 rounded-lg border border-white/[0.08] bg-[#090909] p-1">
+          <button type="button" onClick={() => changeKind("simples")} className={`rounded-md px-3 py-2 text-xs font-semibold transition ${tipo === "simples" ? "bg-[#A9EC17] text-black" : "text-white/50 hover:text-white"}`}>Produto simples</button>
+          <button type="button" onClick={() => changeKind("variacoes")} className={`rounded-md px-3 py-2 text-xs font-semibold transition ${tipo === "variacoes" ? "bg-[#A9EC17] text-black" : "text-white/50 hover:text-white"}`}>Com variações</button>
+        </div>
         <label className="flex flex-col gap-1 text-xs text-white/60">
           Nome
           <input className={inputClass} value={nome} onChange={(e) => setNome(e.target.value)} required />
         </label>
         <label className="flex flex-col gap-1 text-xs text-white/60">
           Categoria
-          <input
+          <select
             className={inputClass}
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
             required
-          />
+          >
+            <option value="">Selecione uma categoria</option>
+            {props.categories.filter((category) => category.ativo).map((category) => (
+              <option key={category.id} value={category.id}>{`${"— ".repeat(category.depth)}${category.nome}`}</option>
+            ))}
+          </select>
         </label>
+        {props.categories.length === 0 ? <p className="rounded-md border border-amber-400/20 bg-amber-400/5 px-3 py-2 text-xs text-amber-200">Cadastre ao menos uma categoria antes de criar produtos.</p> : null}
         <label className="flex flex-col gap-1 text-xs text-white/60">
           Subtítulo
           <input
@@ -164,6 +192,10 @@ export default function ProductForm(props: ProductFormProps) {
       <section className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#111111] p-4">
         <h2 className="text-sm font-semibold text-white">Links de marketplace</h2>
         <label className="flex flex-col gap-1 text-xs text-white/60">
+          Shopee
+          <input className={inputClass} value={linkShopee} onChange={(e) => setLinkShopee(e.target.value)} placeholder="https://…" />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-white/60">
           Mercado Livre
           <input
             className={inputClass}
@@ -193,8 +225,11 @@ export default function ProductForm(props: ProductFormProps) {
       </section>
 
       <section className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#111111] p-4">
-        <h2 className="text-sm font-semibold text-white">Variantes</h2>
-        <VariantListEditor value={variantes} onChange={setVariantes} />
+        <div>
+          <h2 className="text-sm font-semibold text-white">{tipo === "simples" ? "Dados de venda" : "Variações"}</h2>
+          <p className="mt-1 text-xs text-white/40">{tipo === "simples" ? "Um produto unitário não exibe variação na loja, mas ainda precisa de preço, SKU e dimensões para compra e frete." : "Cada variação possui preço, SKU e pacote próprios."}</p>
+        </div>
+        <VariantListEditor value={variantes} onChange={setVariantes} mode={tipo === "simples" ? "simple" : "variants"} />
       </section>
 
       {error ? (
@@ -206,7 +241,7 @@ export default function ProductForm(props: ProductFormProps) {
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || props.categories.length === 0}
           className="flex items-center gap-2 rounded-md bg-[#B8E82E] px-4 py-2 text-sm font-semibold text-black transition hover:brightness-95 disabled:opacity-60"
         >
           {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}

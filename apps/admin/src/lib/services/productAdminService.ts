@@ -14,6 +14,7 @@ export type ProductListItem = {
   ativo: boolean;
   precoPor: number | null;
   variantesCount: number;
+  tipo: "simples" | "variacoes";
 };
 
 function slugify(value: string): string {
@@ -45,12 +46,33 @@ function variantData(v: ProductInput["variantes"][number]) {
     precoDe: v.precoDe,
     precoPor: v.precoPor,
     skuInterno: v.skuInterno ?? null,
-    linkShopee: v.linkShopee ?? null,
+    linkShopee: null,
     pesoKg: v.pesoKg,
     comprimentoCm: v.comprimentoCm,
     larguraCm: v.larguraCm,
     alturaCm: v.alturaCm,
   };
+}
+
+async function resolveCategory(categoryId: string): Promise<{ id: string; path: string }> {
+  const names: string[] = [];
+  let currentId: string | null = categoryId;
+  const visited = new Set<string>();
+
+  while (currentId) {
+    if (visited.has(currentId)) throw new Error("A categoria selecionada possui uma hierarquia inválida.");
+    visited.add(currentId);
+    const category: { id: string; nome: string; parentId: string | null; ativo: boolean } | null = await prisma.category.findUnique({
+      where: { id: currentId },
+      select: { id: true, nome: true, parentId: true, ativo: true },
+    });
+    if (!category) throw new Error("Categoria não encontrada.");
+    if (!category.ativo) throw new Error("Selecione uma categoria ativa.");
+    names.unshift(category.nome);
+    currentId = category.parentId;
+  }
+
+  return { id: categoryId, path: names.join(" / ") };
 }
 
 export async function listProducts(search?: string): Promise<ProductListItem[]> {
@@ -81,6 +103,7 @@ export async function listProducts(search?: string): Promise<ProductListItem[]> 
     ativo: p.ativo,
     precoPor: p.variantes[0] ? Number(p.variantes[0].precoPor) : null,
     variantesCount: p._count.variantes,
+    tipo: p.tipo,
   }));
 }
 
@@ -97,18 +120,21 @@ export async function getProductById(id: string) {
 
 export async function createProduct(input: ProductInput): Promise<{ id: string }> {
   const slug = await uniqueSlug(input.nome);
+  const category = await resolveCategory(input.categoryId);
   const product = await prisma.product.create({
     data: {
       slug,
+      tipo: input.tipo,
+      categoryId: category.id,
       nome: input.nome,
-      categoria: input.categoria,
+      categoria: category.path,
       subtitulo: input.subtitulo,
       descricao: input.descricao,
       ativo: input.ativo,
       imagem: input.imagem,
       imagens: input.imagens,
       caracteristicas: [],
-      linkShopee: null,
+      linkShopee: input.linkShopee ?? null,
       linkMercadoLivre: input.linkMercadoLivre ?? null,
       linkTiktokShop: input.linkTiktokShop ?? null,
       linkShein: input.linkShein ?? null,
@@ -121,6 +147,7 @@ export async function createProduct(input: ProductInput): Promise<{ id: string }
 
 export async function updateProduct(id: string, input: ProductInput): Promise<{ id: string }> {
   const slug = await uniqueSlug(input.nome, id);
+  const category = await resolveCategory(input.categoryId);
   const keepIds = input.variantes.map((v) => v.id).filter((v): v is string => Boolean(v));
 
   await prisma.$transaction(async (tx) => {
@@ -128,13 +155,16 @@ export async function updateProduct(id: string, input: ProductInput): Promise<{ 
       where: { id },
       data: {
         slug,
+        tipo: input.tipo,
+        categoryId: category.id,
         nome: input.nome,
-        categoria: input.categoria,
+        categoria: category.path,
         subtitulo: input.subtitulo,
         descricao: input.descricao,
         ativo: input.ativo,
         imagem: input.imagem,
         imagens: input.imagens,
+        linkShopee: input.linkShopee ?? null,
         linkMercadoLivre: input.linkMercadoLivre ?? null,
         linkTiktokShop: input.linkTiktokShop ?? null,
         linkShein: input.linkShein ?? null,

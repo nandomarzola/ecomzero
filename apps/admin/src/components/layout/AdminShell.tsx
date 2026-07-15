@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
-export default function AdminShell({ children }: { children: ReactNode }) {
+export default function AdminShell({ children, userLabel }: { children: ReactNode; userLabel: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -25,6 +25,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           collapsed={collapsed}
           onOpenMobileSidebar={() => setMobileOpen(true)}
           onToggleCollapse={() => setCollapsed((value) => !value)}
+          userLabel={userLabel}
         />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>

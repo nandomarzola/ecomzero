@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
-import { uploadProductImage } from "@/lib/blob";
+import { uploadImage } from "@/lib/blob";
 
 // Upload de imagem de produto → Vercel Blob. Protegido por sessão de admin.
 // O ImageUploader (client) chama isto a cada arquivo e guarda a URL retornada.
@@ -17,7 +17,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const url = await uploadProductImage(file);
+    const scope = request.nextUrl.searchParams.get("scope") === "banners" ? "banners" : "produtos";
+    const url = await uploadImage(file, scope);
     return NextResponse.json({ url });
   } catch (error) {
     return NextResponse.json(

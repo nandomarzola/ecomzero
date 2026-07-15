@@ -1,5 +1,8 @@
-import PlaceholderPage from "@/components/PlaceholderPage";
+import SettingsForm from "@/components/configuracoes/SettingsForm";
+import { getStoreSettings } from "@/lib/services/settingsAdminService";
 
-export default function ConfiguracoesPage() {
-  return <PlaceholderPage title="Configurações" />;
+export const dynamic = "force-dynamic";
+
+export default async function ConfiguracoesPage() {
+  return <SettingsForm initial={await getStoreSettings()} />;
 }

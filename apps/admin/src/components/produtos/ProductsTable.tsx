@@ -53,7 +53,7 @@ export default function ProductsTable({
               </td>
               <td className="px-4 py-3 text-white/70">{p.categoria}</td>
               <td className="px-4 py-3 text-white/70">{formatPrice(p.precoPor)}</td>
-              <td className="px-4 py-3 text-white/70">{p.variantesCount}</td>
+              <td className="px-4 py-3 text-white/70">{p.tipo === "simples" ? "Produto simples" : `${p.variantesCount} variações`}</td>
               <td className="px-4 py-3">
                 <ActiveToggle id={p.id} ativo={p.ativo} />
               </td>

@@ -1,0 +1,27 @@
+import { prisma } from "@/lib/db";
+import type { StoreSettingsInput } from "@/lib/validation/settings";
+
+const defaults = {
+  id: "singleton", nomeLoja: "EcomZero", descricaoFooter: "Produtos inteligentes, úteis e de qualidade para transformar sua rotina.",
+  mensagemFooter: "Produtos úteis para facilitar o seu dia a dia.", barraAnuncioAtiva: false,
+};
+
+export async function getStoreSettings() {
+  return prisma.storeSettings.upsert({ where: { id: "singleton" }, create: defaults, update: {} });
+}
+
+export async function updateStoreSettings(input: StoreSettingsInput) {
+  const data = {
+    ...input,
+    barraAnuncioTexto: input.barraAnuncioTexto ?? null,
+    barraAnuncioLink: input.barraAnuncioLink ?? null,
+    emailSuporte: input.emailSuporte ?? null,
+    telefoneSuporte: input.telefoneSuporte ?? null,
+    whatsapp: input.whatsapp ?? null,
+    linkShopee: input.linkShopee ?? null,
+    linkInstagram: input.linkInstagram ?? null,
+    linkFacebook: input.linkFacebook ?? null,
+    linkTiktok: input.linkTiktok ?? null,
+  };
+  return prisma.storeSettings.upsert({ where: { id: "singleton" }, create: { id: "singleton", ...data }, update: data });
+}

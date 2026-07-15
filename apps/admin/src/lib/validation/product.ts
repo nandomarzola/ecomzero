@@ -20,7 +20,6 @@ export const variantSchema = z.object({
     (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
     z.string().trim().optional(),
   ),
-  linkShopee: marketplaceUrl,
   pesoKg: dimField,
   comprimentoCm: dimField,
   larguraCm: dimField,
@@ -29,16 +28,25 @@ export const variantSchema = z.object({
 
 export const productInputSchema = z.object({
   nome: z.string().trim().min(1, "Informe o nome"),
-  categoria: z.string().trim().min(1, "Informe a categoria"),
+  tipo: z.enum(["simples", "variacoes"]),
+  categoryId: z.string().uuid("Selecione uma categoria"),
   subtitulo: z.string().trim().min(1, "Informe o subtítulo"),
   descricao: z.string().trim().min(1, "Informe a descrição"),
   ativo: z.boolean().default(true),
   imagem: z.string().trim().min(1, "Envie a imagem de capa"),
   imagens: z.array(z.string().trim().min(1)).default([]),
+  linkShopee: marketplaceUrl,
   linkMercadoLivre: marketplaceUrl,
   linkTiktokShop: marketplaceUrl,
   linkShein: marketplaceUrl,
-  variantes: z.array(variantSchema).min(1, "Cadastre ao menos uma variante"),
+  variantes: z.array(variantSchema).min(1, "Informe os dados de venda do produto"),
+}).superRefine((input, context) => {
+  if (input.tipo === "simples" && input.variantes.length !== 1) {
+    context.addIssue({ code: "custom", path: ["variantes"], message: "Produto simples deve ter uma única configuração de venda" });
+  }
+  if (input.tipo === "variacoes" && input.variantes.length < 2) {
+    context.addIssue({ code: "custom", path: ["variantes"], message: "Cadastre pelo menos duas variações" });
+  }
 });
 
 export type ProductInput = z.infer<typeof productInputSchema>;
