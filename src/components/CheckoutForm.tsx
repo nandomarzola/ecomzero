@@ -199,7 +199,8 @@ export default function CheckoutForm({
 
   const selectionMatchesCart = Boolean(
     storedSelection &&
-      Math.abs(storedSelection.cartSubtotal - cartSubtotal) < 0.005,
+      (createdOrderId !== null ||
+        Math.abs(storedSelection.cartSubtotal - cartSubtotal) < 0.005),
   );
   const selection = selectionMatchesCart ? (storedSelection ?? null) : null;
   const storageReady = storedSelection !== undefined;
@@ -388,7 +389,6 @@ export default function CheckoutForm({
         data?.error ?? "Não foi possível abrir o pagamento. Tente novamente.",
       );
     }
-    clearCheckoutShippingSelection();
     window.location.assign(data.initPoint);
   };
 
