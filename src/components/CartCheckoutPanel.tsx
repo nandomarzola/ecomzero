@@ -129,10 +129,28 @@ export default function CartCheckoutPanel({
       cartSubtotal: subtotal,
     };
     saveCheckoutShippingSelection(nextSelection);
+    setErrorMessage("");
+    setStatus("idle");
   };
 
   const goToCheckout = () => {
-    if (!canCheckout) return;
+    if (!canCheckout) {
+      setErrorMessage(
+        selectionExpired
+          ? "Sua cotação expirou. Calcule o frete novamente."
+          : quote
+            ? "Selecione uma das opções de frete para continuar."
+            : "Calcule o frete e selecione uma opção para continuar.",
+      );
+      setStatus("error");
+      document
+        .getElementById("shipping-calculator")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => {
+        document.getElementById("cart-shipping-cep")?.focus();
+      }, 350);
+      return;
+    }
     router.push("/checkout");
   };
 
@@ -182,15 +200,15 @@ export default function CartCheckoutPanel({
           <button
             type="button"
             onClick={goToCheckout}
-            disabled={!canCheckout}
-            className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:bg-[#A9EC17]/10 disabled:text-white/35"
+            className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
-            Finalizar compra
+            {canCheckout ? "Finalizar compra" : "Escolher frete para continuar"}
             <ArrowRight className="h-4 w-4" />
           </button>
         </section>
 
         <section
+          id="shipping-calculator"
           aria-labelledby="shipping-calculator-title"
           className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5"
         >
@@ -205,6 +223,7 @@ export default function CartCheckoutPanel({
             }}
           >
             <input
+              id="cart-shipping-cep"
               type="text"
               inputMode="numeric"
               maxLength={9}
@@ -296,10 +315,9 @@ export default function CartCheckoutPanel({
           <button
             type="button"
             onClick={goToCheckout}
-            disabled={!canCheckout}
-            className="font-display min-h-11 flex-1 rounded-md bg-[#A9EC17] px-4 text-[10px] font-extrabold uppercase text-black disabled:cursor-not-allowed disabled:bg-[#A9EC17]/10 disabled:text-white/35"
+            className="font-display min-h-11 flex-1 rounded-md bg-[#A9EC17] px-4 text-[10px] font-extrabold uppercase text-black"
           >
-            Finalizar compra
+            {canCheckout ? "Finalizar compra" : "Escolher frete"}
           </button>
         </div>
       </div>

@@ -247,14 +247,6 @@ export default function CheckoutForm({
     }),
     [effectiveCep, selection, values],
   );
-  const parsedForm = checkoutSchema.safeParse(payload);
-  const canSubmit =
-    storageReady &&
-    Boolean(selection) &&
-    !selectionExpired &&
-    cepMatchesShipping &&
-    parsedForm.success &&
-    !isSubmitting;
   const total = (selection?.cartSubtotal ?? 0) + (selection?.preco ?? 0);
 
   const updateField = (field: FormField, value: string) => {
@@ -566,7 +558,7 @@ export default function CheckoutForm({
 
             <button
               type="submit"
-              disabled={isSubmitting || (!canSubmit && !createdOrderId)}
+              disabled={isSubmitting}
               className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:bg-[#A9EC17]/10 disabled:text-white/35"
             >
               {isSubmitting ? (
