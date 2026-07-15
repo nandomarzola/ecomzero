@@ -354,6 +354,28 @@ export default function MercadoPagoPayment({
 
       <div className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <main className="min-w-0 rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-4 sm:p-7">
+          <section
+            aria-label="Pagamento processado pelo Mercado Pago"
+            className="mb-5 rounded-xl border border-[#009EE3]/35 bg-[#009EE3]/[0.08] p-4"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#009EE3] text-white">
+                <ShieldCheck className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#66C9F2]">
+                  Ambiente de pagamento seguro
+                </p>
+                <p className="font-display mt-1 text-lg font-extrabold text-white">
+                  Pagamento processado pelo Mercado Pago
+                </p>
+                <p className="mt-1 text-[11px] leading-5 text-white/55">
+                  Seus dados de pagamento são protegidos e processados pela
+                  infraestrutura do Mercado Pago.
+                </p>
+              </div>
+            </div>
+          </section>
           {isCheckingPayment ? (
             <div className="flex min-h-[320px] items-center justify-center gap-3 text-sm text-white/50">
               <LoaderCircle className="h-5 w-5 animate-spin text-[#A9EC17]" />

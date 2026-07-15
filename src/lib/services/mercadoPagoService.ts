@@ -154,6 +154,43 @@ const assertFrozenOrderTotal = (order: PaymentOrderSnapshot) => {
   }
 };
 
+const sanitizeProviderText = (value: unknown) => {
+  if (typeof value !== "string") return null;
+
+  return value
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "<email>")
+    .replace(/APP_USR-[A-Za-z0-9-]+/g, "<credential>")
+    .replace(/\b\d{11,14}\b/g, "<document>")
+    .slice(0, 240);
+};
+
+const getMercadoPagoFailure = (error: unknown) => {
+  if (!error || typeof error !== "object") {
+    return { status: null, error: null, message: null, causes: [] };
+  }
+
+  const failure = error as Record<string, unknown>;
+  const causes = Array.isArray(failure.cause)
+    ? failure.cause.slice(0, 5).map((cause) => {
+        const entry =
+          cause && typeof cause === "object"
+            ? (cause as Record<string, unknown>)
+            : {};
+        return {
+          code: sanitizeProviderText(entry.code),
+          description: sanitizeProviderText(entry.description),
+        };
+      })
+    : [];
+
+  return {
+    status: typeof failure.status === "number" ? failure.status : null,
+    error: sanitizeProviderText(failure.error),
+    message: sanitizeProviderText(failure.message),
+    causes,
+  };
+};
+
 export async function createMercadoPagoPayment(
   order: PaymentOrderSnapshot,
   input: BrickPaymentInput,
@@ -171,6 +208,15 @@ export async function createMercadoPagoPayment(
   const idempotencyKey = createHash("sha256")
     .update(`${order.id}:${input.attemptId}`)
     .digest("hex");
+  const paymentItems = order.items.map((item) => ({
+    id: item.id,
+    title: item.productName.slice(0, 120),
+    description: item.variantLabel.slice(0, 120),
+    picture_url: absoluteUrl(item.productImage, siteUrl),
+    category_id: "others",
+    quantity: item.quantidade,
+    unit_price: item.precoUnitario,
+  }));
 
   try {
     const response = await new Payment(getMercadoPagoClient()).create({
@@ -184,14 +230,14 @@ export async function createMercadoPagoPayment(
           ? Number(input.formData.issuer_id)
           : undefined,
         external_reference: order.id,
-        statement_descriptor: "ECOMZERO",
+        statement_descriptor: isPix ? undefined : "ECOMZERO",
         notification_url: new URL(
           "/api/webhooks/mercadopago",
           siteUrl,
         ).toString(),
         date_of_expiration: expiresAt?.toISOString(),
-        capture: true,
-        binary_mode: false,
+        capture: isPix ? undefined : true,
+        binary_mode: isPix ? undefined : false,
         three_d_secure_mode: isPix ? undefined : "optional",
         metadata: { order_id: order.id },
         payer: {
@@ -202,56 +248,54 @@ export async function createMercadoPagoPayment(
             type: documentDigits.length === 14 ? "CNPJ" : "CPF",
             number: documentDigits,
           },
-          phone: {
-            area_code: phoneDigits.slice(0, 2),
-            number: phoneDigits.slice(2),
-          },
-          address: {
-            zip_code: order.cepDestino.replace(/\D/g, ""),
-            street_name: order.logradouro,
-            street_number: order.numero,
-            neighborhood: order.bairro,
-            city: order.cidade,
-            federal_unit: order.uf,
-          },
+          phone: isPix
+            ? undefined
+            : {
+                area_code: phoneDigits.slice(0, 2),
+                number: phoneDigits.slice(2),
+              },
+          address: isPix
+            ? undefined
+            : {
+                zip_code: order.cepDestino.replace(/\D/g, ""),
+                street_name: order.logradouro,
+                street_number: order.numero,
+                neighborhood: order.bairro,
+                city: order.cidade,
+                federal_unit: order.uf,
+              },
         },
-        additional_info: {
-          items: order.items.map((item) => ({
-            id: item.id,
-            title: item.productName.slice(0, 120),
-            description: item.variantLabel.slice(0, 120),
-            picture_url: absoluteUrl(item.productImage, siteUrl),
-            category_id: "others",
-            quantity: item.quantidade,
-            unit_price: item.precoUnitario,
-          })),
-          payer: {
-            first_name: firstName,
-            last_name: lastName,
-            phone: {
-              area_code: phoneDigits.slice(0, 2),
-              number: phoneDigits.slice(2),
+        additional_info: isPix
+          ? { items: paymentItems }
+          : {
+              items: paymentItems,
+              payer: {
+                first_name: firstName,
+                last_name: lastName,
+                phone: {
+                  area_code: phoneDigits.slice(0, 2),
+                  number: phoneDigits.slice(2),
+                },
+                address: {
+                  zip_code: order.cepDestino.replace(/\D/g, ""),
+                  street_name: order.logradouro,
+                  street_number: order.numero,
+                },
+              },
+              shipments: {
+                mode: "not_specified",
+                cost: order.valorFrete,
+                receiver_address: {
+                  zip_code: order.cepDestino.replace(/\D/g, ""),
+                  street_name: order.logradouro,
+                  street_number: order.numero,
+                  apartment: order.complemento ?? undefined,
+                  city_name: order.cidade,
+                  state_name: order.uf,
+                  country_name: "Brasil",
+                },
+              },
             },
-            address: {
-              zip_code: order.cepDestino.replace(/\D/g, ""),
-              street_name: order.logradouro,
-              street_number: order.numero,
-            },
-          },
-          shipments: {
-            mode: "not_specified",
-            cost: order.valorFrete,
-            receiver_address: {
-              zip_code: order.cepDestino.replace(/\D/g, ""),
-              street_name: order.logradouro,
-              street_number: order.numero,
-              apartment: order.complemento ?? undefined,
-              city_name: order.cidade,
-              state_name: order.uf,
-              country_name: "Brasil",
-            },
-          },
-        },
       },
       requestOptions: { idempotencyKey },
     });
@@ -259,6 +303,24 @@ export async function createMercadoPagoPayment(
     return normalizePaymentResponse(response);
   } catch (error) {
     if (error instanceof MercadoPagoServiceError) throw error;
+
+    const failure = getMercadoPagoFailure(error);
+    console.error("Mercado Pago payment creation failed", {
+      orderReference: order.id.slice(0, 8),
+      paymentMethod: input.formData.payment_method_id,
+      providerStatus: failure.status,
+      providerError: failure.error,
+      providerMessage: failure.message,
+      providerCauses: failure.causes,
+    });
+
+    if (failure.status === 401 || failure.status === 403) {
+      throw new MercadoPagoServiceError(
+        "Pagamento temporariamente indisponível. Tente novamente mais tarde.",
+        503,
+      );
+    }
+
     throw new MercadoPagoServiceError(
       "Não foi possível processar o pagamento. Confira os dados e tente novamente.",
       502,
