@@ -90,7 +90,7 @@ export default function ProductMarketplaces({ links }: ProductMarketplacesProps)
             Compre nos marketplaces
           </p>
           <p className="mt-1 text-[11px] leading-5 text-white/45">
-            Canais oficiais disponíveis para este produto.
+            Compre diretamente em nossa loja oficial nos marketplaces. Garantia de qualidade e entrega rápida.
           </p>
         </div>
 
