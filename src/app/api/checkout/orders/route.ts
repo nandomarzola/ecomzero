@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { getCartSessionId, rotateCartSessionId } from "@/lib/session";
+import {
+  getCartSessionId,
+  rotateCartSessionId,
+  setCheckoutOrderAccess,
+} from "@/lib/session";
 import {
   CheckoutServiceError,
   createOrderFromCart,
@@ -31,8 +35,9 @@ export async function POST(request: NextRequest) {
     const order = await createOrderFromCart(
       sessionId,
       parsed.data,
-      session?.user.id ?? null,
+      session?.user?.id ?? null,
     );
+    await setCheckoutOrderAccess(order.orderId);
     await rotateCartSessionId();
     return NextResponse.json(order, { status: 201 });
   } catch (error) {

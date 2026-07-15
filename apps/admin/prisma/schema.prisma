@@ -134,14 +134,17 @@ model User {
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  status          OrderStatus @default(draft)
-  userId          String?
-  nomeCliente     String?
-  emailCliente    String?
-  telefoneCliente String?
-  total           Decimal     @default(0) @db.Decimal(10, 2)
-  createdAt       DateTime    @default(now())
+  id                             String      @id @default(uuid())
+  status                         OrderStatus @default(draft)
+  userId                         String?
+  nomeCliente                    String?
+  emailCliente                   String?
+  telefoneCliente                String?
+  total                          Decimal     @default(0) @db.Decimal(10, 2)
+  mercadoPagoPreferenceId        String?     @unique
+  mercadoPagoInitPoint           String?
+  mercadoPagoPreferenceExpiresAt DateTime?
+  createdAt                      DateTime    @default(now())
 
   @@index([userId])
 }

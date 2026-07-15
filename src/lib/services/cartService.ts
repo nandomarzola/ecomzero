@@ -65,7 +65,10 @@ async function recalculateTotal(orderId: string): Promise<void> {
     (sum, item) => sum + Number(item.precoUnitario) * item.quantidade,
     0,
   );
-  await prisma.order.update({ where: { id: orderId }, data: { total } });
+  await prisma.$transaction([
+    prisma.order.update({ where: { id: orderId }, data: { total } }),
+    prisma.checkoutShippingQuote.deleteMany({ where: { orderId } }),
+  ]);
 }
 
 export async function getCart(sessionId: string | null): Promise<Cart> {

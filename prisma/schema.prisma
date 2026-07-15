@@ -197,28 +197,31 @@ model ProductVariant {
 // sessão anônima via cookie. Ao finalizar, pode ser associado a um usuário;
 // userId permanece nulo no checkout como convidado.
 model Order {
-  id               String      @id @default(uuid())
-  status           OrderStatus @default(draft)
-  sessionId        String?     @unique
-  userId           String?
-  user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  nomeCliente      String?
-  emailCliente     String?
-  telefoneCliente  String?
-  cpfCnpj          String?
-  cepDestino       String?
-  logradouro       String?
-  numero           String?
-  complemento      String?
-  bairro           String?
-  cidade           String?
-  uf               String?
-  subtotal         Decimal     @default(0) @db.Decimal(10, 2)
-  valorFrete       Decimal     @default(0) @db.Decimal(10, 2)
-  total            Decimal     @default(0) @db.Decimal(10, 2)
-  shippingQuoteId  String?     @unique
-  shippingOptionId String?
-  createdAt        DateTime    @default(now())
+  id                             String      @id @default(uuid())
+  status                         OrderStatus @default(draft)
+  sessionId                      String?     @unique
+  userId                         String?
+  user                           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  nomeCliente                    String?
+  emailCliente                   String?
+  telefoneCliente                String?
+  cpfCnpj                        String?
+  cepDestino                     String?
+  logradouro                     String?
+  numero                         String?
+  complemento                    String?
+  bairro                         String?
+  cidade                         String?
+  uf                             String?
+  subtotal                       Decimal     @default(0) @db.Decimal(10, 2)
+  valorFrete                     Decimal     @default(0) @db.Decimal(10, 2)
+  total                          Decimal     @default(0) @db.Decimal(10, 2)
+  shippingQuoteId                String?     @unique
+  shippingOptionId               String?
+  mercadoPagoPreferenceId        String?     @unique
+  mercadoPagoInitPoint           String?
+  mercadoPagoPreferenceExpiresAt DateTime?
+  createdAt                      DateTime    @default(now())
 
   items                 OrderItem[]
   shippingQuote         CheckoutShippingQuote? @relation("CartShippingQuote")

@@ -24,6 +24,11 @@ const envSchema = z.object({
   // usa MELHOR_ENVIO_TOKEN fixo, segue funcionando).
   MELHOR_ENVIO_CLIENT_ID: z.string().min(1).optional(),
   MELHOR_ENVIO_CLIENT_SECRET: z.string().min(1).optional(),
+  MERCADOPAGO_ACCESS_TOKEN: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().min(1).optional(),
+  ),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -48,7 +53,14 @@ export const config = {
     clientId: parsed.data.MELHOR_ENVIO_CLIENT_ID,
     clientSecret: parsed.data.MELHOR_ENVIO_CLIENT_SECRET,
   },
+  mercadoPago: {
+    accessToken: parsed.data.MERCADOPAGO_ACCESS_TOKEN,
+  },
 } as const;
+
+export const isMercadoPagoConfigurado = Boolean(
+  parsed.data.MERCADOPAGO_ACCESS_TOKEN,
+);
 
 // true quando o frete aponta para a API de produção do Melhor Envio (não sandbox).
 // Nesse modo o token vem do banco (OAuth com refresh), não da env var fixa.

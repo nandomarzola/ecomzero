@@ -3,15 +3,13 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Headphones,
-  Info,
-  Lock,
   RefreshCw,
   ShieldCheck,
   Truck,
 } from "lucide-react";
+import CartCheckoutPanel from "@/components/CartCheckoutPanel";
 import CartItemRow from "@/components/CartItemRow";
 import CategoryStrip from "@/components/CategoryStrip";
-import PaymentBadges from "@/components/PaymentBadges";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import TrustBadges from "@/components/TrustBadges";
 import { getCart } from "@/lib/services/cartService";
@@ -134,107 +132,10 @@ export default async function CartPage() {
                 />
               </section>
 
-              <aside className="space-y-3 xl:sticky xl:top-24">
-                <section
-                  aria-labelledby="order-summary-title"
-                  className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5"
-                >
-                  <h2
-                    id="order-summary-title"
-                    className="font-display text-lg font-bold text-white"
-                  >
-                    Resumo do pedido
-                  </h2>
-
-                  <dl className="mt-5 space-y-3 text-[13px]">
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-white/65">
-                        Subtotal ({productCount} {productCount === 1 ? "item" : "itens"})
-                      </dt>
-                      <dd className="font-medium text-white">
-                        {formatPrice(cart.total)}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="inline-flex items-center gap-1.5 text-white/65">
-                        Frete
-                        <Info className="h-3.5 w-3.5" strokeWidth={1.7} />
-                      </dt>
-                      <dd className="text-white/40">Calcular</dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <dt className="text-white/65">Cupom de desconto</dt>
-                      <dd className="font-medium text-[#A9EC17]/70">Adicionar</dd>
-                    </div>
-                  </dl>
-
-                  <div className="mt-5 flex items-center justify-between border-t border-white/[0.09] pt-5">
-                    <span className="font-display text-sm font-bold uppercase text-white">
-                      Total
-                    </span>
-                    <strong className="font-display text-[25px] font-extrabold text-[#A9EC17]">
-                      {formatPrice(cart.total)}
-                    </strong>
-                  </div>
-                  <p className="mt-1 text-[10px] text-white/38">
-                    Frete calculado na próxima etapa.
-                  </p>
-
-                  <button
-                    type="button"
-                    disabled
-                    aria-disabled="true"
-                    title="Fechamento de pedido ainda não disponível"
-                    className="font-display mt-5 flex min-h-[54px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-md border border-[#A9EC17]/15 bg-[#A9EC17]/10 px-5 text-xs font-bold uppercase text-white/35"
-                  >
-                    <Lock className="h-4 w-4" />
-                    Finalizar compra
-                  </button>
-                  <p className="mt-3 flex items-center justify-center gap-2 text-center text-[10px] text-white/35">
-                    <Lock className="h-3.5 w-3.5" />
-                    Fechamento de pedido ainda não disponível
-                  </p>
-                </section>
-
-                <section
-                  aria-labelledby="shipping-calculator-title"
-                  className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5"
-                >
-                  <h2
-                    id="shipping-calculator-title"
-                    className="font-display text-sm font-bold text-white"
-                  >
-                    Calcular frete e prazo
-                  </h2>
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={9}
-                      disabled
-                      placeholder="Digite seu CEP"
-                      title="Cálculo de frete chega na próxima etapa"
-                      aria-label="CEP"
-                      className="h-11 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none placeholder:text-white/32 disabled:cursor-not-allowed"
-                    />
-                    <button
-                      type="button"
-                      disabled
-                      title="Cálculo de frete chega na próxima etapa"
-                      className="h-11 shrink-0 cursor-not-allowed rounded-md bg-[#A9EC17]/20 px-4 text-[10px] font-bold text-white/40"
-                    >
-                      Calcular
-                    </button>
-                  </div>
-                  <p className="mt-3 text-[10px] text-[#A9EC17]/55">
-                    Não sei meu CEP
-                  </p>
-                </section>
-
-                <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5">
-                  <PaymentBadges />
-                </section>
-              </aside>
+              <CartCheckoutPanel
+                subtotal={cart.total}
+                productCount={productCount}
+              />
             </div>
 
             <div className="mt-12 border-t border-white/[0.08] pt-8 sm:mt-14 sm:pt-9">
@@ -245,25 +146,6 @@ export default async function CartPage() {
               />
             </div>
 
-            <div className="fixed inset-x-0 bottom-16 z-40 border-t border-white/10 bg-black/95 px-4 py-3 backdrop-blur md:hidden">
-              <div className="mx-auto flex max-w-lg items-center gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[9px] uppercase text-white/40">Total</p>
-                  <strong className="font-display text-lg font-extrabold text-[#A9EC17]">
-                    {formatPrice(cart.total)}
-                  </strong>
-                </div>
-                <button
-                  type="button"
-                  disabled
-                  aria-disabled="true"
-                  title="Fechamento de pedido ainda não disponível"
-                  className="font-display min-h-11 flex-1 cursor-not-allowed rounded-md border border-[#A9EC17]/15 bg-[#A9EC17]/10 px-4 text-[10px] font-bold uppercase text-white/35"
-                >
-                  Finalizar compra
-                </button>
-              </div>
-            </div>
           </>
         )}
 
