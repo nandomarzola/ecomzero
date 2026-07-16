@@ -205,7 +205,7 @@ export default function CartDrawer() {
                 ))}
               </section>
               <CartDrawerCoupon />
-              <CartDrawerShipping subtotal={cart.subtotal} />
+              <CartDrawerShipping subtotal={cart.subtotal} active={isOpen} />
               {checkoutError ? (
                 <p role="alert" className="pb-2 text-[10px] leading-4 text-amber-300">
                   {checkoutError}

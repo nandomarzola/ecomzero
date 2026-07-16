@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { AlertCircle, LoaderCircle, Truck } from "lucide-react";
 import {
   clearCheckoutShippingSelection,
@@ -93,7 +93,13 @@ function getApiError(value: unknown) {
   return null;
 }
 
-export default function CartDrawerShipping({ subtotal }: { subtotal: number }) {
+export default function CartDrawerShipping({
+  subtotal,
+  active,
+}: {
+  subtotal: number;
+  active: boolean;
+}) {
   const storedRaw = useSyncExternalStore(
     subscribeCheckoutShippingSelection,
     getCheckoutShippingSnapshot,
@@ -115,12 +121,24 @@ export default function CartDrawerShipping({ subtotal }: { subtotal: number }) {
   );
   const selection = storedSelectionIsValid ? storedSelection : null;
   const [cepDraft, setCepDraft] = useState<string | null>(null);
-  const [quote, setQuote] = useState<QuoteResponse | null>(null);
+  const [quoteState, setQuoteState] = useState<{
+    quote: QuoteResponse;
+    cep: string;
+    subtotal: number;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const autoQuoteKeyRef = useRef("");
+  const calculateRef = useRef<() => void>(() => {});
   const cep =
     cepDraft ??
     (selection?.cep ? formatCep(selection.cep) : savedUserCep ? formatCep(savedUserCep) : "");
+  const quote =
+    quoteState &&
+    quoteState.cep === sanitizeCep(cep) &&
+    Math.abs(quoteState.subtotal - subtotal) < 0.005
+      ? quoteState.quote
+      : null;
 
   useEffect(() => {
     if (storedSelection && !storedSelectionIsValid) {
@@ -136,7 +154,7 @@ export default function CartDrawerShipping({ subtotal }: { subtotal: number }) {
 
     setIsLoading(true);
     setError("");
-    setQuote(null);
+    setQuoteState(null);
     clearCheckoutShippingSelection();
     saveUserCep(cep);
 
@@ -158,13 +176,37 @@ export default function CartDrawerShipping({ subtotal }: { subtotal: number }) {
         setError("A cotação recebida é inválida. Tente novamente.");
         return;
       }
-      setQuote(parsed);
+      setQuoteState({
+        quote: parsed,
+        cep: sanitizeCep(cep),
+        subtotal,
+      });
     } catch {
       setError("Serviço de frete indisponível. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    calculateRef.current = () => {
+      void calculate();
+    };
+  });
+
+  useEffect(() => {
+    if (!active) {
+      autoQuoteKeyRef.current = "";
+      return;
+    }
+    if (selection || quote || isLoading || !isValidCep(cep)) return;
+
+    const quoteKey = `${sanitizeCep(cep)}:${subtotal}`;
+    if (autoQuoteKeyRef.current === quoteKey) return;
+    autoQuoteKeyRef.current = quoteKey;
+    const timer = window.setTimeout(() => calculateRef.current(), 180);
+    return () => window.clearTimeout(timer);
+  }, [active, cep, isLoading, quote, selection, subtotal]);
 
   const selectOption = (option: ShippingOption) => {
     if (!quote) return;
