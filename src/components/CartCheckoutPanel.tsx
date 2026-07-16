@@ -21,6 +21,7 @@ import {
   isValidCep,
   subscribeUserCep,
 } from "@/lib/client/cepStorage";
+import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 
 type ShippingOption = {
   id: string;
@@ -108,10 +109,9 @@ export default function CartCheckoutPanel({
     ? isCheckoutShippingExpired(selection, now)
     : false;
   const shippingPrice = selection && !selectionExpired ? selection.preco : 0;
-  const freeShipping = coupon?.freeShipping ?? false;
-  const shippingDiscount = freeShipping ? shippingPrice : 0;
-  const total = subtotal - discount + shippingPrice - shippingDiscount;
-  const canCheckout = Boolean(selection && !selectionExpired);
+  const freeShipping = qualifiesForFreeShipping(subtotal, coupon?.freeShipping);
+  const total = subtotal - discount + (freeShipping ? 0 : shippingPrice);
+  const canCheckout = freeShipping || Boolean(selection && !selectionExpired);
 
   const applyCoupon = () => {
     setCouponError("");
@@ -190,10 +190,10 @@ export default function CartCheckoutPanel({
   });
 
   useEffect(() => {
-    if (productCount === 0 || hasValidSelection) return;
+    if (productCount === 0 || freeShipping || hasValidSelection) return;
     const timer = window.setTimeout(() => autoQuoteRef.current(), 600);
     return () => window.clearTimeout(timer);
-  }, [productCount, subtotal, savedUserCep, hasValidSelection]);
+  }, [freeShipping, productCount, subtotal, savedUserCep, hasValidSelection]);
 
   const selectShipping = (option: ShippingOption) => {
     if (!quote) return;
@@ -214,6 +214,10 @@ export default function CartCheckoutPanel({
   };
 
   const goToCheckout = () => {
+    if (freeShipping) {
+      router.push(isLoggedIn ? "/checkout" : "/checkout/identificacao");
+      return;
+    }
     if (!canCheckout) {
       setErrorMessage(
         selectionExpired
@@ -257,8 +261,10 @@ export default function CartCheckoutPanel({
                 Frete
                 <Info className="h-3.5 w-3.5" strokeWidth={1.7} />
               </dt>
-              <dd className={selection ? "font-medium text-white" : "text-white/40"}>
-                {selection && !selectionExpired
+              <dd className={freeShipping || selection ? "font-medium text-white" : "text-white/40"}>
+                {freeShipping
+                  ? "Grátis"
+                  : selection && !selectionExpired
                   ? formatPrice(selection.preco)
                   : "Calcular"}
               </dd>
@@ -267,12 +273,6 @@ export default function CartCheckoutPanel({
               <div className="flex items-center justify-between gap-4">
                 <dt className="text-white/65">Desconto{coupon ? ` (${coupon.code})` : ""}</dt>
                 <dd className="font-medium text-[#A9EC17]">- {formatPrice(discount)}</dd>
-              </div>
-            )}
-            {freeShipping && shippingPrice > 0 && (
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-white/65">Frete grátis (cupom)</dt>
-                <dd className="font-medium text-[#A9EC17]">- {formatPrice(shippingPrice)}</dd>
               </div>
             )}
           </dl>
@@ -332,7 +332,9 @@ export default function CartCheckoutPanel({
             </strong>
           </div>
           <p className="mt-1 min-h-4 text-[10px] text-white/38">
-            {selection && !selectionExpired
+            {freeShipping
+              ? "A transportadora será definida após a confirmação do pedido."
+              : selection && !selectionExpired
               ? `${selection.transportadora} · ${selection.servico}`
               : "Selecione o frete para continuar."}
           </p>
@@ -347,11 +349,12 @@ export default function CartCheckoutPanel({
           </button>
         </section>
 
-        <section
-          id="shipping-calculator"
-          aria-labelledby="shipping-calculator-title"
-          className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5"
-        >
+        {!freeShipping && (
+          <section
+            id="shipping-calculator"
+            aria-labelledby="shipping-calculator-title"
+            className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5"
+          >
           <h2 id="shipping-calculator-title" className="font-display text-sm font-bold text-white">
             Calcular frete e prazo
           </h2>
@@ -446,7 +449,8 @@ export default function CartCheckoutPanel({
               })}
             </fieldset>
           )}
-        </section>
+          </section>
+        )}
 
         <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5">
           <PaymentBadges />

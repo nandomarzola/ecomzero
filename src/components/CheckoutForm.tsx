@@ -29,6 +29,11 @@ import {
   parseCheckoutShippingSelection,
   subscribeCheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
+import {
+  formatCep as formatSavedCep,
+  getUserCepSnapshot,
+  subscribeUserCep,
+} from "@/lib/client/cepStorage";
 import { checkoutSchema } from "@/lib/validation/checkout";
 
 type CheckoutFormProps = {
@@ -36,6 +41,8 @@ type CheckoutFormProps = {
   sessionName: string;
   sessionEmail: string;
   cartSubtotal: number;
+  cartDiscount: number;
+  freeShipping: boolean;
 };
 
 type FormValues = {
@@ -164,6 +171,8 @@ export default function CheckoutForm({
   sessionName,
   sessionEmail,
   cartSubtotal,
+  cartDiscount,
+  freeShipping,
 }: CheckoutFormProps) {
   const router = useRouter();
   const [values, setValues] = useState<FormValues>({
@@ -183,6 +192,11 @@ export default function CheckoutForm({
         ? undefined
         : parseCheckoutShippingSelection(storedRaw),
     [storedRaw],
+  );
+  const savedUserCep = useSyncExternalStore(
+    subscribeUserCep,
+    getUserCepSnapshot,
+    () => null,
   );
   const [cepOverride, setCepOverride] = useState<string | null>(null);
   const [selectedAddressId, setSelectedAddressId] = useState("");
@@ -210,10 +224,10 @@ export default function CheckoutForm({
   }, [selectionMatchesCart, storedSelection]);
 
   useEffect(() => {
-    if (storageReady && !selection && !createdOrderId) {
+    if (storageReady && !freeShipping && !selection && !createdOrderId) {
       router.replace("/carrinho");
     }
-  }, [createdOrderId, router, selection, storageReady]);
+  }, [createdOrderId, freeShipping, router, selection, storageReady]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -234,21 +248,25 @@ export default function CheckoutForm({
             nome: string;
             email: string;
             telefone: string | null;
-            cpfCnpj: string | null;
           };
           setValues((current) => ({
             ...current,
             nome: current.nome || profile.nome,
             email: current.email || profile.email,
             telefone: current.telefone || formatPhone(profile.telefone ?? ""),
-            cpfCnpj: current.cpfCnpj || formatDocument(profile.cpfCnpj ?? ""),
           }));
         }
         if (addressResponse.ok) {
           const payload = (await addressResponse.json()) as { addresses: SavedAddress[] };
-          const matchingAddress = payload.addresses.find(
-            (address) => onlyDigits(address.cep) === onlyDigits(selection?.cep ?? ""),
-          );
+          const targetCep = onlyDigits(selection?.cep ?? savedUserCep ?? "");
+          const matchingAddress =
+            payload.addresses.find(
+              (address) => onlyDigits(address.cep) === targetCep,
+            ) ??
+            (freeShipping
+              ? payload.addresses.find((address) => address.padrao) ??
+                payload.addresses[0]
+              : undefined);
           if (matchingAddress) {
             setSelectedAddressId(matchingAddress.id);
             setValues((current) => ({
@@ -267,16 +285,22 @@ export default function CheckoutForm({
     };
 
     void loadAccount();
-  }, [isLoggedIn, selection?.cep]);
+  }, [freeShipping, isLoggedIn, savedUserCep, selection?.cep]);
 
   const selectionExpired = Boolean(
-    storedSelection && isCheckoutShippingExpired(storedSelection, now),
+    !freeShipping &&
+      storedSelection &&
+      isCheckoutShippingExpired(storedSelection, now),
   );
-  const effectiveCep = cepOverride ?? formatCep(selection?.cep ?? "");
+  const effectiveCep =
+    cepOverride ??
+    formatCep(selection?.cep ?? (savedUserCep ? formatSavedCep(savedUserCep) : ""));
   const cepDigits = onlyDigits(effectiveCep);
-  const cepMatchesShipping = selection
-    ? onlyDigits(effectiveCep) === selection.cep
-    : false;
+  const cepMatchesShipping = freeShipping
+    ? true
+    : selection
+      ? onlyDigits(effectiveCep) === selection.cep
+      : false;
   const payload = useMemo(
     () => ({
       ...values,
@@ -286,7 +310,7 @@ export default function CheckoutForm({
     }),
     [effectiveCep, selection, values],
   );
-  const total = (selection?.cartSubtotal ?? 0) + (selection?.preco ?? 0);
+  const total = cartSubtotal - cartDiscount + (freeShipping ? 0 : selection?.preco ?? 0);
 
   useEffect(() => {
     if (cepDigits.length !== 8 || selectedAddressId) {
@@ -400,7 +424,7 @@ export default function CheckoutForm({
       return;
     }
 
-    if (!selection || selectionExpired || !cepMatchesShipping) {
+    if (!freeShipping && (!selection || selectionExpired || !cepMatchesShipping)) {
       setStatusMessage("Volte ao carrinho e recalcule o frete para este CEP.");
       return;
     }
@@ -442,7 +466,7 @@ export default function CheckoutForm({
     );
   }
 
-  if (!selection) {
+  if (!freeShipping && !selection) {
     return (
       <div className="flex min-h-[55vh] items-center justify-center">
         <LoaderCircle className="h-7 w-7 animate-spin text-[var(--brand-color)]" />
@@ -498,7 +522,11 @@ export default function CheckoutForm({
               </span>
               <div>
                 <h2 className="font-display text-lg font-bold text-white">Endereço de entrega</h2>
-                <p className="text-[11px] text-white/42">O CEP deve ser o mesmo usado na cotação.</p>
+                <p className="text-[11px] text-white/42">
+                  {freeShipping
+                    ? "Informe o endereço onde o pedido será entregue."
+                    : "O CEP deve ser o mesmo usado na cotação."}
+                </p>
               </div>
             </div>
 
@@ -580,24 +608,36 @@ export default function CheckoutForm({
             <dl className="mt-5 space-y-3 text-[12px]">
               <div className="flex justify-between gap-4 text-white/60">
                 <dt>Subtotal</dt>
-                <dd className="font-medium text-white">{formatPrice(selection.cartSubtotal)}</dd>
+                <dd className="font-medium text-white">{formatPrice(cartSubtotal)}</dd>
               </div>
-              <div className="flex justify-between gap-4 text-white/60">
-                <dt>Frete</dt>
-                <dd className="font-medium text-white">{formatPrice(selection.preco)}</dd>
-              </div>
+              {cartDiscount > 0 && (
+                <div className="flex justify-between gap-4 text-white/60">
+                  <dt>Desconto</dt>
+                  <dd className="font-medium text-[var(--brand-color)]">
+                    - {formatPrice(cartDiscount)}
+                  </dd>
+                </div>
+              )}
+              {!freeShipping && selection && (
+                <div className="flex justify-between gap-4 text-white/60">
+                  <dt>Frete</dt>
+                  <dd className="font-medium text-white">{formatPrice(selection.preco)}</dd>
+                </div>
+              )}
             </dl>
             <div className="mt-5 flex items-end justify-between border-t border-white/[0.09] pt-5">
               <span className="font-display text-xs font-bold uppercase text-white">Total</span>
               <strong className="font-display text-[25px] font-extrabold text-[var(--brand-color)]">{formatPrice(total)}</strong>
             </div>
-            <div className="mt-5 flex gap-3 rounded-lg border border-white/[0.08] bg-black/30 p-3">
-              <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
-              <div className="min-w-0">
-                <p className="truncate text-[11px] font-semibold text-white">{selection.transportadora} · {selection.servico}</p>
-                <p className="mt-0.5 text-[10px] text-white/45">Entrega em até {selection.prazoDias} dias úteis</p>
+            {!freeShipping && selection && (
+              <div className="mt-5 flex gap-3 rounded-lg border border-white/[0.08] bg-black/30 p-3">
+                <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold text-white">{selection.transportadora} · {selection.servico}</p>
+                  <p className="mt-0.5 text-[10px] text-white/45">Entrega em até {selection.prazoDias} dias úteis</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {selectionExpired && (
               <p role="alert" className="mt-4 flex gap-2 text-[11px] leading-5 text-amber-200">

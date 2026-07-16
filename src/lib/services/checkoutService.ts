@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import type { ShippingOption } from "@/lib/services/shippingService";
 import type { CheckoutInput } from "@/lib/validation/checkout";
 import { CouponError, validateForCheckout } from "@/lib/services/couponService";
+import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 
 export class CheckoutServiceError extends Error {
   constructor(message: string) {
@@ -70,65 +71,83 @@ export async function createOrderFromCart(
           );
         }
 
-        const quote = await transaction.checkoutShippingQuote.findUnique({
-          where: { id: checkout.shippingQuoteId },
-        });
-
-        if (!quote || quote.orderId !== cart.id || quote.cep !== checkout.cep) {
-          throw new CheckoutServiceError(
-            "Cotação de frete inválida, recalcule o frete",
-          );
-        }
-
-        if (quote.expiresAt <= new Date()) {
-          throw new CheckoutServiceError(
-            "Cotação de frete expirada, recalcule o frete",
-          );
-        }
-
-        const options = Array.isArray(quote.options)
-          ? quote.options.filter(isShippingOption)
-          : [];
-        const selectedOption = options.find(
-          (option) => option.id === checkout.shippingOptionId,
-        );
-
-        if (!selectedOption) {
-          throw new CheckoutServiceError(
-            "Opção de frete inválida, recalcule o frete",
-          );
-        }
-
         const subtotal = cart.items.reduce(
           (total, item) =>
             total.plus(item.variant.precoPor.mul(item.quantidade)),
           new Prisma.Decimal(0),
         );
-        const valorFrete = new Prisma.Decimal(selectedOption.preco).toDecimalPlaces(2);
 
-        // Cupom: validação AUTORITATIVA (com identidade) dentro da transação —
-        // é o que decide o valor cobrado. Falha vira CheckoutServiceError com
-        // mensagem específica ("Pedido mínimo...", "Cupom expirou.", etc.).
         let descontoCupom = new Prisma.Decimal(0);
         let couponId: string | null = null;
+        let couponGrantsFreeShipping = false;
         if (cart.couponId) {
           try {
             const applied = await validateForCheckout(transaction, {
               couponId: cart.couponId,
               orderId: cart.id,
               subtotal: subtotal.toNumber(),
-              shippingCost: valorFrete.toNumber(),
+              shippingCost: 0,
               userId,
               email: checkout.email,
             });
             descontoCupom = new Prisma.Decimal(applied.descontoCupom);
             couponId = applied.couponId;
+            couponGrantsFreeShipping = applied.freeShipping;
           } catch (couponError) {
             if (couponError instanceof CouponError) {
               throw new CheckoutServiceError(couponError.message);
             }
             throw couponError;
           }
+        }
+
+        const freeShipping = qualifiesForFreeShipping(
+          subtotal.toNumber(),
+          couponGrantsFreeShipping,
+        );
+        let quoteId: string | null = null;
+        let optionId: string | null = null;
+        let valorFrete = new Prisma.Decimal(0);
+
+        if (!freeShipping) {
+          if (!checkout.shippingQuoteId || !checkout.shippingOptionId) {
+            throw new CheckoutServiceError(
+              "Calcule e selecione uma opção de frete para continuar",
+            );
+          }
+
+          const quote = await transaction.checkoutShippingQuote.findUnique({
+            where: { id: checkout.shippingQuoteId },
+          });
+
+          if (!quote || quote.orderId !== cart.id || quote.cep !== checkout.cep) {
+            throw new CheckoutServiceError(
+              "Cotação de frete inválida, recalcule o frete",
+            );
+          }
+
+          if (quote.expiresAt <= new Date()) {
+            throw new CheckoutServiceError(
+              "Cotação de frete expirada, recalcule o frete",
+            );
+          }
+
+          const options = Array.isArray(quote.options)
+            ? quote.options.filter(isShippingOption)
+            : [];
+          const selectedOption = options.find(
+            (option) => option.id === checkout.shippingOptionId,
+          );
+
+          if (!selectedOption) {
+            throw new CheckoutServiceError(
+              "Opção de frete inválida, recalcule o frete",
+            );
+          }
+
+          valorFrete = new Prisma.Decimal(selectedOption.preco).toDecimalPlaces(2);
+          quoteId = quote.id;
+          optionId = selectedOption.id;
         }
 
         const total = subtotal.plus(valorFrete).minus(descontoCupom);
@@ -162,8 +181,8 @@ export async function createOrderFromCart(
             descontoCupom,
             couponId,
             total,
-            shippingQuoteId: quote.id,
-            shippingOptionId: selectedOption.id,
+            shippingQuoteId: quoteId,
+            shippingOptionId: optionId,
           },
         });
 

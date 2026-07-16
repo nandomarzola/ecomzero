@@ -75,8 +75,15 @@ export const checkoutSchema = z
       .trim()
       .toUpperCase()
       .regex(/^[A-Z]{2}$/, "UF deve ter 2 letras"),
-    shippingQuoteId: z.string().uuid("Cotação de frete inválida"),
-    shippingOptionId: z.string().trim().min(1, "Opção de frete inválida").max(100),
+    shippingQuoteId: z
+      .union([z.string().uuid("Cotação de frete inválida"), z.literal("")])
+      .default(""),
+    shippingOptionId: z
+      .union([
+        z.string().trim().min(1, "Opção de frete inválida").max(100),
+        z.literal(""),
+      ])
+      .default(""),
   })
   .strict();
 

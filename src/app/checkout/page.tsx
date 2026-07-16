@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import CheckoutForm from "@/components/CheckoutForm";
 import { auth } from "@/lib/auth";
 import { getCart } from "@/lib/services/cartService";
+import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 import { getCartSessionId } from "@/lib/session";
 
 export const metadata: Metadata = {
@@ -27,7 +28,12 @@ export default async function CheckoutPage() {
         isLoggedIn
         sessionName={session?.user?.name ?? ""}
         sessionEmail={session?.user?.email ?? ""}
-        cartSubtotal={cart.total}
+        cartSubtotal={cart.subtotal}
+        cartDiscount={cart.discount}
+        freeShipping={qualifiesForFreeShipping(
+          cart.subtotal,
+          cart.coupon?.freeShipping,
+        )}
       />
     </div>
   );

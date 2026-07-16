@@ -19,6 +19,7 @@ import {
   parseCheckoutShippingSelection,
   subscribeCheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
+import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 
 const focusableSelector = [
   "a[href]",
@@ -58,10 +59,12 @@ export default function CartDrawer() {
     !isCheckoutShippingExpired(storedShipping, now)
       ? storedShipping
       : null;
-  const shippingPrice = shippingSelection?.preco ?? null;
-  const freeShipping = cart.coupon?.freeShipping ?? false;
-  const total =
-    cart.total + (shippingPrice ?? 0) - (freeShipping ? shippingPrice ?? 0 : 0);
+  const freeShipping = qualifiesForFreeShipping(
+    cart.subtotal,
+    cart.coupon?.freeShipping,
+  );
+  const shippingPrice = freeShipping ? 0 : shippingSelection?.preco ?? null;
+  const total = cart.total + (shippingPrice ?? 0);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -123,7 +126,7 @@ export default function CartDrawer() {
   }, [closeCart, isOpen]);
 
   const goToCheckout = () => {
-    if (!shippingSelection) {
+    if (!freeShipping && !shippingSelection) {
       setCheckoutError("Calcule o frete e selecione uma opção para continuar.");
       document.getElementById("drawer-shipping-cep")?.focus();
       return;
@@ -205,7 +208,9 @@ export default function CartDrawer() {
                 ))}
               </section>
               <CartDrawerCoupon />
-              <CartDrawerShipping subtotal={cart.subtotal} active={isOpen} />
+              {!freeShipping ? (
+                <CartDrawerShipping subtotal={cart.subtotal} active={isOpen} />
+              ) : null}
               {checkoutError ? (
                 <p role="alert" className="pb-2 text-[10px] leading-4 text-amber-300">
                   {checkoutError}
