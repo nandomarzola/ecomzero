@@ -108,6 +108,8 @@ export async function createOrderFromCart(
         let quoteId: string | null = null;
         let optionId: string | null = null;
         let valorFrete = new Prisma.Decimal(0);
+        let shippingService: string | null = null;
+        let shippingEstimatedDays: number | null = null;
 
         if (!freeShipping) {
           if (!checkout.shippingQuoteId || !checkout.shippingOptionId) {
@@ -148,6 +150,8 @@ export async function createOrderFromCart(
           valorFrete = new Prisma.Decimal(selectedOption.preco).toDecimalPlaces(2);
           quoteId = quote.id;
           optionId = selectedOption.id;
+          shippingService = selectedOption.servico;
+          shippingEstimatedDays = selectedOption.prazoDias;
         }
 
         const total = subtotal.plus(valorFrete).minus(descontoCupom);
@@ -183,6 +187,16 @@ export async function createOrderFromCart(
             total,
             shippingQuoteId: quoteId,
             shippingOptionId: optionId,
+            shippingMode: freeShipping
+              ? couponGrantsFreeShipping
+                ? "free_shipping_coupon"
+                : "free_shipping_threshold"
+              : "melhor_envio",
+            shippingProvider: freeShipping ? null : "melhor_envio",
+            shippingService,
+            shippingAmountCharged: valorFrete,
+            shippingPayer: freeShipping ? "store" : "customer",
+            shippingEstimatedDays,
           },
         });
 

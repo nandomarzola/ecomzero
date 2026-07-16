@@ -19,6 +19,46 @@ enum OrderStatus {
   cancelado
 }
 
+enum ShippingMode {
+  legacy
+  melhor_envio
+  free_shipping_coupon
+  free_shipping_threshold
+  external
+}
+
+enum ShippingPayer {
+  customer
+  store
+  external
+  unknown
+}
+
+enum ShippingLabelStatus {
+  not_applicable
+  awaiting_payment
+  awaiting_shipping_data
+  awaiting_invoice
+  ready_to_purchase
+  insufficient_balance
+  processing
+  purchased
+  generated
+  printed
+  posted
+  in_transit
+  delivered
+  error
+  external
+  canceled
+}
+
+enum ShippingLabelSource {
+  automatic
+  manual
+  external
+}
+
 enum ProductKind {
   simples
   variacoes
@@ -204,11 +244,11 @@ model ProductVariant {
 // sessão anônima via cookie. Ao finalizar, pode ser associado a um usuário;
 // userId permanece nulo no checkout como convidado.
 model Order {
-  id                             String      @id @default(uuid())
-  status                         OrderStatus @default(draft)
-  sessionId                      String?     @unique
+  id                             String        @id @default(uuid())
+  status                         OrderStatus   @default(draft)
+  sessionId                      String?       @unique
   userId                         String?
-  user                           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user                           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   nomeCliente                    String?
   emailCliente                   String?
   telefoneCliente                String?
@@ -220,20 +260,26 @@ model Order {
   bairro                         String?
   cidade                         String?
   uf                             String?
-  subtotal                       Decimal     @default(0) @db.Decimal(10, 2)
-  valorFrete                     Decimal     @default(0) @db.Decimal(10, 2)
-  descontoCupom                  Decimal     @default(0) @db.Decimal(10, 2)
-  total                          Decimal     @default(0) @db.Decimal(10, 2)
+  subtotal                       Decimal       @default(0) @db.Decimal(10, 2)
+  valorFrete                     Decimal       @default(0) @db.Decimal(10, 2)
+  descontoCupom                  Decimal       @default(0) @db.Decimal(10, 2)
+  total                          Decimal       @default(0) @db.Decimal(10, 2)
   couponId                       String?
-  shippingQuoteId                String?     @unique
+  shippingQuoteId                String?       @unique
   shippingOptionId               String?
-  mercadoPagoPreferenceId        String?     @unique
+  shippingMode                   ShippingMode  @default(legacy)
+  shippingProvider               String?
+  shippingService                String?
+  shippingAmountCharged          Decimal       @default(0) @db.Decimal(10, 2)
+  shippingPayer                  ShippingPayer @default(unknown)
+  shippingEstimatedDays          Int?
+  mercadoPagoPreferenceId        String?       @unique
   mercadoPagoInitPoint           String?
   mercadoPagoPreferenceExpiresAt DateTime?
-  mercadoPagoPaymentId           String?     @unique
+  mercadoPagoPaymentId           String?       @unique
   mercadoPagoPaymentStatus       String?
   pagoEm                         DateTime?
-  createdAt                      DateTime    @default(now())
+  createdAt                      DateTime      @default(now())
 
   items                 OrderItem[]
   shippingQuote         CheckoutShippingQuote? @relation("CartShippingQuote")
@@ -244,6 +290,7 @@ model Order {
 
   @@index([userId])
   @@index([couponId])
+  @@index([status, shippingMode])
 }
 
 model Coupon {
@@ -311,37 +358,37 @@ model Banner {
 }
 
 model StoreSettings {
-  id                String   @id @default("singleton")
-  nomeLoja          String   @default("EcomZero")
-  descricaoFooter   String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
-  mensagemFooter    String   @default("Produtos úteis para facilitar o seu dia a dia.")
-  barraAnuncioAtiva Boolean  @default(false)
-  barraAnuncioTexto String?
-  barraAnuncioLink  String?
-  barraAnuncioCor   String?
-  barraAnuncioVelocidade Int @default(5)
-  emailSuporte      String?
-  telefoneSuporte   String?
-  whatsapp          String?
-  linkShopee        String?
-  linkInstagram     String?
-  linkFacebook      String?
-  linkTiktok        String?
-  logoUrl           String   @default("/images/logo2.png")
-  faviconUrl        String?
-  corPrincipal      String   @default("#A9EC17")
-  fusoHorario       String   @default("America/Sao_Paulo")
-  lojaAtiva         Boolean  @default(true)
-  plano             String   @default("Profissional")
-  moeda             String   @default("BRL")
-  idioma            String   @default("pt-BR")
-  fontFamily        String   @default("geist")
-  productCardStyle  String   @default("standard")
-  cardCornerStyle   String   @default("rounded")
-  showRating        Boolean  @default(true)
-  showBuyNowButton  Boolean  @default(true)
-  buttonStyle       String   @default("filled")
-  updatedAt         DateTime @updatedAt
+  id                     String   @id @default("singleton")
+  nomeLoja               String   @default("EcomZero")
+  descricaoFooter        String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
+  mensagemFooter         String   @default("Produtos úteis para facilitar o seu dia a dia.")
+  barraAnuncioAtiva      Boolean  @default(false)
+  barraAnuncioTexto      String?
+  barraAnuncioLink       String?
+  barraAnuncioCor        String?
+  barraAnuncioVelocidade Int      @default(5)
+  emailSuporte           String?
+  telefoneSuporte        String?
+  whatsapp               String?
+  linkShopee             String?
+  linkInstagram          String?
+  linkFacebook           String?
+  linkTiktok             String?
+  logoUrl                String   @default("/images/logo2.png")
+  faviconUrl             String?
+  corPrincipal           String   @default("#A9EC17")
+  fusoHorario            String   @default("America/Sao_Paulo")
+  lojaAtiva              Boolean  @default(true)
+  plano                  String   @default("Profissional")
+  moeda                  String   @default("BRL")
+  idioma                 String   @default("pt-BR")
+  fontFamily             String   @default("geist")
+  productCardStyle       String   @default("standard")
+  cardCornerStyle        String   @default("rounded")
+  showRating             Boolean  @default(true)
+  showBuyNowButton       Boolean  @default(true)
+  buttonStyle            String   @default("filled")
+  updatedAt              DateTime @updatedAt
 }
 
 model AnnouncementBarItem {
@@ -437,28 +484,69 @@ model ShippingSettings {
 }
 
 model Shipment {
-  id                  String    @id @default(uuid())
-  orderId             String    @unique
-  order               Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  melhorEnvioId       String?   @unique
+  id                  String               @id @default(uuid())
+  orderId             String               @unique
+  order               Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  melhorEnvioId       String?              @unique
   melhorEnvioProtocol String?
-  status              String    @default("creating")
+  status              String               @default("creating")
+  labelStatus         ShippingLabelStatus  @default(awaiting_shipping_data)
+  labelSource         ShippingLabelSource?
+  serviceId           String?
   transportadora      String?
   servico             String?
+  prazoDias           Int?
+  custoEstimado       Decimal?             @db.Decimal(10, 2)
+  custoEtiqueta       Decimal?             @db.Decimal(10, 2)
   codigoRastreio      String?
   urlRastreio         String?
   urlEtiqueta         String?
+  referenciaEtiqueta  String?
   tipoDocumentoFiscal String?
   chaveNotaFiscal     String?
   ultimoErro          String?
+  ultimoErroCodigo    String?
+  tentativas          Int                  @default(0)
+  processandoEm       DateTime?
+  processamentoToken  String?
+  ultimaTentativaEm   DateTime?
+  saldoConsultadoEm   DateTime?
   compradoEm          DateTime?
   geradoEm            DateTime?
+  impressoEm          DateTime?
   postadoEm           DateTime?
   entregueEm          DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  canceladoEm         DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  events ShipmentEvent[]
 
   @@index([status])
+  @@index([labelStatus])
+  @@index([processandoEm])
+}
+
+model ShipmentEvent {
+  id         String               @id @default(uuid())
+  shipmentId String
+  shipment   Shipment             @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  type       String
+  status     ShippingLabelStatus?
+  message    String?
+  metadata   Json?
+  createdAt  DateTime             @default(now())
+
+  @@index([shipmentId, createdAt])
+}
+
+model MelhorEnvioBalanceCache {
+  id           String    @id @default("singleton")
+  saldo        Decimal?  @db.Decimal(12, 2)
+  disponivel   Boolean   @default(false)
+  consultadoEm DateTime?
+  ultimoErro   String?
+  updatedAt    DateTime  @updatedAt
 }
 
 // Usuário do painel administrativo (apps/admin). Single-user, separado do

@@ -18,14 +18,20 @@ export type OrderRow = {
   paymentMethod: string | null; // não persistido hoje — sempre null (ver status.ts)
   total: number;
   status: string;
+  shippingMode: string;
+  shippingProvider: string | null;
+  shippingService: string | null;
+  shippingAmountCharged: number;
+  labelStatus: string;
   shipmentStatus: string | null;
+  shipmentError: string | null;
 };
 
 export type OrdersSummary = {
-  pagos: { count: number; total: number };
-  naoPagos: { count: number; total: number };
-  feitos: { count: number };
-  naoFeitos: { count: number };
+  aguardando: number;
+  geradas: number;
+  manuais: number;
+  problemas: number;
 };
 
 export type OrdersPage = {
@@ -36,6 +42,19 @@ export type OrdersPage = {
   totalPages: number;
 };
 
+export async function getCachedMelhorEnvioBalance() {
+  const balance = await prisma.melhorEnvioBalanceCache.findUnique({
+    where: { id: "singleton" },
+  });
+  return {
+    available: balance?.disponivel ?? false,
+    value: balance?.saldo === null || balance?.saldo === undefined
+      ? null
+      : Number(balance.saldo),
+    checkedAt: balance?.consultadoEm?.toISOString() ?? null,
+  };
+}
+
 // Mapeamento acordado com o dono do produto:
 //   pagos     → status "pago"
 //   nao-pagos → status "aguardando_pagamento"
@@ -44,13 +63,54 @@ export type OrdersPage = {
 //   todos     → todo pedido que saiu do carrinho (mesmo conjunto de "feitos")
 function statusWhere(filter: OrderFilterId): Prisma.OrderWhereInput {
   switch (filter) {
-    case "pagos":
-      return { status: "pago" };
-    case "nao-pagos":
+    case "aguardando-pagamento":
       return { status: "aguardando_pagamento" };
-    case "nao-feitos":
-      return { status: "cancelado" };
-    case "feitos":
+    case "aguardando-etiqueta":
+      return {
+        status: "pago",
+        OR: [
+          { shipment: { is: null } },
+          {
+            shipment: {
+              is: {
+                labelStatus: {
+                  in: [
+                    "awaiting_shipping_data",
+                    "awaiting_invoice",
+                    "ready_to_purchase",
+                    "processing",
+                  ],
+                },
+              },
+            },
+          },
+        ],
+      };
+    case "etiqueta-gerada":
+      return {
+        shipment: {
+          is: { labelStatus: { in: ["generated", "printed"] } },
+        },
+      };
+    case "frete-gratis":
+      return {
+        status: "pago",
+        shippingMode: {
+          in: ["free_shipping_coupon", "free_shipping_threshold"],
+        },
+      };
+    case "com-problema":
+      return {
+        shipment: {
+          is: { labelStatus: { in: ["insufficient_balance", "error"] } },
+        },
+      };
+    case "postados":
+      return { shipment: { is: { labelStatus: "posted" } } };
+    case "em-transito":
+      return { shipment: { is: { labelStatus: "in_transit" } } };
+    case "entregues":
+      return { shipment: { is: { labelStatus: "delivered" } } };
     case "todos":
     default:
       return { status: { not: "draft" } };
@@ -97,27 +157,31 @@ function searchWhere(search: string | undefined): Prisma.OrderWhereInput {
 
 export async function getOrdersSummary(period: OrderPeriodId): Promise<OrdersSummary> {
   const dateFilter = dateWhere(period);
-  const [pagos, naoPagos, feitos, naoFeitos] = await Promise.all([
-    prisma.order.aggregate({
-      where: { ...dateFilter, status: "pago" },
-      _count: true,
-      _sum: { total: true },
+  const [aguardando, geradas, manuais, problemas] = await Promise.all([
+    prisma.order.count({
+      where: { ...dateFilter, ...statusWhere("aguardando-etiqueta") },
     }),
-    prisma.order.aggregate({
-      where: { ...dateFilter, status: "aguardando_pagamento" },
-      _count: true,
-      _sum: { total: true },
+    prisma.order.count({
+      where: {
+        ...dateFilter,
+        shipment: {
+          is: {
+            labelStatus: {
+              in: ["generated", "printed", "posted", "in_transit", "delivered"],
+            },
+          },
+        },
+      },
     }),
-    prisma.order.count({ where: { ...dateFilter, status: { not: "draft" } } }),
-    prisma.order.count({ where: { ...dateFilter, status: "cancelado" } }),
+    prisma.order.count({
+      where: { ...dateFilter, ...statusWhere("frete-gratis") },
+    }),
+    prisma.order.count({
+      where: { ...dateFilter, ...statusWhere("com-problema") },
+    }),
   ]);
 
-  return {
-    pagos: { count: pagos._count, total: Number(pagos._sum.total ?? 0) },
-    naoPagos: { count: naoPagos._count, total: Number(naoPagos._sum.total ?? 0) },
-    feitos: { count: feitos },
-    naoFeitos: { count: naoFeitos },
-  };
+  return { aguardando, geradas, manuais, problemas };
 }
 
 export async function listOrdersPaged(params: {
@@ -128,9 +192,11 @@ export async function listOrdersPaged(params: {
 }): Promise<OrdersPage> {
   const pageSize = ORDERS_PAGE_SIZE;
   const where: Prisma.OrderWhereInput = {
-    ...statusWhere(params.filter),
-    ...dateWhere(params.period),
-    ...searchWhere(params.search),
+    AND: [
+      statusWhere(params.filter),
+      dateWhere(params.period),
+      searchWhere(params.search),
+    ],
   };
 
   const total = await prisma.order.count({ where });
@@ -149,7 +215,17 @@ export async function listOrdersPaged(params: {
       status: true,
       total: true,
       createdAt: true,
-      shipment: { select: { status: true } },
+      shippingMode: true,
+      shippingProvider: true,
+      shippingService: true,
+      shippingAmountCharged: true,
+      shipment: {
+        select: {
+          status: true,
+          labelStatus: true,
+          ultimoErro: true,
+        },
+      },
     },
   });
 
@@ -162,7 +238,19 @@ export async function listOrdersPaged(params: {
       paymentMethod: null,
       total: Number(order.total),
       status: order.status,
+      shippingMode: order.shippingMode,
+      shippingProvider: order.shippingProvider,
+      shippingService: order.shippingService,
+      shippingAmountCharged: Number(order.shippingAmountCharged),
+      labelStatus:
+        order.shipment?.labelStatus ??
+        (order.status === "aguardando_pagamento"
+          ? "awaiting_payment"
+          : order.status === "pago"
+            ? "awaiting_shipping_data"
+            : "not_applicable"),
       shipmentStatus: order.shipment?.status ?? null,
+      shipmentError: order.shipment?.ultimoErro ?? null,
     })),
     total,
     page,

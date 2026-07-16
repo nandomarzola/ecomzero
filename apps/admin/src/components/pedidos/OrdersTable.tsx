@@ -1,9 +1,15 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Eye, PackageSearch } from "lucide-react";
+import { ChevronLeft, ChevronRight, PackageSearch } from "lucide-react";
 import type { OrdersPage } from "@/lib/services/orderAdminService";
 import type { OrdersQuery } from "@/lib/orders/href";
 import { ordersHref } from "@/lib/orders/href";
-import { orderStatusLabel, orderStatusTone, paymentMethodLabel } from "@/lib/orders/status";
+import {
+  labelStatusLabel,
+  labelStatusTone,
+  logisticsStatusLabel,
+  paymentMethodLabel,
+  shippingModeLabel,
+} from "@/lib/orders/status";
 import StatusBadge from "@/components/pedidos/StatusBadge";
 
 const money = (value: number) =>
@@ -54,15 +60,17 @@ export default function OrdersTable({
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[840px] border-collapse">
+        <table className="w-full min-w-[1280px] border-collapse">
           <thead>
             <tr className="border-b border-white/[0.07]">
               <th className={HEAD_CLASS}>Pedido</th>
               <th className={HEAD_CLASS}>Cliente</th>
               <th className={HEAD_CLASS}>Data</th>
               <th className={HEAD_CLASS}>Pagamento</th>
+              <th className={HEAD_CLASS}>Modalidade de frete</th>
+              <th className={HEAD_CLASS}>Situação da etiqueta</th>
               <th className={`${HEAD_CLASS} text-right`}>Valor</th>
-              <th className={HEAD_CLASS}>Status</th>
+              <th className={HEAD_CLASS}>Status logístico</th>
               <th className={`${HEAD_CLASS} text-right`}>Ações</th>
             </tr>
           </thead>
@@ -83,19 +91,44 @@ export default function OrdersTable({
                   <td className="px-4 py-3 text-[13px] text-white/75">
                     {paymentMethodLabel(order.status, order.paymentMethod)}
                   </td>
+                  <td className="px-4 py-3">
+                    <p className="text-[13px] text-white/75">{shippingModeLabel(order.shippingMode)}</p>
+                    {order.shippingService ? (
+                      <p className="mt-0.5 text-[11px] text-white/40">{order.shippingService}</p>
+                    ) : null}
+                  </td>
+                  <td className="px-4 py-3" title={order.shipmentError ?? undefined}>
+                    <StatusBadge
+                      label={labelStatusLabel(order.labelStatus)}
+                      tone={labelStatusTone(order.labelStatus)}
+                    />
+                  </td>
                   <td className="px-4 py-3 text-right text-[13px] font-semibold text-white">{money(order.total)}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge label={orderStatusLabel(order.status)} tone={orderStatusTone(order.status)} />
+                    <span className="text-[13px] text-white/65">
+                      {logisticsStatusLabel(order.labelStatus)}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end">
                       <Link
-                        href={`/pedidos/${order.id}`}
-                        aria-label={`Visualizar pedido #${order.id.slice(0, 8)}`}
-                        title="Visualizar pedido"
-                        className="flex h-8 w-8 items-center justify-center rounded-md border border-white/[0.08] bg-[#1A1A1A] text-white/60 transition hover:border-[#A9EC17]/30 hover:text-[#A9EC17]"
+                        href={order.labelStatus === "generated" || order.labelStatus === "printed"
+                          ? `/pedidos/${order.id}/etiqueta?autoprint=1`
+                          : `/pedidos/${order.id}`}
+                        aria-label={`Abrir ação do pedido #${order.id.slice(0, 8)}`}
+                        className="inline-flex h-8 items-center justify-center rounded-md border border-white/[0.08] bg-[#1A1A1A] px-3 text-[11px] font-semibold text-white/65 transition hover:border-[#A9EC17]/30 hover:text-[#A9EC17]"
                       >
-                        <Eye className="h-4 w-4" strokeWidth={1.8} />
+                        {order.labelStatus === "awaiting_invoice"
+                          ? "Informar NF-e"
+                          : order.labelStatus === "ready_to_purchase"
+                            ? "Comprar etiqueta"
+                            : ["insufficient_balance", "error", "awaiting_shipping_data"].includes(order.labelStatus)
+                              ? "Tentar novamente"
+                              : ["generated", "printed"].includes(order.labelStatus)
+                                ? "Imprimir"
+                                : ["posted", "in_transit"].includes(order.labelStatus)
+                                  ? "Rastrear"
+                                  : "Ver detalhes"}
                       </Link>
                     </div>
                   </td>

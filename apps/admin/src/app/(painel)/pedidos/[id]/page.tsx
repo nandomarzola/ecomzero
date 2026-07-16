@@ -4,7 +4,12 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CreditCard, MapPin, Package } from "lucide-react";
 import ShipmentActions from "@/components/pedidos/ShipmentActions";
 import { config } from "@/lib/config";
-import { getAdminOrderDetails } from "@/lib/services/shippingFulfillmentAdminService";
+import {
+  getAdminOrderDetails,
+  getShippingSettings,
+} from "@/lib/services/shippingFulfillmentAdminService";
+import { getCachedMelhorEnvioBalance } from "@/lib/services/orderAdminService";
+import { getStorefrontMelhorEnvioBalance } from "@/lib/services/storefrontShippingAdminClient";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +35,11 @@ export default async function AdminOrderDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const order = await getAdminOrderDetails(id);
+  const [order, shippingSettings, balance] = await Promise.all([
+    getAdminOrderDetails(id),
+    getShippingSettings(),
+    getStorefrontMelhorEnvioBalance().catch(() => getCachedMelhorEnvioBalance()),
+  ]);
   if (!order || order.status === "draft") notFound();
 
   return (
@@ -102,8 +111,47 @@ export default async function AdminOrderDetailsPage({
       {order.status === "pago" ? (
         <ShipmentActions
           orderId={order.id}
-          shipment={order.shipment}
-          requiresShippingSelection={!order.shippingQuoteId || !order.shippingOptionId}
+          shippingMode={order.shippingMode}
+          shippingAmountCharged={Number(order.shippingAmountCharged)}
+          senderStateRegister={shippingSettings?.inscricaoEstadual ?? null}
+          autoPurchaseEnabled={config.melhorEnvioAutoPurchaseEnabled}
+          balance={balance}
+          shipment={order.shipment
+            ? {
+                melhorEnvioId: order.shipment.melhorEnvioId,
+                melhorEnvioProtocol: order.shipment.melhorEnvioProtocol,
+                status: order.shipment.status,
+                labelStatus: order.shipment.labelStatus,
+                labelSource: order.shipment.labelSource,
+                serviceId: order.shipment.serviceId,
+                transportadora: order.shipment.transportadora,
+                servico: order.shipment.servico,
+                prazoDias: order.shipment.prazoDias,
+                custoEstimado: order.shipment.custoEstimado === null
+                  ? null
+                  : Number(order.shipment.custoEstimado),
+                custoEtiqueta: order.shipment.custoEtiqueta === null
+                  ? null
+                  : Number(order.shipment.custoEtiqueta),
+                chaveNotaFiscal: order.shipment.chaveNotaFiscal,
+                codigoRastreio: order.shipment.codigoRastreio,
+                urlRastreio: order.shipment.urlRastreio,
+                urlEtiqueta: order.shipment.urlEtiqueta,
+                ultimoErro: order.shipment.ultimoErro,
+                ultimoErroCodigo: order.shipment.ultimoErroCodigo,
+                tentativas: order.shipment.tentativas,
+                ultimaTentativaEm: order.shipment.ultimaTentativaEm?.toISOString() ?? null,
+                geradoEm: order.shipment.geradoEm?.toISOString() ?? null,
+                impressoEm: order.shipment.impressoEm?.toISOString() ?? null,
+                events: order.shipment.events.map((event) => ({
+                  id: event.id,
+                  type: event.type,
+                  status: event.status,
+                  message: event.message,
+                  createdAt: event.createdAt.toISOString(),
+                })),
+              }
+            : null}
         />
       ) : (
         <p className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] p-4 text-sm text-amber-200">A expedição será liberada quando o pagamento for confirmado.</p>

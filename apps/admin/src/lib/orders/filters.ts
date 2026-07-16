@@ -1,9 +1,13 @@
 import {
-  CheckCircle2,
+  AlertTriangle,
   Clock3,
+  FileCheck2,
+  FileClock,
+  Gift,
   ListChecks,
-  ShoppingCart,
-  XCircle,
+  PackageCheck,
+  Route,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,7 +16,16 @@ import {
 // então não pode arrastar `@/lib/db`. A tradução filtro → cláusula Prisma vive
 // em `orderAdminService.ts`.
 
-export type OrderFilterId = "todos" | "pagos" | "nao-pagos" | "feitos" | "nao-feitos";
+export type OrderFilterId =
+  | "todos"
+  | "aguardando-pagamento"
+  | "aguardando-etiqueta"
+  | "etiqueta-gerada"
+  | "frete-gratis"
+  | "com-problema"
+  | "postados"
+  | "em-transito"
+  | "entregues";
 
 export type OrderFilter = {
   id: OrderFilterId;
@@ -21,19 +34,23 @@ export type OrderFilter = {
   noun: string; // usado no rodapé "Mostrando X a Y de Z {noun}"
   icon: LucideIcon;
   /** chave do card de resumo que fica destacado quando esta aba está ativa */
-  metric: "pagos" | "naoPagos" | "feitos" | "naoFeitos";
+  metric: "aguardando" | "geradas" | "manuais" | "problemas";
 };
 
 export const ORDER_FILTERS: OrderFilter[] = [
-  { id: "todos", label: "Todos", sectionTitle: "Todos os pedidos", noun: "pedidos", icon: ListChecks, metric: "feitos" },
-  { id: "pagos", label: "Pagos", sectionTitle: "Pedidos pagos", noun: "pedidos pagos", icon: CheckCircle2, metric: "pagos" },
-  { id: "nao-pagos", label: "Não pagos", sectionTitle: "Pedidos não pagos", noun: "pedidos não pagos", icon: Clock3, metric: "naoPagos" },
-  { id: "feitos", label: "Feitos", sectionTitle: "Pedidos feitos", noun: "pedidos feitos", icon: ShoppingCart, metric: "feitos" },
-  { id: "nao-feitos", label: "Não feitos", sectionTitle: "Pedidos não feitos", noun: "pedidos não feitos", icon: XCircle, metric: "naoFeitos" },
+  { id: "todos", label: "Todos", sectionTitle: "Todos os pedidos", noun: "pedidos", icon: ListChecks, metric: "aguardando" },
+  { id: "aguardando-pagamento", label: "Aguardando pagamento", sectionTitle: "Pedidos aguardando pagamento", noun: "pedidos aguardando pagamento", icon: Clock3, metric: "aguardando" },
+  { id: "aguardando-etiqueta", label: "Aguardando etiqueta", sectionTitle: "Pedidos aguardando etiqueta", noun: "pedidos aguardando etiqueta", icon: FileClock, metric: "aguardando" },
+  { id: "etiqueta-gerada", label: "Etiqueta gerada", sectionTitle: "Pedidos com etiqueta gerada", noun: "pedidos com etiqueta", icon: FileCheck2, metric: "geradas" },
+  { id: "frete-gratis", label: "Frete grátis / manual", sectionTitle: "Frete grátis com ação manual", noun: "pedidos com frete grátis", icon: Gift, metric: "manuais" },
+  { id: "com-problema", label: "Com problema", sectionTitle: "Pedidos que precisam de atenção", noun: "pedidos com problema", icon: AlertTriangle, metric: "problemas" },
+  { id: "postados", label: "Postados", sectionTitle: "Pedidos postados", noun: "pedidos postados", icon: PackageCheck, metric: "geradas" },
+  { id: "em-transito", label: "Em trânsito", sectionTitle: "Pedidos em trânsito", noun: "pedidos em trânsito", icon: Truck, metric: "geradas" },
+  { id: "entregues", label: "Entregues", sectionTitle: "Pedidos entregues", noun: "pedidos entregues", icon: Route, metric: "geradas" },
 ];
 
 // Print da referência abre com a aba "Pagos" ativa.
-export const DEFAULT_ORDER_FILTER: OrderFilterId = "pagos";
+export const DEFAULT_ORDER_FILTER: OrderFilterId = "aguardando-etiqueta";
 
 export function resolveOrderFilter(value: string | undefined): OrderFilter {
   return (

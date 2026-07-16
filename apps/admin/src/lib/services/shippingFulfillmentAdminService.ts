@@ -63,9 +63,16 @@ function shipmentResponseObject(value: unknown): JsonObject | null {
 
 async function recordShipmentError(orderId: string, error: unknown) {
   const message = error instanceof Error ? error.message : "Falha na operação logística.";
+  const insufficient = /saldo|balance|insufficient/i.test(message);
   await prisma.shipment.updateMany({
     where: { orderId },
-    data: { ultimoErro: message.slice(0, 500) },
+    data: {
+      labelStatus: insufficient ? "insufficient_balance" : "error",
+      ultimoErro: message.slice(0, 500),
+      ultimoErroCodigo: insufficient ? "INSUFFICIENT_BALANCE" : "PROVIDER_ERROR",
+      processandoEm: null,
+      processamentoToken: null,
+    },
   });
 }
 
@@ -91,7 +98,11 @@ export async function getAdminOrderDetails(orderId: string) {
   return prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      shipment: true,
+      shipment: {
+        include: {
+          events: { orderBy: { createdAt: "desc" }, take: 20 },
+        },
+      },
       items: {
         include: {
           variant: { include: { product: true } },
@@ -207,6 +218,11 @@ export async function createMelhorEnvioShipment(
   input: CreateShipmentInput,
   selection?: AdminShippingSelection,
 ) {
+  if (!config.melhorEnvioAutoPurchaseEnabled) {
+    throw new Error(
+      "A inserção no carrinho está desabilitada por MELHOR_ENVIO_AUTO_PURCHASE_ENABLED=false.",
+    );
+  }
   const [order, settings] = await Promise.all([
     getAdminOrderDetails(orderId),
     getShippingSettings(),
@@ -395,7 +411,9 @@ export async function createMelhorEnvioShipment(
         melhorEnvioId,
         melhorEnvioProtocol: optionalString(data?.protocol),
         status: "pending",
+        labelStatus: "ready_to_purchase",
         ultimoErro: null,
+        ultimoErroCodigo: null,
       },
     });
   } catch (error) {
@@ -422,6 +440,11 @@ export async function getMelhorEnvioLabelFile(
 }
 
 export async function purchaseMelhorEnvioShipment(orderId: string) {
+  if (!config.melhorEnvioAutoPurchaseEnabled) {
+    throw new Error(
+      "A compra de etiquetas está desabilitada por MELHOR_ENVIO_AUTO_PURCHASE_ENABLED=false.",
+    );
+  }
   const shipment = await getShipmentForOperation(orderId);
   try {
     await melhorEnvioRequest("/api/v2/me/shipment/checkout", {
@@ -430,7 +453,13 @@ export async function purchaseMelhorEnvioShipment(orderId: string) {
     });
     return prisma.shipment.update({
       where: { orderId },
-      data: { status: "released", compradoEm: new Date(), ultimoErro: null },
+      data: {
+        status: "released",
+        labelStatus: "purchased",
+        compradoEm: new Date(),
+        ultimoErro: null,
+        ultimoErroCodigo: null,
+      },
     });
   } catch (error) {
     await recordShipmentError(orderId, error);
@@ -447,7 +476,14 @@ export async function generateMelhorEnvioLabel(orderId: string) {
     });
     return prisma.shipment.update({
       where: { orderId },
-      data: { status: "generated", geradoEm: new Date(), ultimoErro: null },
+      data: {
+        status: "generated",
+        labelStatus: "generated",
+        geradoEm: new Date(),
+        referenciaEtiqueta: shipment.melhorEnvioId,
+        ultimoErro: null,
+        ultimoErroCodigo: null,
+      },
     });
   } catch (error) {
     await recordShipmentError(orderId, error);
@@ -467,6 +503,26 @@ export async function dismissShipmentError(orderId: string) {
   }
 }
 
+export async function markShipmentPrinted(orderId: string) {
+  const updated = await prisma.shipment.updateMany({
+    where: { orderId, labelStatus: "generated" },
+    data: {
+      labelStatus: "printed",
+      impressoEm: new Date(),
+    },
+  });
+  if (updated.count === 0) return;
+  const shipment = await prisma.shipment.findUniqueOrThrow({ where: { orderId } });
+  await prisma.shipmentEvent.create({
+    data: {
+      shipmentId: shipment.id,
+      type: "printed",
+      status: "printed",
+      message: "Etiqueta aberta para impressão.",
+    },
+  });
+}
+
 export async function syncMelhorEnvioTracking(orderId: string) {
   const shipment = await getShipmentForOperation(orderId);
   try {
@@ -478,13 +534,41 @@ export async function syncMelhorEnvioTracking(orderId: string) {
     const status = optionalString(data?.status);
     const tracking = optionalString(data?.tracking);
     const trackingUrl = optionalString(data?.tracking_url);
+    const statusMap: Record<string, "ready_to_purchase" | "purchased" | "generated" | "posted" | "in_transit" | "delivered" | "canceled"> = {
+      pending: "ready_to_purchase",
+      released: "purchased",
+      generated: "generated",
+      received: "posted",
+      posted: "in_transit",
+      delivered: "delivered",
+      cancelled: "canceled",
+      canceled: "canceled",
+    };
+    const incomingLabelStatus = status ? statusMap[status] : undefined;
+    const ranks: Record<string, number> = {
+      awaiting_shipping_data: 1,
+      awaiting_invoice: 2,
+      ready_to_purchase: 3,
+      processing: 4,
+      purchased: 5,
+      generated: 6,
+      printed: 7,
+      posted: 8,
+      in_transit: 9,
+      delivered: 10,
+      canceled: 10,
+    };
+    const advances = incomingLabelStatus &&
+      (ranks[incomingLabelStatus] ?? -1) >= (ranks[shipment.labelStatus] ?? -1) &&
+      !(shipment.labelStatus === "delivered" && incomingLabelStatus === "canceled");
     return prisma.shipment.update({
       where: { orderId },
       data: {
-        ...(status ? { status } : {}),
+        ...(status && advances ? { status, labelStatus: incomingLabelStatus } : {}),
         ...(tracking ? { codigoRastreio: tracking } : {}),
         ...(trackingUrl ? { urlRastreio: trackingUrl } : {}),
         ultimoErro: null,
+        ultimoErroCodigo: null,
       },
     });
   } catch (error) {

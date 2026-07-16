@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
-import { config, isMelhorEnvioProducao } from "@/lib/config";
-import { getValidAccessToken, MelhorEnvioAuthError } from "./melhorEnvioAuthService";
+import { config } from "@/lib/config";
+import {
+  MelhorEnvioServiceError,
+  melhorEnvioRequest,
+} from "@/lib/services/melhorEnvioService";
 
 // Única camada que toca o Prisma para frete — API routes nunca importam
 // @/lib/db ou @/generated/prisma diretamente.
@@ -103,7 +106,7 @@ async function requestShippingQuote(
   cepDestino: string,
   shippingPackage: ShippingPackage,
 ): Promise<ShippingOption[]> {
-  const { token, baseUrl, cepOrigem } = config.melhorEnvio;
+  const { cepOrigem } = config.melhorEnvio;
 
   if (!cepOrigem) {
     throw new ShippingServiceError(
@@ -112,64 +115,31 @@ async function requestShippingQuote(
     );
   }
 
-  // Produção usa OAuth com refresh automático (token vem do banco); sandbox/dev
-  // continua no token fixo da env var. Ver melhorEnvioAuthService.
-  let authToken: string;
-  if (isMelhorEnvioProducao) {
-    try {
-      authToken = await getValidAccessToken();
-    } catch (error) {
-      if (error instanceof MelhorEnvioAuthError) {
-        throw new ShippingServiceError(
-          "Cálculo de frete não configurado neste ambiente",
-          503,
-        );
-      }
-      throw error;
-    }
-  } else {
-    if (!token) {
+  let data: unknown;
+  try {
+    data = await melhorEnvioRequest("/api/v2/me/shipment/calculate", {
+      method: "POST",
+      body: {
+        from: { postal_code: cepOrigem },
+        to: { postal_code: cepDestino },
+        package: shippingPackage,
+        services: MELHOR_ENVIO_SERVICES,
+      },
+      timeoutMs: 8_000,
+    });
+  } catch (error) {
+    if (error instanceof MelhorEnvioServiceError && error.status === 503) {
       throw new ShippingServiceError(
         "Cálculo de frete não configurado neste ambiente",
         503,
       );
     }
-    authToken = token;
-  }
-
-  let response: Response;
-  try {
-    response = await fetch(`${baseUrl}/api/v2/me/shipment/calculate`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "User-Agent": "ecomzero (contato@ecomzero.com.br)",
-      },
-      body: JSON.stringify({
-        from: { postal_code: cepOrigem },
-        to: { postal_code: cepDestino },
-        package: shippingPackage,
-        services: MELHOR_ENVIO_SERVICES,
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-  } catch {
     throw new ShippingServiceError(
       "Serviço de frete indisponível no momento",
       502,
     );
   }
 
-  if (!response.ok) {
-    throw new ShippingServiceError(
-      "Serviço de frete indisponível no momento",
-      502,
-    );
-  }
-
-  const data = (await response.json().catch(() => null)) as MelhorEnvioQuote[] | null;
   if (!Array.isArray(data)) {
     throw new ShippingServiceError(
       "Serviço de frete indisponível no momento",
@@ -177,7 +147,7 @@ async function requestShippingQuote(
     );
   }
 
-  const options = data
+  const options = (data as MelhorEnvioQuote[])
     .filter((quote) => !quote.error && quote.price && quote.delivery_time != null)
     .map((quote) => ({
       id: String(quote.id),

@@ -1,10 +1,11 @@
-import { CheckCircle2, Clock3, ShoppingCart, XCircle } from "lucide-react";
-import { getOrdersSummary } from "@/lib/services/orderAdminService";
+import { AlertTriangle, FileCheck2, FileClock, Gift } from "lucide-react";
+import {
+  getCachedMelhorEnvioBalance,
+  getOrdersSummary,
+} from "@/lib/services/orderAdminService";
+import { getStorefrontMelhorEnvioBalance } from "@/lib/services/storefrontShippingAdminClient";
 import type { OrderFilter, OrderPeriodId } from "@/lib/orders/filters";
 import OrderSummaryCard, { type SummaryTone } from "@/components/pedidos/OrderSummaryCard";
-
-const money = (value: number) =>
-  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 // Async Server Component — busca os totais do período e monta os 4 cards.
 // O card correspondente à aba ativa fica destacado (verde).
@@ -15,36 +16,49 @@ export default async function SummaryCards({
   period: OrderPeriodId;
   activeMetric: OrderFilter["metric"];
 }) {
-  const summary = await getOrdersSummary(period);
+  const [summary, balance] = await Promise.all([
+    getOrdersSummary(period),
+    getStorefrontMelhorEnvioBalance().catch(() => getCachedMelhorEnvioBalance()),
+  ]);
 
   const cards: {
     metric: OrderFilter["metric"];
     label: string;
     value: string;
     subtitle: string;
-    icon: typeof CheckCircle2;
+    icon: typeof FileClock;
     tone: SummaryTone;
   }[] = [
-    { metric: "pagos", label: "Pedidos pagos", value: String(summary.pagos.count), subtitle: money(summary.pagos.total), icon: CheckCircle2, tone: "green" },
-    { metric: "naoPagos", label: "Pedidos não pagos", value: String(summary.naoPagos.count), subtitle: money(summary.naoPagos.total), icon: Clock3, tone: "amber" },
-    { metric: "feitos", label: "Pedidos feitos", value: String(summary.feitos.count), subtitle: "Total", icon: ShoppingCart, tone: "blue" },
-    { metric: "naoFeitos", label: "Pedidos não feitos", value: String(summary.naoFeitos.count), subtitle: "Total", icon: XCircle, tone: "purple" },
+    { metric: "aguardando", label: "Pagos aguardando etiqueta", value: String(summary.aguardando), subtitle: "Ação pendente", icon: FileClock, tone: "amber" },
+    { metric: "geradas", label: "Etiquetas geradas", value: String(summary.geradas), subtitle: "No período", icon: FileCheck2, tone: "green" },
+    { metric: "manuais", label: "Frete grátis / manual", value: String(summary.manuais), subtitle: "Ação da loja", icon: Gift, tone: "blue" },
+    { metric: "problemas", label: "Erros ou sem saldo", value: String(summary.problemas), subtitle: "Precisam de atenção", icon: AlertTriangle, tone: "purple" },
   ];
 
   return (
-    <section aria-label="Resumo de pedidos" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {cards.map((card) => (
-        <OrderSummaryCard
-          key={card.metric}
-          label={card.label}
-          value={card.value}
-          subtitle={card.subtitle}
-          icon={card.icon}
-          tone={card.tone}
-          active={card.metric === activeMetric}
-        />
-      ))}
-    </section>
+    <div className="space-y-2">
+      <section aria-label="Resumo de pedidos" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {cards.map((card) => (
+          <OrderSummaryCard
+            key={card.metric}
+            label={card.label}
+            value={card.value}
+            subtitle={card.subtitle}
+            icon={card.icon}
+            tone={card.tone}
+            active={card.metric === activeMetric}
+          />
+        ))}
+      </section>
+      <p className="text-right text-[11px] text-white/35">
+        Melhor Carteira: {balance.available && balance.value !== null
+          ? balance.value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+          : "Saldo indisponível"}
+        {balance.checkedAt
+          ? ` · atualizado ${new Date(balance.checkedAt).toLocaleString("pt-BR")}`
+          : ""}
+      </p>
+    </div>
   );
 }
 

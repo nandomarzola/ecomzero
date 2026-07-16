@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getMelhorEnvioLabelFile } from "@/lib/services/shippingFulfillmentAdminService";
+import {
+  getMelhorEnvioLabelFile,
+  markShipmentPrinted,
+} from "@/lib/services/shippingFulfillmentAdminService";
 
 function findUrl(value: unknown): string | null {
   if (typeof value === "string" && value.startsWith("https://")) return value;
@@ -13,7 +16,7 @@ function findUrl(value: unknown): string | null {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string; format: string }> },
 ) {
   if (!(await auth())?.user) {
@@ -27,6 +30,7 @@ export async function GET(
 
   try {
     const upstream = await getMelhorEnvioLabelFile(id);
+    await markShipmentPrinted(id);
     const upstreamType = upstream.headers.get("content-type") ?? "";
     if (upstreamType.includes("application/json")) {
       const data = await upstream.json().catch(() => null);
@@ -41,7 +45,7 @@ export async function GET(
     return new NextResponse(upstream.body, {
       headers: {
         "Content-Type": upstreamType || "image/jpeg",
-        "Content-Disposition": `inline; filename="ecomzero-${id.slice(0, 8)}.jpeg"`,
+        "Content-Disposition": `${new URL(request.url).searchParams.get("download") === "1" ? "attachment" : "inline"}; filename="ecomzero-${id.slice(0, 8)}.jpeg"`,
         "Cache-Control": "private, no-store, max-age=0",
       },
     });

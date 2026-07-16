@@ -1,16 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Loader2, PackageCheck, Printer, RefreshCw, ShoppingCart, WandSparkles, X } from "lucide-react";
 import {
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
+  FileCheck2,
+  FileText,
+  Loader2,
+  PackageCheck,
+  Printer,
+  RefreshCw,
+  ShieldCheck,
+  Trash2,
+  Truck,
+} from "lucide-react";
+import {
+  attachInvoiceAction,
   calculateOrderShippingAction,
-  createShipmentAction,
-  dismissShipmentErrorAction,
+  cancelShipmentAction,
   generateLabelAction,
+  markExternalShipmentAction,
+  prepareShipmentAction,
   purchaseShipmentAction,
-  syncTrackingAction,
+  syncShipmentStatusAction,
 } from "@/lib/actions/shipping";
+import {
+  labelStatusLabel,
+  shippingModeLabel,
+} from "@/lib/orders/status";
 
 type ShippingOption = {
   id: string;
@@ -30,49 +49,87 @@ type Shipment = {
   melhorEnvioId: string | null;
   melhorEnvioProtocol: string | null;
   status: string;
+  labelStatus: string;
+  labelSource: string | null;
+  serviceId: string | null;
   transportadora: string | null;
   servico: string | null;
+  prazoDias: number | null;
+  custoEstimado: number | null;
+  custoEtiqueta: number | null;
+  chaveNotaFiscal: string | null;
   codigoRastreio: string | null;
   urlRastreio: string | null;
+  urlEtiqueta: string | null;
   ultimoErro: string | null;
+  ultimoErroCodigo: string | null;
+  tentativas: number;
+  ultimaTentativaEm: string | null;
+  geradoEm: string | null;
+  impressoEm: string | null;
+  events: Array<{
+    id: string;
+    type: string;
+    status: string | null;
+    message: string | null;
+    createdAt: string;
+  }>;
 } | null;
 
-const statusLabel: Record<string, string> = {
-  creating: "Preparando integração",
-  pending: "No carrinho do Melhor Envio",
-  released: "Etiqueta comprada",
-  generated: "Etiqueta gerada",
-  received: "Recebido no ponto de postagem",
-  posted: "Postado / em trânsito",
-  delivered: "Entregue",
-  undelivered: "Não entregue",
-  cancelled: "Cancelado",
-  canceled: "Cancelado",
-  paused: "Pausado",
-  suspended: "Suspenso",
-};
+const money = (value: number) =>
+  value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const freeShippingModes = new Set([
+  "free_shipping_coupon",
+  "free_shipping_threshold",
+]);
 
 export default function ShipmentActions({
   orderId,
+  shippingMode,
+  shippingAmountCharged,
+  senderStateRegister,
+  autoPurchaseEnabled,
+  balance,
   shipment,
-  requiresShippingSelection,
 }: {
   orderId: string;
+  shippingMode: string;
+  shippingAmountCharged: number;
+  senderStateRegister: string | null;
+  autoPurchaseEnabled: boolean;
+  balance: { available: boolean; value: number | null; checkedAt: string | null };
   shipment: Shipment;
-  requiresShippingSelection: boolean;
 }) {
   const router = useRouter();
-  const [fiscalType, setFiscalType] = useState<"nota_fiscal" | "declaracao_conteudo">("nota_fiscal");
-  const [invoiceKey, setInvoiceKey] = useState("");
-  const [declarationConfirmed, setDeclarationConfirmed] = useState(false);
+  const [invoiceKey, setInvoiceKey] = useState(shipment?.chaveNotaFiscal ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [quotePending, startQuoteTransition] = useTransition();
   const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
-  const [selectedShippingOptionId, setSelectedShippingOptionId] = useState("");
+  const [selectedShippingOptionId, setSelectedShippingOptionId] = useState(
+    shipment?.serviceId ?? "",
+  );
 
-  const calculateShipping = useCallback(() => {
+  const isFreeShipping = freeShippingModes.has(shippingMode);
+  const invoiceSaved = Boolean(
+    shipment?.chaveNotaFiscal && shipment.chaveNotaFiscal === invoiceKey,
+  );
+  const invoiceFormatValid = /^\d{44}$/.test(invoiceKey);
+  const labelStatus = shipment?.labelStatus ?? "awaiting_shipping_data";
+
+  function applyQuote(result: ShippingQuote) {
+    setShippingQuote(result);
+    setSelectedShippingOptionId(
+      shipment?.serviceId && result.options.some((option) => option.id === shipment.serviceId)
+        ? shipment.serviceId
+        : result.options[0]?.id ?? "",
+    );
+  }
+
+  function calculateShipping() {
     setError(null);
     startQuoteTransition(async () => {
       const result = await calculateOrderShippingAction(orderId);
@@ -80,280 +137,277 @@ export default function ShipmentActions({
         setError(result.error ?? "Não foi possível calcular o frete deste pedido.");
         return;
       }
-      setShippingQuote(result.data);
-      setSelectedShippingOptionId(result.data.options[0]?.id ?? "");
+      applyQuote(result.data);
     });
-  }, [orderId]);
+  }
 
   useEffect(() => {
-    if (!requiresShippingSelection || shipment?.melhorEnvioId) return;
-    const timer = window.setTimeout(calculateShipping, 0);
+    if (!isFreeShipping || shipment?.melhorEnvioId) return;
+    const timer = window.setTimeout(() => {
+      startQuoteTransition(async () => {
+        const result = await calculateOrderShippingAction(orderId);
+        if (!result.ok) {
+          setError(result.error ?? "Não foi possível calcular o frete deste pedido.");
+          return;
+        }
+        setShippingQuote(result.data);
+        setSelectedShippingOptionId(
+          shipment?.serviceId && result.data.options.some((option) => option.id === shipment.serviceId)
+            ? shipment.serviceId
+            : result.data.options[0]?.id ?? "",
+        );
+      });
+    }, 0);
     return () => window.clearTimeout(timer);
-  }, [calculateShipping, requiresShippingSelection, shipment?.melhorEnvioId]);
+  }, [isFreeShipping, orderId, shipment?.melhorEnvioId, shipment?.serviceId]);
 
-  function run(name: string, action: () => Promise<{ ok: boolean; error?: string }>) {
+  function run(
+    name: string,
+    action: () => Promise<{ ok: boolean; error?: string }>,
+    successMessage: string,
+  ) {
     setError(null);
+    setSuccess(null);
     setOperation(name);
     startTransition(async () => {
       const result = await action();
       if (!result.ok) setError(result.error ?? "Não foi possível concluir a operação.");
-      else router.refresh();
-      setOperation(null);
-    });
-  }
-
-  function createShipment() {
-    if (requiresShippingSelection && (!shippingQuote || !selectedShippingOptionId)) {
-      setError("Calcule o frete e selecione uma transportadora antes de continuar.");
-      return;
-    }
-    run("create", () =>
-      createShipmentAction(
-        orderId,
-        fiscalType === "nota_fiscal"
-          ? { tipoDocumentoFiscal: fiscalType, chaveNotaFiscal: invoiceKey }
-          : {
-              tipoDocumentoFiscal: fiscalType,
-              declaracaoConfirmada: declarationConfirmed,
-            },
-        requiresShippingSelection && shippingQuote
-          ? {
-              quoteId: shippingQuote.quoteId,
-              optionId: selectedShippingOptionId,
-            }
-          : undefined,
-      ),
-    );
-  }
-
-  function purchase() {
-    if (!window.confirm("Comprar esta etiqueta? O valor será descontado do saldo da Melhor Carteira.")) return;
-    run("purchase", () => purchaseShipmentAction(orderId));
-  }
-
-  function generate() {
-    if (!window.confirm("Gerar a etiqueta térmica 10×15 agora? Nesta etapa a transportadora pode ser comunicada do envio.")) return;
-    const tab = window.open("about:blank", "_blank");
-    setError(null);
-    setOperation("generate");
-    startTransition(async () => {
-      const result = await generateLabelAction(orderId);
-      if (!result.ok) {
-        tab?.close();
-        setError(result.error);
-      } else {
-        const printUrl = new URL(`/pedidos/${orderId}/etiqueta?autoprint=1`, window.location.origin).toString();
-        if (tab) {
-          tab.opener = null;
-          tab.location.href = printUrl;
-        } else {
-          window.location.href = printUrl;
-        }
+      else {
+        setSuccess(successMessage);
         router.refresh();
       }
       setOperation(null);
     });
   }
 
-  const noRemoteShipment = !shipment?.melhorEnvioId;
-  const canPrintThermal = Boolean(
-    shipment &&
-      [
-        "generated",
-        "received",
-        "posted",
-        "delivered",
-        "undelivered",
-        "paused",
-        "suspended",
-      ].includes(shipment.status),
-  );
+  function saveInvoice() {
+    run(
+      "invoice",
+      () => attachInvoiceAction(orderId, { invoiceKey }),
+      "Chave da NF-e validada e vinculada ao pedido.",
+    );
+  }
 
-  // Legenda do estágio atual — deixa explícito qual é a próxima ação, evitando
-  // a ambiguidade de "Comprar etiqueta" enquanto o pedido já está no carrinho.
-  const stageHint = shipment
-    ? shipment.status === "pending"
-      ? "O pedido já está no carrinho do Melhor Envio. Finalize a compra para debitar o frete e liberar a etiqueta."
-      : shipment.status === "released"
-        ? "Etiqueta comprada. Gere o arquivo da etiqueta para imprimir."
-        : canPrintThermal
-          ? "Etiqueta pronta. Imprima e cole no pacote; use Atualizar status para acompanhar o rastreio."
-          : "Acompanhe o andamento do envio pelo Melhor Envio."
-    : null;
+  function prepare(serviceId?: string) {
+    run(
+      "prepare",
+      () => prepareShipmentAction(orderId, serviceId),
+      "Cotação e dados logísticos atualizados.",
+    );
+  }
+
+  function purchase() {
+    if (!window.confirm("Comprar e gerar esta etiqueta no Melhor Envio? O custo será debitado da Melhor Carteira.")) return;
+    run(
+      "purchase",
+      () => purchaseShipmentAction(orderId),
+      "Etiqueta gerada com sucesso.",
+    );
+  }
+
+  function markExternal() {
+    if (!window.confirm("Marcar este pedido como envio externo? Ele deixará a fila do Melhor Envio.")) return;
+    run(
+      "external",
+      () => markExternalShipmentAction(orderId),
+      "Pedido marcado como envio externo.",
+    );
+  }
+
+  function cancelLabel() {
+    if (!window.confirm("Cancelar esta etiqueta no Melhor Envio? O cancelamento pode depender da aprovação da transportadora.")) return;
+    run(
+      "cancel",
+      () => cancelShipmentAction(orderId),
+      "Cancelamento solicitado ao Melhor Envio.",
+    );
+  }
+
+  function generateLegacyLabel() {
+    if (!window.confirm("Gerar o arquivo da etiqueta comprada?")) return;
+    run(
+      "generate",
+      () => generateLabelAction(orderId),
+      "Etiqueta gerada com sucesso.",
+    );
+  }
 
   return (
     <section className="rounded-xl border border-white/[0.08] bg-[#111111] p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#A9EC17]">Expedição</p>
-          <h2 className="font-display mt-1 text-lg font-bold">Etiqueta Melhor Envio</h2>
+          <h2 className="font-display mt-1 text-lg font-bold">Fiscal e logística</h2>
+          <p className="mt-1 text-xs text-white/40">Venda comercial com NF-e obrigatória.</p>
         </div>
-        {shipment ? (
-          <span className="rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/5 px-3 py-1 text-xs text-[#D9FF87]">
-            {statusLabel[shipment.status] ?? shipment.status}
-          </span>
-        ) : null}
+        <span className="rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/5 px-3 py-1 text-xs text-[#D9FF87]">
+          {labelStatusLabel(labelStatus)}
+        </span>
       </div>
 
-      {noRemoteShipment ? (
-        <div className="mt-5 space-y-4">
-          {requiresShippingSelection ? (
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <InfoCard label="Tipo de frete" value={shippingModeLabel(shippingMode)} detail={isFreeShipping ? "Grátis para o cliente; custo da loja" : "Contratado pelo cliente"} />
+        <InfoCard label="Serviço selecionado" value={shipment?.transportadora && shipment.servico ? `${shipment.transportadora} · ${shipment.servico}` : "Aguardando cotação"} detail={shipment?.prazoDias ? `Até ${shipment.prazoDias} dias úteis` : null} />
+        <InfoCard label="Custo da etiqueta" value={shipment?.custoEtiqueta !== null && shipment?.custoEtiqueta !== undefined ? money(shipment.custoEtiqueta) : shipment?.custoEstimado !== null && shipment?.custoEstimado !== undefined ? `${money(shipment.custoEstimado)} estimado` : "—"} detail={`Cobrado do cliente: ${money(shippingAmountCharged)}`} />
+        <InfoCard label="Melhor Carteira" value={balance.available && balance.value !== null ? money(balance.value) : "Saldo indisponível"} detail={balance.checkedAt ? `Consulta: ${new Date(balance.checkedAt).toLocaleString("pt-BR")}` : null} />
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-4">
+          <div className="rounded-xl border border-white/[0.08] bg-[#090909] p-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#A9EC17]" />
+              <h3 className="text-sm font-semibold">Dados fiscais</h3>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+              <label className="flex flex-col gap-1.5 text-xs text-white/55">
+                Chave da NF-e
+                <input
+                  value={invoiceKey}
+                  onChange={(event) => setInvoiceKey(event.target.value.replace(/\D/g, "").slice(0, 44))}
+                  inputMode="numeric"
+                  maxLength={44}
+                  placeholder="44 dígitos"
+                  className="h-10 rounded-lg border border-white/10 bg-[#050505] px-3 font-mono text-sm text-white outline-none focus:border-[#A9EC17]/50"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={pending || !invoiceFormatValid}
+                onClick={saveInvoice}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#A9EC17] px-4 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {operation === "invoice" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                Validar e salvar NF-e
+              </button>
+            </div>
+            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+              <p className={invoiceSaved ? "text-[#A9EC17]" : "text-amber-300"}>
+                {invoiceSaved ? "Chave validada no backend" : `${invoiceKey.length}/44 dígitos`}
+              </p>
+              <p className={senderStateRegister ? "text-white/55" : "text-red-300"}>
+                Inscrição estadual: {senderStateRegister ?? "não cadastrada"}
+              </p>
+            </div>
+          </div>
+
+          {isFreeShipping && !shipment?.melhorEnvioId ? (
             <div className="rounded-xl border border-[#A9EC17]/20 bg-[#A9EC17]/[0.03] p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-sm font-semibold text-white">Escolha a transportadora</h3>
-                  <p className="mt-1 text-xs leading-5 text-white/40">
-                    Pedido com frete grátis. A opção mais barata é selecionada automaticamente, mas você pode trocar.
-                  </p>
+                  <h3 className="text-sm font-semibold">Transportadora para o frete grátis</h3>
+                  <p className="mt-1 text-xs text-white/40">A opção mais barata vem selecionada, mas você pode escolher outra antes da compra.</p>
                 </div>
-                <button
-                  type="button"
-                  disabled={quotePending}
-                  onClick={calculateShipping}
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 transition hover:border-[#A9EC17]/40 hover:text-white disabled:opacity-50"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${quotePending ? "animate-spin" : ""}`} />
-                  Recalcular
+                <button type="button" disabled={quotePending} onClick={calculateShipping} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 disabled:opacity-50">
+                  <RefreshCw className={`h-3.5 w-3.5 ${quotePending ? "animate-spin" : ""}`} /> Recalcular
                 </button>
               </div>
-
               {quotePending && !shippingQuote ? (
-                <div className="mt-4 flex items-center gap-2 rounded-lg border border-white/[0.07] bg-black/20 px-3 py-4 text-xs text-white/45">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#A9EC17]" />
-                  Consultando transportadoras para este endereço...
-                </div>
+                <p className="mt-4 flex items-center gap-2 text-xs text-white/45"><Loader2 className="h-4 w-4 animate-spin text-[#A9EC17]" /> Consultando transportadoras...</p>
               ) : null}
-
               {shippingQuote ? (
-                <fieldset className="mt-4 grid gap-2 lg:grid-cols-2">
-                  <legend className="sr-only">Selecione a transportadora e o serviço</legend>
-                  {shippingQuote.options.map((option, index) => {
-                    const selected = selectedShippingOptionId === option.id;
-                    return (
-                      <label
-                        key={option.id}
-                        className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selected ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.06]" : "border-white/[0.08] bg-[#090909] hover:border-white/20"}`}
-                      >
-                        <input
-                          type="radio"
-                          name="admin-shipping-option"
-                          value={option.id}
-                          checked={selected}
-                          onChange={() => setSelectedShippingOptionId(option.id)}
-                          className="h-4 w-4 accent-[#A9EC17]"
-                        />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white/85">
-                            {option.transportadora} · {option.servico}
-                            {index === 0 ? (
-                              <span className="rounded-full bg-[#A9EC17]/10 px-2 py-0.5 text-[9px] uppercase tracking-wide text-[#A9EC17]">
-                                Mais barato
-                              </span>
-                            ) : null}
-                          </span>
-                          <span className="mt-1 block text-xs text-white/40">
-                            Entrega em até {option.prazoDias} dias úteis
-                          </span>
-                        </span>
-                        <strong className="text-sm text-[#A9EC17]">
-                          {option.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </strong>
-                      </label>
-                    );
-                  })}
-                </fieldset>
+                <div className="mt-4 grid gap-2 lg:grid-cols-2">
+                  {shippingQuote.options.map((option, index) => (
+                    <label key={option.id} className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 ${selectedShippingOptionId === option.id ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.06]" : "border-white/[0.08]"}`}>
+                      <input type="radio" name="shipping-option" checked={selectedShippingOptionId === option.id} onChange={() => setSelectedShippingOptionId(option.id)} className="accent-[#A9EC17]" />
+                      <span className="min-w-0 flex-1 text-sm">
+                        <strong>{option.transportadora} · {option.servico}</strong>
+                        <small className="mt-1 block text-white/40">Até {option.prazoDias} dias úteis {index === 0 ? "· mais barato" : ""}</small>
+                      </span>
+                      <strong className="text-[#A9EC17]">{money(option.preco)}</strong>
+                    </label>
+                  ))}
+                  <button type="button" disabled={pending || !selectedShippingOptionId} onClick={() => prepare(selectedShippingOptionId)} className="rounded-lg border border-[#A9EC17]/30 px-4 py-2.5 text-sm font-semibold text-[#A9EC17] disabled:opacity-50 lg:col-span-2">
+                    Confirmar serviço selecionado
+                  </button>
+                </div>
               ) : null}
             </div>
           ) : null}
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className={`cursor-pointer rounded-lg border p-4 ${fiscalType === "nota_fiscal" ? "border-[#A9EC17]/40 bg-[#A9EC17]/5" : "border-white/10"}`}>
-              <input type="radio" name="fiscal" value="nota_fiscal" checked={fiscalType === "nota_fiscal"} onChange={() => setFiscalType("nota_fiscal")} className="mr-2 accent-[#A9EC17]" />
-              <span className="text-sm font-semibold">NF-e</span>
-              <p className="mt-1 text-xs leading-5 text-white/40">Obrigatória para venda comercial.</p>
-            </label>
-            <label className={`cursor-pointer rounded-lg border p-4 ${fiscalType === "declaracao_conteudo" ? "border-amber-300/40 bg-amber-300/5" : "border-white/10"}`}>
-              <input type="radio" name="fiscal" value="declaracao_conteudo" checked={fiscalType === "declaracao_conteudo"} onChange={() => setFiscalType("declaracao_conteudo")} className="mr-2 accent-[#A9EC17]" />
-              <span className="text-sm font-semibold">Declaração de conteúdo</span>
-              <p className="mt-1 text-xs leading-5 text-white/40">Somente para envio não comercial permitido.</p>
-            </label>
+          {!autoPurchaseEnabled ? (
+            <div className="flex gap-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-100/75">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+              Compra real bloqueada por segurança. Para liberar, configure MELHOR_ENVIO_AUTO_PURCHASE_ENABLED=true no storefront e no admin.
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            {["awaiting_shipping_data", "error", "insufficient_balance", "awaiting_invoice"].includes(labelStatus) ? (
+              <button type="button" disabled={pending || quotePending} onClick={() => prepare()} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70 disabled:opacity-50">
+                <RefreshCw className={`h-4 w-4 ${operation === "prepare" ? "animate-spin" : ""}`} /> Revalidar preparação
+              </button>
+            ) : null}
+            {labelStatus === "ready_to_purchase" ? (
+              <button type="button" disabled={pending || !autoPurchaseEnabled} onClick={purchase} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-45">
+                {operation === "purchase" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />} Comprar e gerar etiqueta
+              </button>
+            ) : null}
+            {labelStatus === "purchased" ? (
+              <button type="button" disabled={pending} onClick={generateLegacyLabel} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50">
+                <PackageCheck className="h-4 w-4" /> Gerar etiqueta comprada
+              </button>
+            ) : null}
+            {["generated", "printed", "posted", "in_transit", "delivered"].includes(labelStatus) ? (
+              <>
+                <a href={`/pedidos/${orderId}/etiqueta?autoprint=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black"><Printer className="h-4 w-4" /> Imprimir etiqueta</a>
+                <a href={`/api/orders/${orderId}/label/jpeg?download=1`} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70"><FileText className="h-4 w-4" /> Baixar etiqueta</a>
+              </>
+            ) : null}
+            {shipment?.melhorEnvioId ? (
+              <button type="button" disabled={pending} onClick={() => run("sync", () => syncShipmentStatusAction(orderId), "Status atualizado.")} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${operation === "sync" ? "animate-spin" : ""}`} /> Atualizar status</button>
+            ) : null}
+            {shipment?.melhorEnvioId && ["purchased", "generated", "printed"].includes(labelStatus) ? (
+              <button type="button" disabled={pending} onClick={cancelLabel} className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 px-4 py-2.5 text-sm text-red-300 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Cancelar etiqueta</button>
+            ) : null}
+            {!shipment?.melhorEnvioId && labelStatus !== "external" ? (
+              <button type="button" disabled={pending} onClick={markExternal} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-50"><Truck className="h-4 w-4" /> Marcar como envio externo</button>
+            ) : null}
+            {shipment?.urlRastreio ? (
+              <a href={shipment.urlRastreio} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70">Abrir rastreio <ExternalLink className="h-4 w-4" /></a>
+            ) : null}
           </div>
-
-          {fiscalType === "nota_fiscal" ? (
-            <label className="flex flex-col gap-1 text-xs text-white/60">
-              Chave da NF-e
-              <input value={invoiceKey} onChange={(event) => setInvoiceKey(event.target.value)} maxLength={54} placeholder="44 dígitos" className="rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 text-sm text-white outline-none focus:border-[#A9EC17]/50" />
-            </label>
-          ) : (
-            <label className="flex items-start gap-2 rounded-lg border border-amber-300/15 bg-amber-300/[0.04] p-3 text-xs leading-5 text-amber-100/75">
-              <input type="checkbox" checked={declarationConfirmed} onChange={(event) => setDeclarationConfirmed(event.target.checked)} className="mt-1 accent-[#A9EC17]" />
-              Confirmo que este envio é não comercial e pode utilizar declaração de conteúdo conforme as regras aplicáveis.
-            </label>
-          )}
-
-          <button type="button" disabled={pending || quotePending || (requiresShippingSelection && !selectedShippingOptionId)} onClick={createShipment} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60">
-            {operation === "create" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
-            Enviar ao carrinho do Melhor Envio
-          </button>
         </div>
-      ) : (
-        <div className="mt-5">
-          <dl className="grid gap-3 rounded-lg border border-white/[0.07] bg-[#090909] p-4 text-sm sm:grid-cols-2">
-            <div><dt className="text-xs text-white/35">Transportadora e serviço</dt><dd className="mt-1 text-white/75">{shipment.transportadora ?? "—"} · {shipment.servico ?? "—"}</dd></div>
-            <div><dt className="text-xs text-white/35">ID no Melhor Envio</dt><dd className="mt-1 font-mono text-xs text-white/60">{shipment.melhorEnvioId}</dd></div>
-            {shipment.melhorEnvioProtocol ? <div><dt className="text-xs text-white/35">Protocolo</dt><dd className="mt-1 text-white/75">{shipment.melhorEnvioProtocol}</dd></div> : null}
-            {shipment.codigoRastreio ? <div><dt className="text-xs text-white/35">Código de rastreio</dt><dd className="mt-1 font-mono text-white/75">{shipment.codigoRastreio}</dd></div> : null}
+
+        <aside className="rounded-xl border border-white/[0.08] bg-[#090909] p-4">
+          <h3 className="text-sm font-semibold">Histórico e diagnóstico</h3>
+          <dl className="mt-4 grid grid-cols-2 gap-3 text-xs">
+            <div><dt className="text-white/35">Origem</dt><dd className="mt-1 text-white/70">{shipment?.labelSource === "automatic" ? "Automática" : shipment?.labelSource === "manual" ? "Manual" : shipment?.labelSource === "external" ? "Externa" : "Ainda não definida"}</dd></div>
+            <div><dt className="text-white/35">Tentativas</dt><dd className="mt-1 text-white/70">{shipment?.tentativas ?? 0}</dd></div>
+            <div className="col-span-2"><dt className="text-white/35">Última tentativa</dt><dd className="mt-1 text-white/70">{shipment?.ultimaTentativaEm ? new Date(shipment.ultimaTentativaEm).toLocaleString("pt-BR") : "—"}</dd></div>
+            {shipment?.codigoRastreio ? <div className="col-span-2"><dt className="text-white/35">Rastreio</dt><dd className="mt-1 font-mono text-white/70">{shipment.codigoRastreio}</dd></div> : null}
           </dl>
 
-          {stageHint ? <p className="mt-3 text-xs leading-5 text-white/40">{stageHint}</p> : null}
+          {shipment?.ultimoErro ? (
+            <div className="mt-4 flex gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.06] p-3 text-xs leading-5 text-red-200/80">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span><strong className="block text-red-200">{shipment.ultimoErroCodigo === "INSUFFICIENT_BALANCE" ? "Saldo insuficiente" : "Última tentativa não concluída"}</strong>{shipment.ultimoErro}</span>
+            </div>
+          ) : null}
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {shipment.status === "pending" ? (
-              <button type="button" disabled={pending} onClick={purchase} title="O pedido já está no carrinho do Melhor Envio. Clique para pagar e finalizar a compra da etiqueta." className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60">
-                {operation === "purchase" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />} Finalizar compra da etiqueta
-              </button>
-            ) : null}
-            {shipment.status === "released" ? (
-              <button type="button" disabled={pending} onClick={generate} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60">
-                {operation === "generate" ? <Loader2 className="h-4 w-4 animate-spin" /> : <WandSparkles className="h-4 w-4" />} Gerar etiqueta
-              </button>
-            ) : null}
-            {canPrintThermal ? (
-              <a href={`/pedidos/${orderId}/etiqueta?autoprint=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black">
-                <Printer className="h-4 w-4" /> Imprimir etiqueta
-              </a>
-            ) : null}
-            <button type="button" disabled={pending} onClick={() => run("sync", () => syncTrackingAction(orderId))} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-60">
-              <RefreshCw className={`h-4 w-4 ${operation === "sync" ? "animate-spin" : ""}`} /> Atualizar status
-            </button>
-            {shipment.urlRastreio ? <a href={shipment.urlRastreio} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60">Abrir rastreio <ExternalLink className="h-4 w-4" /></a> : null}
-          </div>
-        </div>
-      )}
+          <ol className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
+            {shipment?.events.length ? shipment.events.map((event) => (
+              <li key={event.id} className="flex gap-2 text-xs">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#A9EC17]" />
+                <div><p className="leading-5 text-white/60">{event.message ?? event.type}</p><time className="text-[10px] text-white/30">{new Date(event.createdAt).toLocaleString("pt-BR")}</time></div>
+              </li>
+            )) : <li className="text-xs text-white/35">Nenhum evento logístico registrado.</li>}
+          </ol>
+        </aside>
+      </div>
 
-      {/* Erro contextual: só aparece DEPOIS de uma ação do usuário nesta sessão. */}
-      {error ? (
-        <p role="alert" className="mt-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>
-      ) : shipment?.ultimoErro ? (
-        // Falha de uma tentativa anterior, persistida no banco (Shipment.ultimoErro).
-        // Não é um erro atual — mostramos de forma discreta e acionável, nunca como
-        // alarme vermelho fixo. Some ao concluir uma ação com sucesso (Atualizar status)
-        // ou ao clicar em "Descartar aviso" (limpa a nota sem consultar a API).
-        <div className="mt-4 flex flex-col gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-white/45">
-            <span className="text-white/60">A última tentativa não foi concluída no Melhor Envio.</span>{" "}
-            Clique em <span className="text-white/70">Atualizar status</span> para sincronizar. Detalhe: {shipment.ultimoErro}
-          </p>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => run("dismiss", () => dismissShipmentErrorAction(orderId))}
-            className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md border border-white/10 px-2.5 py-1.5 text-xs text-white/55 transition hover:text-white disabled:opacity-60 sm:self-auto"
-          >
-            {operation === "dismiss" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />} Descartar aviso
-          </button>
-        </div>
-      ) : null}
+      {error ? <p role="alert" className="mt-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p> : null}
+      {success ? <p role="status" className="mt-4 rounded-lg border border-[#A9EC17]/25 bg-[#A9EC17]/[0.06] px-3 py-2 text-sm text-[#D9FF87]">{success}</p> : null}
     </section>
+  );
+}
+
+function InfoCard({ label, value, detail }: { label: string; value: string; detail: string | null }) {
+  return (
+    <div className="rounded-lg border border-white/[0.07] bg-[#090909] p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-white/35">{label}</p>
+      <p className="mt-1.5 text-sm font-semibold text-white/80">{value}</p>
+      {detail ? <p className="mt-1 text-[11px] leading-4 text-white/35">{detail}</p> : null}
+    </div>
   );
 }

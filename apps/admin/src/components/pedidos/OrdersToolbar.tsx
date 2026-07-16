@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, Search, SlidersHorizontal } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
 import { ORDER_PERIODS, resolveOrderPeriod } from "@/lib/orders/filters";
 import { ordersHref, type OrdersQuery } from "@/lib/orders/href";
 
@@ -41,15 +41,6 @@ export default function OrdersToolbar({ current }: { current: OrdersQuery }) {
           className="h-9 w-full rounded-lg border border-white/[0.09] bg-[#0F0F0F] pl-9 pr-3 text-[13px] text-white placeholder:text-white/35 outline-none transition focus:border-[#A9EC17]/40"
         />
       </div>
-
-      <button
-        type="button"
-        title="Mais filtros (em breve)"
-        className="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-white/[0.09] bg-[#1A1A1A] px-3 text-[13px] font-medium text-white/80 transition hover:border-[#A9EC17]/30"
-      >
-        <SlidersHorizontal className="h-4 w-4 text-white/55" />
-        Filtros
-      </button>
 
       <div className="relative shrink-0">
         <button

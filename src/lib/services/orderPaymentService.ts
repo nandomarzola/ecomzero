@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
+import { after } from "next/server";
 import { recordCouponUsage } from "@/lib/services/couponService";
+import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentService";
 import {
   createMercadoPagoPayment,
   createPaymentPreference,
@@ -622,13 +624,38 @@ async function reconcilePayment(
       });
     }
 
+    if (result.count === 1) {
+      const shipment = await tx.shipment.upsert({
+        where: { orderId: order.id },
+        create: {
+          orderId: order.id,
+          status: "payment_confirmed",
+          labelStatus: "awaiting_shipping_data",
+        },
+        update: {},
+      });
+      await tx.shipmentEvent.create({
+        data: {
+          shipmentId: shipment.id,
+          type: "payment_confirmed",
+          status: shipment.labelStatus,
+          message: "Pagamento confirmado. Preparação logística agendada.",
+        },
+      });
+    }
+
     return result;
   });
 
+  let preparationPending = updated.count === 1;
   if (updated.count === 0) {
     const current = await prisma.order.findUnique({
       where: { id: order.id },
-      select: { status: true, mercadoPagoPaymentId: true },
+      select: {
+        status: true,
+        mercadoPagoPaymentId: true,
+        shipment: { select: { status: true } },
+      },
     });
 
     if (
@@ -640,6 +667,17 @@ async function reconcilePayment(
         "PAYMENT_MISMATCH",
       );
     }
+    preparationPending = current.shipment?.status === "payment_confirmed";
+  }
+
+  if (preparationPending) {
+    after(async () => {
+      await prepareShipmentAfterPayment(order.id).catch(() => {
+        console.error("Falha ao preparar expedição após pagamento", {
+          orderId: order.id,
+        });
+      });
+    });
   }
 
   return {

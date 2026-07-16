@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { config } from "@/lib/config";
-import { prisma } from "@/lib/db";
+import { applyProviderShipmentUpdate } from "@/lib/services/shipmentStatusService";
 
 type WebhookData = {
   id?: unknown;
@@ -14,6 +14,7 @@ type WebhookData = {
   generated_at?: unknown;
   posted_at?: unknown;
   delivered_at?: unknown;
+  canceled_at?: unknown;
 };
 
 type WebhookBody = {
@@ -73,26 +74,19 @@ export async function POST(request: NextRequest) {
       ? data.tracking_url
       : null;
 
-  const result = await prisma.shipment.updateMany({
-    where: {
-      OR: [
-        { melhorEnvioId: data.id },
-        ...(tagOrderId ? [{ orderId: tagOrderId }] : []),
-      ],
-    },
-    data: {
-      melhorEnvioId: data.id,
-      ...(typeof data.protocol === "string" ? { melhorEnvioProtocol: data.protocol } : {}),
-      ...(status ? { status } : {}),
-      ...(typeof data.tracking === "string" ? { codigoRastreio: data.tracking } : {}),
-      ...(trackingUrl ? { urlRastreio: trackingUrl } : {}),
-      ...(safeDate(data.paid_at) ? { compradoEm: safeDate(data.paid_at) } : {}),
-      ...(safeDate(data.generated_at) ? { geradoEm: safeDate(data.generated_at) } : {}),
-      ...(safeDate(data.posted_at) ? { postadoEm: safeDate(data.posted_at) } : {}),
-      ...(safeDate(data.delivered_at) ? { entregueEm: safeDate(data.delivered_at) } : {}),
-      ultimoErro: null,
-    },
+  const result = await applyProviderShipmentUpdate({
+    melhorEnvioId: data.id,
+    orderId: tagOrderId,
+    protocol: typeof data.protocol === "string" ? data.protocol : null,
+    status,
+    tracking: typeof data.tracking === "string" ? data.tracking : null,
+    trackingUrl,
+    paidAt: safeDate(data.paid_at),
+    generatedAt: safeDate(data.generated_at),
+    postedAt: safeDate(data.posted_at),
+    deliveredAt: safeDate(data.delivered_at),
+    canceledAt: safeDate(data.canceled_at),
   });
 
-  return NextResponse.json({ received: true, matched: result.count > 0 });
+  return NextResponse.json({ received: true, ...result });
 }

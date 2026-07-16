@@ -7,10 +7,18 @@ import {
   createMelhorEnvioShipment,
   dismissShipmentError,
   generateMelhorEnvioLabel,
-  purchaseMelhorEnvioShipment,
   syncMelhorEnvioTracking,
   updateShippingSettings,
 } from "@/lib/services/shippingFulfillmentAdminService";
+import {
+  attachInvoiceInStorefront,
+  cancelShipmentInStorefront,
+  markExternalShipmentInStorefront,
+  prepareShipmentInStorefront,
+  purchaseShipmentInStorefront,
+  syncShipmentInStorefront,
+} from "@/lib/services/storefrontShippingAdminClient";
+import { z } from "zod";
 import {
   adminShippingSelectionSchema,
   createShipmentSchema,
@@ -93,7 +101,43 @@ async function runShipmentAction(
 }
 
 export async function purchaseShipmentAction(orderId: string) {
-  return runShipmentAction(orderId, purchaseMelhorEnvioShipment);
+  return runShipmentAction(orderId, purchaseShipmentInStorefront);
+}
+
+export async function prepareShipmentAction(orderId: string, serviceId?: string) {
+  return runShipmentAction(orderId, (id) => prepareShipmentInStorefront(id, serviceId));
+}
+
+export async function attachInvoiceAction(orderId: string, input: unknown) {
+  if (!(await isAuthenticated())) {
+    return { ok: false as const, error: "Sessão expirada. Faça login novamente." };
+  }
+  const parsed = z
+    .object({ invoiceKey: z.string().regex(/^\d{44}$/, "A chave da NF-e deve possuir exatamente 44 dígitos.") })
+    .safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Chave da NF-e inválida." };
+  }
+  try {
+    await attachInvoiceInStorefront(orderId, parsed.data.invoiceKey);
+    revalidatePath(`/pedidos/${orderId}`);
+    revalidatePath("/pedidos");
+    return { ok: true as const, data: undefined };
+  } catch (error) {
+    return { ok: false as const, error: errorMessage(error) };
+  }
+}
+
+export async function markExternalShipmentAction(orderId: string) {
+  return runShipmentAction(orderId, markExternalShipmentInStorefront);
+}
+
+export async function syncShipmentStatusAction(orderId: string) {
+  return runShipmentAction(orderId, syncShipmentInStorefront);
+}
+
+export async function cancelShipmentAction(orderId: string) {
+  return runShipmentAction(orderId, cancelShipmentInStorefront);
 }
 
 export async function generateLabelAction(orderId: string) {

@@ -8,15 +8,17 @@ const HEAD_CLASS =
 export default function OrdersTableSkeleton() {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[840px] border-collapse">
+      <table className="w-full min-w-[1280px] border-collapse">
         <thead>
           <tr className="border-b border-white/[0.07]">
             <th className={HEAD_CLASS}>Pedido</th>
             <th className={HEAD_CLASS}>Cliente</th>
             <th className={HEAD_CLASS}>Data</th>
             <th className={HEAD_CLASS}>Pagamento</th>
+            <th className={HEAD_CLASS}>Modalidade de frete</th>
+            <th className={HEAD_CLASS}>Situação da etiqueta</th>
             <th className={`${HEAD_CLASS} text-right`}>Valor</th>
-            <th className={HEAD_CLASS}>Status</th>
+            <th className={HEAD_CLASS}>Status logístico</th>
             <th className={`${HEAD_CLASS} text-right`}>Ações</th>
           </tr>
         </thead>
@@ -27,6 +29,8 @@ export default function OrdersTableSkeleton() {
               <td className="px-4 py-3"><Bar w="w-28" /><Bar w="w-36" className="mt-1.5 h-2" /></td>
               <td className="px-4 py-3"><Bar w="w-20" /><Bar w="w-14" className="mt-1.5 h-2" /></td>
               <td className="px-4 py-3"><Bar w="w-20" /></td>
+              <td className="px-4 py-3"><Bar w="w-28" /></td>
+              <td className="px-4 py-3"><Bar w="w-28" className="h-6 rounded-full" /></td>
               <td className="px-4 py-3"><Bar w="w-16" className="ml-auto" /></td>
               <td className="px-4 py-3"><Bar w="w-28" className="h-6 rounded-full" /></td>
               <td className="px-4 py-3"><Bar w="w-8" className="ml-auto h-8 rounded-md" /></td>
