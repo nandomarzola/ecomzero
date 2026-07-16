@@ -61,12 +61,13 @@ export async function getAllProducts(): Promise<Product[]> {
   return records.map(toProduct);
 }
 
-// Produtos de uma categoria. Vínculo duplo (decisão de produto): pelo FK
-// `categoryId` (produtos salvos no admin novo) E pelo path legado `categoria`
-// ("Pesca / Canivetes") — produtos antigos/vindos do Hub só têm o path. Uma
-// query só (sem N+1): categoryId IN (...) OR categoria = path OR começa com
-// "path / " (descendentes). Para raiz, `categoryIds` já traz ela + descendentes;
-// para sub, só ela (e o `startsWith` não pega nada, pois sub é folha).
+// Produtos de uma categoria, em qualquer profundidade. Vínculo duplo (decisão
+// de produto): pelo FK `categoryId` (produtos salvos no admin novo) E pelo path
+// legado `categoria` ("Pesca / Camping / Canivetes") — produtos antigos/vindos
+// do Hub só têm o path. Uma query só (sem N+1): categoryId IN (...) OR
+// categoria = path OR começa com "path / ". Ambos os ramos são recursivos:
+// `categoryIds` traz a categoria + TODAS as descendentes (subtree completa) e o
+// prefixo "path / " casa qualquer descendente por texto, em N níveis.
 export async function getProductsByCategory(
   categoryIds: string[],
   path: string,

@@ -57,35 +57,35 @@ export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
   return result;
 });
 
-// Resolve o caminho de slugs da URL (/categorias/[...slug]) para uma categoria.
-// Hoje a hierarquia é de 2 níveis (raiz → subcategoria), imposta pelo admin;
-// caminhos de 1 ou 2 segmentos são aceitos, o resto é inválido (→ 404).
-// `cache()` deduplica a chamada entre generateMetadata e o componente da página.
+// Resolve o caminho de slugs da URL (/categorias/[...slug]) para uma categoria,
+// em QUALQUER profundidade. Caminha os segmentos validando que cada um é filho
+// direto do anterior (o 1º tem que ser raiz); qualquer quebra na cadeia → 404.
+// A árvore inteira já vem carregada em memória por `getActiveCategories` (uma
+// query só, com `descendantIds` recursivo pré-computado), então a subtree
+// completa sai sem query extra. `cache()` deduplica entre generateMetadata e a
+// página.
 export const resolveCategoryPath = cache(
   async (slugs: string[]): Promise<ResolvedCategory | null> => {
-    if (slugs.length < 1 || slugs.length > 2) return null;
+    if (slugs.length < 1) return null;
 
     const all = await getActiveCategories();
     const bySlug = new Map(all.map((category) => [category.slug, category]));
 
-    const root = bySlug.get(slugs[0]);
-    if (!root || root.parentId !== null) return null; // 1º segmento tem que ser raiz
-
-    let category = root;
-    const breadcrumb: StoreCategory[] = [root];
-
-    if (slugs.length === 2) {
-      const sub = bySlug.get(slugs[1]);
-      if (!sub || sub.parentId !== root.id) return null; // sub tem que ser filha da raiz
-      category = sub;
-      breadcrumb.push(sub);
+    const breadcrumb: StoreCategory[] = [];
+    let expectedParentId: string | null = null; // 1º segmento tem que ser raiz
+    for (const slug of slugs) {
+      const node = bySlug.get(slug);
+      // cada segmento precisa existir E ser filho direto do segmento anterior,
+      // na ordem exata da URL — senão o caminho é inválido.
+      if (!node || node.parentId !== expectedParentId) return null;
+      breadcrumb.push(node);
+      expectedParentId = node.id;
     }
 
+    const category = breadcrumb[breadcrumb.length - 1];
     const children = all.filter((c) => c.parentId === category.id);
-    const targetCategoryIds =
-      category.parentId === null
-        ? [category.id, ...category.descendantIds] // raiz: ela + todas as descendentes
-        : [category.id]; // sub: só ela
+    // Qualquer categoria (em qualquer nível) → ela + TODAS as descendentes.
+    const targetCategoryIds = [category.id, ...category.descendantIds];
 
     return { category, breadcrumb, children, targetCategoryIds };
   },
