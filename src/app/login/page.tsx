@@ -84,7 +84,7 @@ export default async function LoginPage() {
           aria-label="Navegação estrutural"
           className="flex items-center gap-2 text-[11px] text-white/42 sm:text-xs"
         >
-          <Link href="/" className="transition hover:text-[#A9EC17]">
+          <Link href="/" className="transition hover:text-[var(--brand-color)]">
             Início
           </Link>
           <span aria-hidden="true">›</span>
@@ -111,7 +111,7 @@ export default async function LoginPage() {
               {benefits.map(({ icon: Icon, title, detail }) => (
                 <li key={title} className="flex items-start gap-5">
                   <Icon
-                    className="mt-0.5 h-11 w-11 shrink-0 text-[#A9EC17] sm:h-12 sm:w-12"
+                    className="mt-0.5 h-11 w-11 shrink-0 text-[var(--brand-color)] sm:h-12 sm:w-12"
                     strokeWidth={1.55}
                   />
                   <div className="min-w-0 pt-0.5">

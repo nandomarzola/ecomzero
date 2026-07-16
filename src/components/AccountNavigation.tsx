@@ -24,9 +24,9 @@ export default function AccountNavigation() {
               <Link
                 href={href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex min-h-11 items-center gap-3 rounded-lg px-4 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] ${
+                className={`flex min-h-11 items-center gap-3 rounded-lg px-4 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] ${
                   isActive
-                    ? "bg-[#A9EC17] text-black"
+                    ? "bg-[var(--brand-color)] text-black"
                     : "text-white/60 hover:bg-white/[0.05] hover:text-white"
                 }`}
               >

@@ -147,7 +147,7 @@ export default function MercadoPagoPayment({
         style: {
           theme: "dark",
           customVariables: {
-            baseColor: "#A9EC17",
+            baseColor: "var(--brand-color)",
             baseColorFirstVariant: "#B8FF28",
             baseColorSecondVariant: "#86BE0F",
             buttonTextColor: "#050505",
@@ -156,7 +156,7 @@ export default function MercadoPagoPayment({
             textPrimaryColor: "#FFFFFF",
             textSecondaryColor: "#9A9A9A",
             outlinePrimaryColor: "#333333",
-            outlineSecondaryColor: "#A9EC17",
+            outlineSecondaryColor: "var(--brand-color)",
             borderRadiusMedium: "8px",
             borderRadiusLarge: "12px",
           },
@@ -353,8 +353,8 @@ export default function MercadoPagoPayment({
           <li><Link href="/carrinho" className="whitespace-nowrap transition hover:text-white">Carrinho</Link></li>
           <li aria-hidden="true"><ChevronRight className="h-4 w-4 text-white/35" /></li>
           <li><Link href="/checkout" className="whitespace-nowrap transition hover:text-white">Identificação</Link></li>
-          <li aria-hidden="true" className="flex -space-x-2 text-[#A9EC17]"><ChevronRight className="h-4 w-4" /><ChevronRight className="h-4 w-4" /></li>
-          <li aria-current="step" className="whitespace-nowrap font-semibold text-[#A9EC17]">Pagamento</li>
+          <li aria-hidden="true" className="flex -space-x-2 text-[var(--brand-color)]"><ChevronRight className="h-4 w-4" /><ChevronRight className="h-4 w-4" /></li>
+          <li aria-current="step" className="whitespace-nowrap font-semibold text-[var(--brand-color)]">Pagamento</li>
           <li aria-hidden="true"><ChevronRight className="h-4 w-4 text-white/35" /></li>
           <li className="whitespace-nowrap">Revisão</li>
         </ol>
@@ -399,7 +399,7 @@ export default function MercadoPagoPayment({
             <main className="min-w-0 rounded-[10px] border border-white/[0.13] bg-[linear-gradient(145deg,#111111,#0B0B0B)] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.22)] sm:p-4">
               {isCheckingPayment ? (
                 <div className="flex min-h-[420px] items-center justify-center gap-3 text-sm text-white/50">
-                  <LoaderCircle className="h-5 w-5 animate-spin text-[#A9EC17]" />
+                  <LoaderCircle className="h-5 w-5 animate-spin text-[var(--brand-color)]" />
                   Consultando pagamento...
                 </div>
               ) : activePayment ? (
@@ -421,7 +421,7 @@ export default function MercadoPagoPayment({
                       style: {
                         theme: "dark",
                         customVariables: {
-                          baseColor: "#A9EC17",
+                          baseColor: "var(--brand-color)",
                           buttonTextColor: "#050505",
                           formBackgroundColor: "#0D0D0D",
                           inputBackgroundColor: "#080808",
@@ -440,7 +440,7 @@ export default function MercadoPagoPayment({
                 />
               ) : (
                 <>
-              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/10 text-[#A9EC17]">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[var(--brand-color)]/20 bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                 {isPix ? (
                   <Clock3 className="h-6 w-6" />
                 ) : (
@@ -482,12 +482,12 @@ export default function MercadoPagoPayment({
                       value={activePayment.qrCode}
                       readOnly
                       onFocus={(event) => event.currentTarget.select()}
-                      className="h-12 min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#080808] px-3 text-xs text-white/65 outline-none focus:border-[#A9EC17]"
+                      className="h-12 min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#080808] px-3 text-xs text-white/65 outline-none focus:border-[var(--brand-color)]"
                     />
                     <button
                       type="button"
                       onClick={copyPixCode}
-                      className="font-display inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-4 text-[11px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+                      className="font-display inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-4 text-[11px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
                     >
                       {copied ? (
                         <Check className="h-4 w-4" />
@@ -500,8 +500,8 @@ export default function MercadoPagoPayment({
                 </div>
               )}
 
-              <div className="mt-6 flex items-center justify-center gap-2 rounded-lg border border-[#A9EC17]/15 bg-[#A9EC17]/[0.05] px-4 py-3 text-[11px] text-white/55">
-                <LoaderCircle className="h-4 w-4 animate-spin text-[#A9EC17]" />
+              <div className="mt-6 flex items-center justify-center gap-2 rounded-lg border border-[var(--brand-color)]/15 bg-[var(--brand-color)]/[0.05] px-4 py-3 text-[11px] text-white/55">
+                <LoaderCircle className="h-4 w-4 animate-spin text-[var(--brand-color)]" />
                 Aguardando confirmação automática do pagamento
               </div>
                 </>
@@ -579,13 +579,13 @@ export default function MercadoPagoPayment({
               </dl>
               <div className="flex items-end justify-between py-5">
                 <span className="font-display text-[13px] font-bold text-white">Total</span>
-                <strong className="font-display text-[28px] font-extrabold leading-none text-[#A9EC17]">
+                <strong className="font-display text-[28px] font-extrabold leading-none text-[var(--brand-color)]">
                   {formatPrice(order.total)}
                 </strong>
               </div>
 
               <div className="flex items-center gap-3 rounded-lg border border-white/[0.16] bg-black/10 p-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17]">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                   <LockKeyhole className="h-6 w-6" strokeWidth={1.6} />
                 </span>
                 <div>
@@ -598,15 +598,15 @@ export default function MercadoPagoPayment({
 
               <div className="mt-5 grid grid-cols-3 divide-x divide-white/[0.07] text-center text-[9px] leading-4 text-white/50">
                 <span className="flex flex-col items-center gap-2 px-1">
-                  <ShieldCheck className="h-5 w-5 text-[#A9EC17]" strokeWidth={1.7} />
+                  <ShieldCheck className="h-5 w-5 text-[var(--brand-color)]" strokeWidth={1.7} />
                   Compra protegida
                 </span>
                 <span className="flex flex-col items-center gap-2 px-1">
-                  <CheckCircle2 className="h-5 w-5 text-[#A9EC17]" strokeWidth={1.7} />
+                  <CheckCircle2 className="h-5 w-5 text-[var(--brand-color)]" strokeWidth={1.7} />
                   Confirmação automática
                 </span>
                 <span className="flex flex-col items-center gap-2 px-1">
-                  <LockKeyhole className="h-5 w-5 text-[#A9EC17]" strokeWidth={1.7} />
+                  <LockKeyhole className="h-5 w-5 text-[var(--brand-color)]" strokeWidth={1.7} />
                   Privacidade garantida
                 </span>
               </div>
@@ -622,15 +622,15 @@ export default function MercadoPagoPayment({
           </p>
           <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:items-center sm:gap-8">
             <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70">
-              <ShieldCheck className="h-7 w-7 shrink-0 text-[#A9EC17]" strokeWidth={1.6} />
+              <ShieldCheck className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.6} />
               Mais de 15 anos<br />de experiência
             </span>
             <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70">
-              <Globe2 className="h-7 w-7 shrink-0 text-[#A9EC17]" strokeWidth={1.6} />
+              <Globe2 className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.6} />
               Presente em mais de<br />18 países
             </span>
             <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70">
-              <Info className="h-7 w-7 shrink-0 text-[#A9EC17]" strokeWidth={1.6} />
+              <Info className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.6} />
               Milhões de pessoas<br />e empresas confiam
             </span>
             <MercadoPagoBrand className="justify-self-center sm:justify-self-end" />

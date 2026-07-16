@@ -82,7 +82,7 @@ const emptyForm: FormValues = {
 };
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
+  "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
 
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
@@ -443,7 +443,7 @@ export default function CheckoutForm({
   if (!storageReady) {
     return (
       <div className="flex min-h-[55vh] items-center justify-center">
-        <LoaderCircle className="h-7 w-7 animate-spin text-[#A9EC17]" />
+        <LoaderCircle className="h-7 w-7 animate-spin text-[var(--brand-color)]" />
       </div>
     );
   }
@@ -451,7 +451,7 @@ export default function CheckoutForm({
   if (!selection) {
     return (
       <div className="flex min-h-[55vh] items-center justify-center">
-        <LoaderCircle className="h-7 w-7 animate-spin text-[#A9EC17]" />
+        <LoaderCircle className="h-7 w-7 animate-spin text-[var(--brand-color)]" />
       </div>
     );
   }
@@ -460,14 +460,14 @@ export default function CheckoutForm({
     <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-8 sm:px-6 lg:px-8">
       <Link
         href="/carrinho"
-        className="inline-flex items-center gap-2 text-xs font-semibold text-[#A9EC17] transition hover:text-white"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar ao carrinho
       </Link>
 
       <header className="mt-5 border-b border-white/[0.08] pb-7">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#A9EC17]">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand-color)]">
           Checkout seguro
         </p>
         <h1 className="font-display mt-2 text-[30px] font-extrabold leading-tight text-white sm:text-[38px]">
@@ -482,7 +482,7 @@ export default function CheckoutForm({
         <div className="space-y-5">
           <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
             <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                 <Check className="h-4 w-4" />
               </span>
               <div>
@@ -500,7 +500,7 @@ export default function CheckoutForm({
 
           <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
             <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17]">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                 <MapPin className="h-4 w-4" />
               </span>
               <div>
@@ -568,7 +568,7 @@ export default function CheckoutForm({
                   cepLookupStatus === "error"
                     ? "text-red-300"
                     : cepLookupStatus === "success"
-                      ? "text-[#A9EC17]"
+                      ? "text-[var(--brand-color)]"
                       : "text-white/50"
                 }`}
               >
@@ -609,10 +609,10 @@ export default function CheckoutForm({
             </dl>
             <div className="mt-5 flex items-end justify-between border-t border-white/[0.09] pt-5">
               <span className="font-display text-xs font-bold uppercase text-white">Total</span>
-              <strong className="font-display text-[25px] font-extrabold text-[#A9EC17]">{formatPrice(total)}</strong>
+              <strong className="font-display text-[25px] font-extrabold text-[var(--brand-color)]">{formatPrice(total)}</strong>
             </div>
             <div className="mt-5 flex gap-3 rounded-lg border border-white/[0.08] bg-black/30 p-3">
-              <Truck className="h-4 w-4 shrink-0 text-[#A9EC17]" />
+              <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-semibold text-white">{selection.transportadora} · {selection.servico}</p>
                 <p className="mt-0.5 text-[10px] text-white/45">Entrega em até {selection.prazoDias} dias úteis</p>
@@ -635,7 +635,7 @@ export default function CheckoutForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:bg-[#A9EC17]/10 disabled:text-white/35"
+              className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:bg-[var(--brand-color)]/10 disabled:text-white/35"
             >
               {isSubmitting ? (
                 <>
@@ -652,7 +652,7 @@ export default function CheckoutForm({
               )}
             </button>
             <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[10px] text-white/38">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#A9EC17]" />
+              <ShieldCheck className="h-3.5 w-3.5 text-[var(--brand-color)]" />
               Você finaliza o pagamento sem sair da EcomZero.
             </p>
           </section>

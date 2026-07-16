@@ -17,6 +17,8 @@ export type CategoryListItem = {
   path: string;
   childrenCount: number;
   productsCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export class CategoryAdminError extends Error {
@@ -84,6 +86,8 @@ export async function listCategories(): Promise<CategoryListItem[]> {
         path,
         childrenCount: row._count.children,
         productsCount: row._count.produtos,
+        createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
       });
       visit(row.id, depth + 1, path);
     }
@@ -109,6 +113,15 @@ async function assertValidParent(categoryId: string | undefined, parentId?: stri
   if (!parentId) return;
   if (categoryId === parentId) throw new CategoryAdminError("Uma categoria não pode ser filha dela mesma.");
 
+  const selectedParent = await prisma.category.findUnique({
+    where: { id: parentId },
+    select: { parentId: true },
+  });
+  if (!selectedParent) throw new CategoryAdminError("Categoria pai não encontrada.");
+  if (selectedParent.parentId) {
+    throw new CategoryAdminError("A hierarquia aceita somente categoria raiz e subcategoria.");
+  }
+
   let currentId: string | null = parentId;
   const visited = new Set<string>();
   while (currentId) {
@@ -124,6 +137,37 @@ async function assertValidParent(categoryId: string | undefined, parentId?: stri
     if (!current) throw new CategoryAdminError("Categoria pai não encontrada.");
     currentId = current.parentId;
   }
+}
+
+export async function duplicateCategory(id: string) {
+  const category = await prisma.category.findUnique({ where: { id } });
+  if (!category) throw new CategoryAdminError("Categoria não encontrada.");
+  if (category.parentId) {
+    const parent = await prisma.category.findUnique({
+      where: { id: category.parentId },
+      select: { parentId: true },
+    });
+    if (parent?.parentId) {
+      throw new CategoryAdminError("Categorias abaixo do segundo nível não podem ser duplicadas.");
+    }
+  }
+
+  const nome = `${category.nome} (cópia)`;
+  return prisma.category.create({
+    data: {
+      nome,
+      slug: await uniqueSlug(nome),
+      descricao: category.descricao,
+      imagemUrl: category.imagemUrl,
+      destaque: false,
+      metaTitulo: category.metaTitulo,
+      metaDescricao: category.metaDescricao,
+      parentId: category.parentId,
+      ordem: await nextCategoryOrder(category.parentId ?? undefined),
+      ativo: false,
+    },
+    select: { id: true },
+  });
 }
 
 export async function createCategory(input: CategoryInput) {
@@ -148,12 +192,15 @@ export async function createCategory(input: CategoryInput) {
 export async function updateCategory(id: string, input: CategoryInput) {
   const existing = await prisma.category.findUnique({
     where: { id },
-    select: { id: true, parentId: true, ordem: true },
+    select: { id: true, parentId: true, ordem: true, _count: { select: { children: true } } },
   });
   if (!existing) throw new CategoryAdminError("Categoria não encontrada.");
   await assertValidParent(id, input.parentId);
 
   const parentId = input.parentId ?? null;
+  if (parentId && existing._count.children > 0) {
+    throw new CategoryAdminError("Mova ou remova as subcategorias antes de transformar esta categoria em subcategoria.");
+  }
   const ordem = existing.parentId === parentId
     ? existing.ordem
     : await nextCategoryOrder(input.parentId);

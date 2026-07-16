@@ -37,7 +37,7 @@ export default function ProductGallery({
             type="button"
             onClick={() => scrollThumbs(-1)}
             aria-label="Ver fotos anteriores"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-[#101010] text-white/65 transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:h-8 lg:w-full"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-[#101010] text-white/65 transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] lg:h-8 lg:w-full"
           >
             <ChevronLeft className="h-4 w-4 lg:hidden" />
             <ChevronUp className="hidden h-4 w-4 lg:block" />
@@ -55,7 +55,7 @@ export default function ProductGallery({
               onClick={() => setSelectedImage(image)}
               aria-label={`Ver foto ${index + 1} de ${productName}`}
               aria-pressed={selectedImage === image}
-              className={`relative h-[68px] w-[68px] shrink-0 overflow-hidden rounded-lg border bg-[#F4F4F4] transition duration-[250ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] motion-reduce:transform-none motion-reduce:transition-none lg:h-[78px] lg:w-full ${selectedImage === image ? "border-[#A9EC17] shadow-[0_0_20px_rgba(169,236,23,0.12)]" : "border-white/10 opacity-70 hover:border-[#A9EC17]/40 hover:opacity-100"}`}
+              className={`relative h-[68px] w-[68px] shrink-0 overflow-hidden rounded-lg border bg-[#F4F4F4] transition duration-[250ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] motion-reduce:transform-none motion-reduce:transition-none lg:h-[78px] lg:w-full ${selectedImage === image ? "border-[var(--brand-color)] shadow-[0_0_20px_rgba(169,236,23,0.12)]" : "border-white/10 opacity-70 hover:border-[var(--brand-color)]/40 hover:opacity-100"}`}
             >
               <Image
                 src={image}
@@ -73,7 +73,7 @@ export default function ProductGallery({
             type="button"
             onClick={() => scrollThumbs(1)}
             aria-label="Ver mais fotos"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-[#101010] text-white/65 transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:h-8 lg:w-full"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/12 bg-[#101010] text-white/65 transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] lg:h-8 lg:w-full"
           >
             <ChevronRight className="h-4 w-4 lg:hidden" />
             <ChevronDown className="hidden h-4 w-4 lg:block" />

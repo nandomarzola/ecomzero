@@ -19,7 +19,7 @@ export default function TrustBadges({ items, className = "grid-cols-2 sm:grid-co
       {items.map(({ icon: Icon, title, detail }) => (
         <div key={title} className="flex min-w-0 items-center gap-3 sm:gap-4">
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#151515]">
-            <Icon className="h-6 w-6 text-[#A9EC17]" strokeWidth={1.6} />
+            <Icon className="h-6 w-6 text-[var(--brand-color)]" strokeWidth={1.6} />
           </span>
           <div className="min-w-0">
             <p className="font-display text-xs font-semibold text-white sm:text-[13px]">

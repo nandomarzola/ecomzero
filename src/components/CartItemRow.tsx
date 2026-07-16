@@ -64,7 +64,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
       <div className="flex min-w-0 items-center gap-3 pr-10 xl:contents xl:pr-0">
         <Link
           href={`/produto/${item.productSlug}`}
-          className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-[#151515] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:h-24 sm:w-24"
+          className="relative h-[88px] w-[88px] shrink-0 overflow-hidden rounded-lg border border-white/[0.08] bg-[#151515] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:h-24 sm:w-24"
         >
           <Image
             src={item.productImage}
@@ -79,14 +79,14 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           <Link
             href={`/produto/${item.productSlug}`}
             title={item.productName}
-            className="font-display line-clamp-2 text-[13px] font-bold leading-[1.35] text-white transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:text-[#A9EC17] sm:text-[15px]"
+            className="font-display line-clamp-2 text-[13px] font-bold leading-[1.35] text-white transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:text-[var(--brand-color)] sm:text-[15px]"
           >
             {item.productName}
           </Link>
           <p className="mt-1 text-[10px] text-white/40 sm:text-[11px]">
             Ref: {item.skuInterno ?? item.variantLabel}
           </p>
-          <p className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-[#A9EC17] sm:text-[11px]">
+          <p className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--brand-color)] sm:text-[11px]">
             <CircleCheck className="h-3.5 w-3.5" strokeWidth={2} />
             Em estoque
           </p>
@@ -100,11 +100,11 @@ export default function CartItemRow({ item }: { item: CartItem }) {
               De <span className="line-through">{formatPrice(item.precoDe)}</span>
             </p>
           )}
-          <strong className="font-display block whitespace-nowrap text-sm font-extrabold text-[#A9EC17] sm:text-base">
+          <strong className="font-display block whitespace-nowrap text-sm font-extrabold text-[var(--brand-color)] sm:text-base">
             {formatPrice(item.precoUnitario)}
           </strong>
           {discountPercentage > 0 && (
-            <span className="mt-1 inline-flex rounded bg-[#A9EC17]/[0.08] px-1.5 py-0.5 text-[8px] font-bold text-[#A9EC17] sm:text-[9px]">
+            <span className="mt-1 inline-flex rounded bg-[var(--brand-color)]/[0.08] px-1.5 py-0.5 text-[8px] font-bold text-[var(--brand-color)] sm:text-[9px]">
               Economize {discountPercentage}%
             </span>
           )}
@@ -116,7 +116,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
             disabled={isPending || item.quantidade <= 1}
             onClick={() => handleQuantityChange(item.quantidade - 1)}
             aria-label="Diminuir quantidade"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-white/55 transition hover:bg-white/5 hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] disabled:opacity-30"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-white/55 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30"
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
@@ -128,7 +128,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
             disabled={isPending}
             onClick={() => handleQuantityChange(item.quantidade + 1)}
             aria-label="Aumentar quantidade"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-white/65 transition hover:bg-white/5 hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] disabled:opacity-30"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-white/65 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
@@ -136,7 +136,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
 
         <div className="min-w-0 text-right xl:text-left">
           <p className="text-[9px] text-white/42 sm:text-[10px]">Subtotal</p>
-          <strong className="font-display block whitespace-nowrap text-sm font-extrabold text-[#A9EC17] sm:text-base">
+          <strong className="font-display block whitespace-nowrap text-sm font-extrabold text-[var(--brand-color)] sm:text-base">
             {formatPrice(item.subtotal)}
           </strong>
         </div>

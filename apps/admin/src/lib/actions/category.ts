@@ -44,6 +44,17 @@ export async function deleteCategoryAction(id: string): Promise<CategoryActionRe
   }
 }
 
+export async function duplicateCategoryAction(id: string): Promise<CategoryActionResult> {
+  if (!(await hasAdminSession())) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  try {
+    const result = await categoryService.duplicateCategory(id);
+    revalidatePath("/categorias");
+    return { ok: true, id: result.id };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : "Erro ao duplicar categoria." };
+  }
+}
+
 export async function reorderCategoriesAction(input: unknown): Promise<CategoryActionResult> {
   if (!(await hasAdminSession())) return { ok: false, error: "Sessão expirada. Faça login novamente." };
   const parsed = categoryReorderSchema.safeParse(input);

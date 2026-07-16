@@ -17,9 +17,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const requestedScope = request.nextUrl.searchParams.get("scope");
-    const scope = requestedScope === "banners" || requestedScope === "categorias"
+    const scope = requestedScope === "banners" || requestedScope === "categorias" || requestedScope === "branding"
       ? requestedScope
       : "produtos";
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: "O arquivo deve ter no máximo 5 MB" }, { status: 400 });
+    }
+    const isIcon = file.name.toLowerCase().endsWith(".ico");
+    if (!file.type.startsWith("image/") && !(scope === "branding" && isIcon)) {
+      return NextResponse.json({ error: "Formato de imagem inválido" }, { status: 400 });
+    }
     const url = await uploadImage(file, scope);
     return NextResponse.json({ url });
   } catch (error) {

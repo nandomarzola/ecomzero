@@ -57,7 +57,7 @@ export default function CepCaptureModal() {
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#A9EC17]/12 text-[#A9EC17]">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/12 text-[var(--brand-color)]">
               <MapPin className="h-5 w-5" strokeWidth={1.8} />
             </span>
             <h2 id="cep-modal-title" className="font-display text-sm font-bold text-white">
@@ -94,12 +94,12 @@ export default function CepCaptureModal() {
             onKeyDown={(event) => {
               if (event.key === "Enter") handleSave();
             }}
-            className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-[12px] text-white outline-none transition placeholder:text-white/35 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17]"
+            className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-[12px] text-white outline-none transition placeholder:text-white/35 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)]"
           />
           <button
             type="button"
             onClick={handleSave}
-            className="h-10 shrink-0 rounded-md bg-[#A9EC17] px-4 text-[11px] font-bold text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="h-10 shrink-0 rounded-md bg-[var(--brand-color)] px-4 text-[11px] font-bold text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             Salvar
           </button>

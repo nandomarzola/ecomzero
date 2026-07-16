@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Metadata, Viewport } from "next";
 import { Geist, Montserrat } from "next/font/google";
 import { Toaster } from "sonner";
@@ -24,53 +25,29 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://www.ecomzero.com.br"),
-  title: {
-    default: "EcomZero | Produtos úteis para o dia a dia",
-    template: "%s | EcomZero",
-  },
-  description:
-    "Conheça os produtos da EcomZero e finalize sua compra com segurança na loja oficial da Shopee.",
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: "EcomZero | Produtos úteis para o dia a dia",
-    description:
-      "Conheça os produtos da EcomZero e finalize sua compra com segurança na loja oficial da Shopee.",
-    url: "/",
-    siteName: "EcomZero",
-    locale: "pt_BR",
-    type: "website",
-    images: [
-      {
-        url: "/produtos/lampada-led.jpg",
-        width: 1024,
-        height: 1024,
-        alt: "Lâmpada LED Recarregável 20W USB Super Forte",
-      },
-    ],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getStoreSettings();
+  const title = `${settings.nomeLoja} | Produtos úteis para o dia a dia`;
+  return {
+    metadataBase: new URL("https://www.ecomzero.com.br"),
+    title: { default: title, template: `%s | ${settings.nomeLoja}` },
+    description: settings.descricaoFooter,
+    icons: { icon: settings.faviconUrl || settings.logoUrl },
+    alternates: { canonical: "/" },
+    openGraph: {
+      title,
+      description: settings.descricaoFooter,
+      url: "/",
+      siteName: settings.nomeLoja,
+      locale: "pt_BR",
+      type: "website",
+      images: [{ url: settings.logoUrl, alt: settings.nomeLoja }],
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#000000",
-};
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "EcomZero",
-  url: "https://www.ecomzero.com.br",
-  logo: "https://www.ecomzero.com.br/images/logo2.png",
-  sameAs: ["https://shopee.com.br/shop/611286890"],
-};
-
-const webSiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "EcomZero",
-  url: "https://www.ecomzero.com.br",
-  inLanguage: "pt-BR",
 };
 
 export default async function RootLayout({
@@ -79,11 +56,28 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const settings = await getStoreSettings();
+  const logoUrl = new URL(settings.logoUrl, "https://www.ecomzero.com.br").toString();
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: settings.nomeLoja,
+    url: "https://www.ecomzero.com.br",
+    logo: logoUrl,
+    sameAs: [settings.linkShopee, settings.linkInstagram, settings.linkFacebook, settings.linkTiktok].filter(Boolean),
+  };
+  const webSiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: settings.nomeLoja,
+    url: "https://www.ecomzero.com.br",
+    inLanguage: settings.idioma,
+  };
   return (
     <html
       lang="pt-BR"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
+      style={{ "--brand-color": settings.corPrincipal, "--accent": settings.corPrincipal } as CSSProperties}
     >
       <body
         className={`${geist.variable} ${montserrat.variable} flex min-h-screen flex-col antialiased`}
@@ -106,7 +100,7 @@ export default async function RootLayout({
           <CartProvider>
             <ProductFiltersProvider>
               {settings.barraAnuncioAtiva && settings.barraAnuncioTexto ? <AnnouncementBar text={settings.barraAnuncioTexto} href={settings.barraAnuncioLink} /> : null}
-              <Header />
+              <Header logoUrl={settings.logoUrl} storeName={settings.nomeLoja} />
 
               <main className="flex-1 pb-16 md:pb-0">{children}</main>
 

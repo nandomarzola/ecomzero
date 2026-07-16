@@ -50,7 +50,7 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
     <section aria-labelledby={`shelf-${title.toLowerCase().replaceAll(" ", "-")}`}>
       <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
         <div>
-          <span className="mb-3 block h-0.5 w-11 bg-[#A9EC17]" />
+          <span className="mb-3 block h-0.5 w-11 bg-[var(--brand-color)]" />
           <h2
             id={`shelf-${title.toLowerCase().replaceAll(" ", "-")}`}
             className="font-display text-xl font-bold uppercase text-white sm:text-2xl"
@@ -61,7 +61,7 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
         </div>
         <Link
           href="/#vitrine"
-          className="font-display inline-flex shrink-0 items-center gap-2 text-[10px] font-bold uppercase text-[#A9EC17] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:text-xs"
+          className="font-display inline-flex shrink-0 items-center gap-2 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-xs"
         >
           Ver todos
           <ArrowRight className="h-4 w-4" />
@@ -73,7 +73,7 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
           type="button"
           onClick={() => scrollShelf(-1)}
           aria-label={`Ver produtos anteriores em ${title}`}
-          className="absolute left-0 top-[42%] z-10 hidden h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:flex"
+          className="absolute left-0 top-[42%] z-10 hidden h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] lg:flex"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -96,7 +96,7 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
           type="button"
           onClick={() => scrollShelf(1)}
           aria-label={`Ver mais produtos em ${title}`}
-          className="absolute right-0 top-[42%] z-10 hidden h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:flex"
+          className="absolute right-0 top-[42%] z-10 hidden h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] lg:flex"
         >
           <ArrowRight className="h-5 w-5" />
         </button>
@@ -165,7 +165,7 @@ export default function Showcase({
     >
       {allProdutos.length === 0 ? (
         <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#0D0D0D] px-6 text-center">
-          <PackageOpen className="h-11 w-11 text-[#A9EC17]/45" strokeWidth={1.4} />
+          <PackageOpen className="h-11 w-11 text-[var(--brand-color)]/45" strokeWidth={1.4} />
           <h2 className="font-display mt-4 text-lg font-bold uppercase text-white">Novos produtos em breve</h2>
           <p className="mt-2 max-w-md text-sm leading-6 text-white/45">Estamos preparando uma seleção renovada para a loja EcomZero.</p>
         </div>
@@ -173,7 +173,7 @@ export default function Showcase({
         <section aria-labelledby="filtered-products-title">
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
             <div>
-              <span className="mb-3 block h-0.5 w-11 bg-[#A9EC17]" />
+              <span className="mb-3 block h-0.5 w-11 bg-[var(--brand-color)]" />
               <h2
                 id="filtered-products-title"
                 className="font-display text-xl font-bold uppercase text-white sm:text-2xl"
@@ -185,7 +185,7 @@ export default function Showcase({
             <Link
               href="/#vitrine"
               onClick={() => setSearchQuery("")}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs text-white/70 transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 px-3 py-2 text-xs text-white/70 transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
             >
               <XCircle className="h-4 w-4" />
               Limpar filtro
@@ -195,7 +195,7 @@ export default function Showcase({
           {products.length === 0 ? (
             <div className="rounded-xl border border-white/10 bg-[#0D0D0D] px-6 py-12 text-center text-sm text-white/65">
               Nenhum produto encontrado nessa seleção. {" "}
-              <Link href="/#vitrine" className="text-[#A9EC17] hover:underline">
+              <Link href="/#vitrine" className="text-[var(--brand-color)] hover:underline">
                 Ver todos
               </Link>
               .

@@ -37,10 +37,6 @@ export default async function AdminOrderDetailsPage({
         <span className="rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/5 px-3 py-1 text-xs text-[#D9FF87]">{orderStatusLabel[order.status]}</span>
       </div>
 
-      {order.status === "pago" ? <ShipmentActions orderId={order.id} shipment={order.shipment} /> : (
-        <p className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] p-4 text-sm text-amber-200">A expedição será liberada quando o pagamento for confirmado.</p>
-      )}
-
       <div className="grid gap-5 lg:grid-cols-[1.35fr_0.65fr]">
         <section className="rounded-xl border border-white/[0.08] bg-[#111111] p-5">
           <div className="flex items-center gap-2"><Package className="h-4 w-4 text-[#A9EC17]" /><h3 className="font-display font-bold">Itens do pedido</h3></div>
@@ -61,6 +57,7 @@ export default async function AdminOrderDetailsPage({
           <dl className="mt-5 space-y-2 border-t border-white/[0.08] pt-4 text-sm">
             <div className="flex justify-between text-white/45"><dt>Subtotal</dt><dd>{money(Number(order.subtotal))}</dd></div>
             <div className="flex justify-between text-white/45"><dt>Frete</dt><dd>{money(Number(order.valorFrete))}</dd></div>
+            {Number(order.descontoCupom) > 0 ? <div className="flex justify-between text-[#A9EC17]"><dt>Desconto (cupom)</dt><dd>- {money(Number(order.descontoCupom))}</dd></div> : null}
             <div className="flex justify-between pt-2 text-base font-bold"><dt>Total</dt><dd className="text-[#A9EC17]">{money(Number(order.total))}</dd></div>
           </dl>
         </section>
@@ -88,6 +85,12 @@ export default async function AdminOrderDetailsPage({
           </section>
         </div>
       </div>
+
+      {order.status === "pago" ? (
+        <ShipmentActions orderId={order.id} shipment={order.shipment} />
+      ) : (
+        <p className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] p-4 text-sm text-amber-200">A expedição será liberada quando o pagamento for confirmado.</p>
+      )}
     </div>
   );
 }

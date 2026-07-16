@@ -52,8 +52,8 @@ export default function CategoryStrip({ categories }: { categories: StoreCategor
               <span
                 className={`flex items-center justify-center transition ${
                   isActive
-                    ? "text-[#A9EC17]"
-                    : "text-[#A9EC17]/85 group-hover:text-[#B7FF23]"
+                    ? "text-[var(--brand-color)]"
+                    : "text-[var(--brand-color)]/85 group-hover:text-[#B7FF23]"
                 }`}
               >
                 <Icon className="h-[18px] w-[18px]" strokeWidth={1.7} />
@@ -63,14 +63,14 @@ export default function CategoryStrip({ categories }: { categories: StoreCategor
                 className={`whitespace-nowrap text-[11px] font-medium transition ${
                   isActive
                     ? "text-white"
-                    : "text-white/68 group-hover:text-[#A9EC17]"
+                    : "text-white/68 group-hover:text-[var(--brand-color)]"
                 }`}
               >
                 {categoria.nome}
               </span>
 
               {isActive && (
-                <span className="absolute inset-x-2 bottom-0 h-0.5 bg-[#A9EC17]" aria-hidden="true" />
+                <span className="absolute inset-x-2 bottom-0 h-0.5 bg-[var(--brand-color)]" aria-hidden="true" />
               )}
             </Link>
           );

@@ -21,7 +21,7 @@ export default async function AccountLayout({
     <div className="min-h-[70vh] bg-[#050505]">
       <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-6 sm:px-6 lg:px-8">
         <nav aria-label="Navegação estrutural" className="flex items-center gap-2 text-xs text-white/40">
-          <Link href="/" className="transition hover:text-[#A9EC17]">
+          <Link href="/" className="transition hover:text-[var(--brand-color)]">
             Início
           </Link>
           <span aria-hidden="true">›</span>
@@ -29,7 +29,7 @@ export default async function AccountLayout({
         </nav>
 
         <header className="mt-6 border-b border-white/[0.08] pb-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#A9EC17]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--brand-color)]">
             Área do cliente
           </p>
           <h1 className="font-display mt-2 text-3xl font-extrabold text-white sm:text-4xl">

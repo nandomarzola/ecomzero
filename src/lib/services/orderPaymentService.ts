@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
+import { recordCouponUsage } from "@/lib/services/couponService";
 import {
   createMercadoPagoPayment,
   createPaymentPreference,
@@ -520,6 +521,10 @@ async function reconcilePayment(
       status: true,
       total: true,
       mercadoPagoPaymentId: true,
+      couponId: true,
+      descontoCupom: true,
+      userId: true,
+      emailCliente: true,
     },
   });
 
@@ -589,17 +594,35 @@ async function reconcilePayment(
     );
   }
 
-  const updated = await prisma.order.updateMany({
-    where: {
-      id: order.id,
-      status: "aguardando_pagamento",
-    },
-    data: {
-      status: "pago",
-      mercadoPagoPaymentId: payment.id,
-      mercadoPagoPaymentStatus: payment.status,
-      pagoEm: payment.approvedAt ?? new Date(),
-    },
+  // Transição para "pago" + registro de uso do cupom na MESMA transação, para
+  // que a redemption e o incremento de `usos` só aconteçam quando o pedido de
+  // fato mudou para pago (idempotente: CouponRedemption.orderId é único, então
+  // webhook reentrante não conta duas vezes).
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.order.updateMany({
+      where: {
+        id: order.id,
+        status: "aguardando_pagamento",
+      },
+      data: {
+        status: "pago",
+        mercadoPagoPaymentId: payment.id,
+        mercadoPagoPaymentStatus: payment.status,
+        pagoEm: payment.approvedAt ?? new Date(),
+      },
+    });
+
+    if (result.count === 1 && order.couponId) {
+      await recordCouponUsage(tx, {
+        couponId: order.couponId,
+        orderId: order.id,
+        userId: order.userId,
+        email: order.emailCliente,
+        valorDesconto: Number(order.descontoCupom),
+      });
+    }
+
+    return result;
   });
 
   if (updated.count === 0) {

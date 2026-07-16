@@ -16,7 +16,7 @@ export default async function AccountDataPage() {
 
   return (
     <section aria-labelledby="account-data-title">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A9EC17]">Cadastro</p>
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand-color)]">Cadastro</p>
       <h2 id="account-data-title" className="font-display mt-1 text-2xl font-extrabold text-white">
         Meus dados
       </h2>

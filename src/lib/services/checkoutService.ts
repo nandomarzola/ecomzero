@@ -2,6 +2,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import type { ShippingOption } from "@/lib/services/shippingService";
 import type { CheckoutInput } from "@/lib/validation/checkout";
+import { CouponError, validateForCheckout } from "@/lib/services/couponService";
 
 export class CheckoutServiceError extends Error {
   constructor(message: string) {
@@ -15,6 +16,7 @@ export type CreatedOrder = {
   status: "aguardando_pagamento";
   subtotal: number;
   valorFrete: number;
+  descontoCupom: number;
   total: number;
 };
 
@@ -103,7 +105,33 @@ export async function createOrderFromCart(
           new Prisma.Decimal(0),
         );
         const valorFrete = new Prisma.Decimal(selectedOption.preco).toDecimalPlaces(2);
-        const total = subtotal.plus(valorFrete);
+
+        // Cupom: validação AUTORITATIVA (com identidade) dentro da transação —
+        // é o que decide o valor cobrado. Falha vira CheckoutServiceError com
+        // mensagem específica ("Pedido mínimo...", "Cupom expirou.", etc.).
+        let descontoCupom = new Prisma.Decimal(0);
+        let couponId: string | null = null;
+        if (cart.couponId) {
+          try {
+            const applied = await validateForCheckout(transaction, {
+              couponId: cart.couponId,
+              orderId: cart.id,
+              subtotal: subtotal.toNumber(),
+              shippingCost: valorFrete.toNumber(),
+              userId,
+              email: checkout.email,
+            });
+            descontoCupom = new Prisma.Decimal(applied.descontoCupom);
+            couponId = applied.couponId;
+          } catch (couponError) {
+            if (couponError instanceof CouponError) {
+              throw new CheckoutServiceError(couponError.message);
+            }
+            throw couponError;
+          }
+        }
+
+        const total = subtotal.plus(valorFrete).minus(descontoCupom);
 
         for (const item of cart.items) {
           await transaction.orderItem.update({
@@ -131,6 +159,8 @@ export async function createOrderFromCart(
             uf: checkout.uf,
             subtotal,
             valorFrete,
+            descontoCupom,
+            couponId,
             total,
             shippingQuoteId: quote.id,
             shippingOptionId: selectedOption.id,
@@ -146,6 +176,7 @@ export async function createOrderFromCart(
           status: "aguardando_pagamento",
           subtotal: subtotal.toNumber(),
           valorFrete: valorFrete.toNumber(),
+          descontoCupom: descontoCupom.toNumber(),
           total: total.toNumber(),
         };
       },

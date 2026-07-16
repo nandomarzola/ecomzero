@@ -1,0 +1,9 @@
+ALTER TABLE "StoreSettings"
+ADD COLUMN "logoUrl" TEXT NOT NULL DEFAULT '/images/logo2.png',
+ADD COLUMN "faviconUrl" TEXT,
+ADD COLUMN "corPrincipal" TEXT NOT NULL DEFAULT '#A9EC17',
+ADD COLUMN "fusoHorario" TEXT NOT NULL DEFAULT 'America/Sao_Paulo',
+ADD COLUMN "lojaAtiva" BOOLEAN NOT NULL DEFAULT true,
+ADD COLUMN "plano" TEXT NOT NULL DEFAULT 'Profissional',
+ADD COLUMN "moeda" TEXT NOT NULL DEFAULT 'BRL',
+ADD COLUMN "idioma" TEXT NOT NULL DEFAULT 'pt-BR';

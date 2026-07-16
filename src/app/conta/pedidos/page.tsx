@@ -17,7 +17,7 @@ const statusDetails = {
   },
   pago: {
     label: "Pagamento confirmado",
-    className: "border-[#A9EC17]/25 bg-[#A9EC17]/[0.08] text-[#D5FF7B]",
+    className: "border-[var(--brand-color)]/25 bg-[var(--brand-color)]/[0.08] text-[#D5FF7B]",
   },
   cancelado: {
     label: "Cancelado",
@@ -45,7 +45,7 @@ export default async function AccountOrdersPage() {
     <section aria-labelledby="orders-title">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A9EC17]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand-color)]">
             Histórico
           </p>
           <h2 id="orders-title" className="font-display mt-1 text-2xl font-extrabold text-white">
@@ -61,7 +61,7 @@ export default async function AccountOrdersPage() {
 
       {orders.length === 0 ? (
         <div className="mt-5 rounded-xl border border-white/[0.1] bg-[#0D0D0D] px-6 py-14 text-center">
-          <PackageOpen className="mx-auto h-12 w-12 text-[#A9EC17]" strokeWidth={1.5} />
+          <PackageOpen className="mx-auto h-12 w-12 text-[var(--brand-color)]" strokeWidth={1.5} />
           <h3 className="font-display mt-5 text-lg font-bold text-white">
             Nenhum pedido por aqui
           </h3>
@@ -70,7 +70,7 @@ export default async function AccountOrdersPage() {
           </p>
           <Link
             href="/"
-            className="font-display mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-[#A9EC17] px-6 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+            className="font-display mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-[var(--brand-color)] px-6 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
           >
             Ver produtos
           </Link>
@@ -80,7 +80,7 @@ export default async function AccountOrdersPage() {
           {orders.map((order) => {
             const shipmentStatus = order.shipment?.status;
             const status = shipmentStatus === "delivered"
-              ? { label: "Entregue", className: "border-[#A9EC17]/25 bg-[#A9EC17]/[0.08] text-[#D5FF7B]" }
+              ? { label: "Entregue", className: "border-[var(--brand-color)]/25 bg-[var(--brand-color)]/[0.08] text-[#D5FF7B]" }
               : shipmentStatus === "posted" || shipmentStatus === "received"
                 ? { label: "Em trânsito", className: "border-sky-300/25 bg-sky-300/[0.08] text-sky-200" }
                 : shipmentStatus
@@ -95,7 +95,7 @@ export default async function AccountOrdersPage() {
               <article key={order.id} className="overflow-hidden rounded-xl border border-white/[0.1] bg-[#0D0D0D]">
                 <header className="flex flex-col gap-3 border-b border-white/[0.08] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.05] text-[#A9EC17]">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/[0.05] text-[var(--brand-color)]">
                       <ReceiptText className="h-4 w-4" />
                     </span>
                     <div>
@@ -140,13 +140,13 @@ export default async function AccountOrdersPage() {
                   <footer className="mt-5 flex flex-col gap-4 border-t border-white/[0.08] pt-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-white/40">Total do pedido</p>
-                      <strong className="font-display mt-1 block text-xl font-extrabold text-[#A9EC17]">
+                      <strong className="font-display mt-1 block text-xl font-extrabold text-[var(--brand-color)]">
                         {formatPrice(order.total)}
                       </strong>
                     </div>
                     <Link
                       href={action.href}
-                      className="font-display inline-flex min-h-11 items-center justify-center rounded-md border border-[#A9EC17]/60 px-5 text-[10px] font-extrabold uppercase text-[#A9EC17] transition hover:bg-[#A9EC17] hover:text-black"
+                      className="font-display inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--brand-color)]/60 px-5 text-[10px] font-extrabold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)] hover:text-black"
                     >
                       {action.label}
                     </Link>

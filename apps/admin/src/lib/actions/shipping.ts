@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import {
   createMelhorEnvioShipment,
+  dismissShipmentError,
   generateMelhorEnvioLabel,
   purchaseMelhorEnvioShipment,
   syncMelhorEnvioTracking,
@@ -78,4 +79,8 @@ export async function generateLabelAction(orderId: string) {
 
 export async function syncTrackingAction(orderId: string) {
   return runShipmentAction(orderId, syncMelhorEnvioTracking);
+}
+
+export async function dismissShipmentErrorAction(orderId: string) {
+  return runShipmentAction(orderId, dismissShipmentError);
 }

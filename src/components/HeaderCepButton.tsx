@@ -68,9 +68,9 @@ export default function HeaderCepButton({ className = "" }: { className?: string
         onClick={toggleOpen}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="header-action flex items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-white/[0.04] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+        className="header-action flex items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-white/[0.04] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
       >
-        <MapPin className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.8} />
+        <MapPin className="h-5 w-5 shrink-0 text-[var(--brand-color)]" strokeWidth={1.8} />
         <span className="min-w-0">
           {savedCep ? (
             <>
@@ -113,12 +113,12 @@ export default function HeaderCepButton({ className = "" }: { className?: string
               onKeyDown={(event) => {
                 if (event.key === "Enter") handleSave();
               }}
-              className="h-9 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-2.5 text-[11px] text-white outline-none transition placeholder:text-white/35 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17]"
+              className="h-9 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-2.5 text-[11px] text-white outline-none transition placeholder:text-white/35 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)]"
             />
             <button
               type="button"
               onClick={handleSave}
-              className="h-9 shrink-0 rounded-md bg-[#A9EC17] px-3 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="h-9 shrink-0 rounded-md bg-[var(--brand-color)] px-3 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Salvar
             </button>

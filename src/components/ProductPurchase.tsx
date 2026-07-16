@@ -93,10 +93,10 @@ export default function ProductPurchase({
                   type="button"
                   onClick={() => handleSelectVariant(variant.id)}
                   aria-pressed={isSelected}
-                  className={`font-display min-h-11 rounded-lg border px-3 py-2 text-[10px] font-bold transition duration-[250ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] motion-reduce:transform-none motion-reduce:transition-none ${
+                  className={`font-display min-h-11 rounded-lg border px-3 py-2 text-[10px] font-bold transition duration-[250ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] motion-reduce:transform-none motion-reduce:transition-none ${
                     isSelected
-                      ? "border-[#A9EC17] bg-[#A9EC17] text-black"
-                      : "border-white/10 bg-[#0D0D0D] text-white/65 hover:-translate-y-0.5 hover:border-[#A9EC17]/35 hover:text-white"
+                      ? "border-[var(--brand-color)] bg-[var(--brand-color)] text-black"
+                      : "border-white/10 bg-[#0D0D0D] text-white/65 hover:-translate-y-0.5 hover:border-[var(--brand-color)]/35 hover:text-white"
                   }`}
                 >
                   {variant.label}
@@ -125,7 +125,7 @@ export default function ProductPurchase({
                 disabled={quantity <= 1}
                 onClick={() => setQuantity((current) => Math.max(1, current - 1))}
                 aria-label="Diminuir quantidade"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-white/55 transition hover:bg-white/5 hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-white/55 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30"
               >
                 <Minus className="h-4 w-4" />
               </button>
@@ -137,7 +137,7 @@ export default function ProductPurchase({
                 disabled={quantity >= 20}
                 onClick={() => setQuantity((current) => Math.min(20, current + 1))}
                 aria-label="Aumentar quantidade"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition hover:bg-white/5 hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] disabled:opacity-30"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -153,10 +153,10 @@ export default function ProductPurchase({
                   </span>
                 </p>
               )}
-              <p className="font-display mt-0.5 whitespace-nowrap text-[24px] font-extrabold leading-none text-[#A9EC17]">
+              <p className="font-display mt-0.5 whitespace-nowrap text-[24px] font-extrabold leading-none text-[var(--brand-color)]">
                 {formatPrice(selectedVariant.precoPor)}
                 {hasDiscount && (
-                  <span className="ml-2 inline-flex rounded-full bg-[#A9EC17]/15 px-2 py-1 align-middle text-[9px] font-bold text-[#A9EC17]">
+                  <span className="ml-2 inline-flex rounded-full bg-[var(--brand-color)]/15 px-2 py-1 align-middle text-[9px] font-bold text-[var(--brand-color)]">
                     {discountPercentage}% OFF
                   </span>
                 )}
@@ -173,7 +173,7 @@ export default function ProductPurchase({
             type="button"
             onClick={() => addToCart("add")}
             disabled={isPending}
-            className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-black transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#B8FF28] hover:shadow-[0_8px_24px_rgba(169,236,23,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
+            className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-black transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#B8FF28] hover:shadow-[0_8px_24px_rgba(169,236,23,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
           >
             <ShoppingCart className="h-4 w-4" strokeWidth={2} />
             {submittingAction === "add" && isPending ? "Adicionando..." : "Adicionar ao carrinho"}
@@ -183,7 +183,7 @@ export default function ProductPurchase({
             type="button"
             onClick={() => addToCart("buy")}
             disabled={isPending}
-            className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[#A9EC17]/40 bg-transparent px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-[#A9EC17] transition duration-[250ms] hover:border-[#A9EC17] hover:bg-[#A9EC17]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 motion-reduce:transition-none"
+            className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-[var(--brand-color)]/40 bg-transparent px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-[var(--brand-color)] transition duration-[250ms] hover:border-[var(--brand-color)] hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 motion-reduce:transition-none"
           >
             <Zap className="h-4 w-4" strokeWidth={2} />
             {submittingAction === "buy" && isPending ? "Processando..." : "Comprar agora"}

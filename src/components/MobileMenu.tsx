@@ -72,7 +72,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Fechar menu"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:text-[#A9EC17]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-white transition hover:text-[var(--brand-color)]"
               >
                 <X className="h-6 w-6" strokeWidth={1.8} />
               </button>
@@ -87,7 +87,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
                       scroll={!item.href.includes("?")}
                       onClick={() => setOpen(false)}
                       aria-current={index === 0 ? "page" : undefined}
-                      className="font-display flex min-h-12 items-center rounded-lg px-4 text-sm font-semibold text-white/90 transition hover:bg-[#170303] hover:text-[#A9EC17]"
+                      className="font-display flex min-h-12 items-center rounded-lg px-4 text-sm font-semibold text-white/90 transition hover:bg-[#170303] hover:text-[var(--brand-color)]"
                     >
                       {item.label}
                     </Link>
@@ -111,7 +111,7 @@ export default function MobileMenu({ items }: MobileMenuProps) {
         aria-label="Abrir menu"
         aria-expanded={open}
         aria-controls="mobile-nav-drawer"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-white transition hover:text-[#A9EC17] md:hidden"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-white transition hover:text-[var(--brand-color)] md:hidden"
       >
         <Menu className="h-6 w-6" strokeWidth={1.8} />
       </button>

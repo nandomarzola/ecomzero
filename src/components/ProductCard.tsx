@@ -90,12 +90,12 @@ export default function ProductCard({ product }: ProductCardProps) {
   };
 
   return (
-    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.13] bg-[linear-gradient(145deg,#111_0%,#080808_100%)] shadow-[0_18px_45px_rgba(0,0,0,0.32)] transition duration-300 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-1 hover:border-[#A9EC17]/45 focus-within:border-[#A9EC17]/55">
+    <article className="group flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-white/[0.13] bg-[linear-gradient(145deg,#111_0%,#080808_100%)] shadow-[0_18px_45px_rgba(0,0,0,0.32)] transition duration-300 motion-reduce:transform-none motion-reduce:transition-none hover:-translate-y-1 hover:border-[var(--brand-color)]/45 focus-within:border-[var(--brand-color)]/55">
       <div className="relative aspect-[1.04/1] overflow-hidden bg-[radial-gradient(circle_at_52%_48%,#292929_0%,#171717_48%,#0C0C0C_82%)]">
         <Link
           href={href}
           aria-label={`Ver detalhes de ${product.nome}`}
-          className="absolute inset-0 z-[1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] focus-visible:ring-inset"
+          className="absolute inset-0 z-[1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] focus-visible:ring-inset"
         >
           <Image
             src={image}
@@ -107,7 +107,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
 
         {hasDiscount && (
-          <span className="font-display absolute left-4 top-4 z-[2] rounded-lg bg-[#A9EC17] px-3 py-2 text-sm font-black text-black shadow-[0_7px_20px_rgba(169,236,23,0.2)] sm:left-5 sm:top-5 sm:text-base">
+          <span className="font-display absolute left-4 top-4 z-[2] rounded-lg bg-[var(--brand-color)] px-3 py-2 text-sm font-black text-black shadow-[0_7px_20px_rgba(169,236,23,0.2)] sm:left-5 sm:top-5 sm:text-base">
             -{discountPercentage}%
           </span>
         )}
@@ -124,13 +124,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       </div>
 
       <div className="flex flex-1 flex-col border-t border-white/[0.06] p-4 sm:p-5">
-        <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-[#A9EC17] sm:text-[11px]">
+        <p className="font-display text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand-color)] sm:text-[11px]">
           {category}
         </p>
 
         <Link
           href={href}
-          className="font-display mt-2 line-clamp-2 min-h-12 text-lg font-extrabold leading-6 text-white outline-none transition hover:text-[#A9EC17] focus-visible:text-[#A9EC17] sm:text-xl sm:leading-7"
+          className="font-display mt-2 line-clamp-2 min-h-12 text-lg font-extrabold leading-6 text-white outline-none transition hover:text-[var(--brand-color)] focus-visible:text-[var(--brand-color)] sm:text-xl sm:leading-7"
         >
           {product.nome}
         </Link>
@@ -143,7 +143,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="mt-3 flex items-center gap-2"
             aria-label={`${rating.toFixed(1)} de 5, com ${product.totalAvaliacoes} avaliações`}
           >
-            <div className="flex items-center gap-0.5 text-[#A9EC17]" aria-hidden="true">
+            <div className="flex items-center gap-0.5 text-[var(--brand-color)]" aria-hidden="true">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
@@ -165,7 +165,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             </p>
           )}
           <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
-            <strong className="font-display text-2xl font-black leading-none text-[#A9EC17] sm:text-[28px]">
+            <strong className="font-display text-2xl font-black leading-none text-[var(--brand-color)] sm:text-[28px]">
               {formatPrice(lowestPrice)}
             </strong>
             {hasDiscount && (
@@ -173,7 +173,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <span className="text-xs text-white/38 line-through sm:text-sm">
                   {formatPrice(previousPrice)}
                 </span>
-                <span className="rounded-md bg-[#A9EC17]/15 px-2 py-1 text-[10px] font-extrabold text-[#A9EC17]">
+                <span className="rounded-md bg-[var(--brand-color)]/15 px-2 py-1 text-[10px] font-extrabold text-[var(--brand-color)]">
                   {discountPercentage}% OFF
                 </span>
               </>
@@ -185,7 +185,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               type="button"
               onClick={() => handleCartAction("buy")}
               disabled={isPending || !defaultVariant}
-              className="font-display inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#A9EC17] px-4 text-xs font-black uppercase text-black transition hover:bg-[#BCF53E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              className="font-display inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[var(--brand-color)] px-4 text-xs font-black uppercase text-black transition hover:bg-[#BCF53E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
             >
               <Zap className="h-5 w-5" strokeWidth={2.2} />
               {pendingAction === "buy" ? "ABRINDO CARRINHO..." : "COMPRAR AGORA"}
@@ -194,7 +194,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               type="button"
               onClick={() => handleCartAction("cart")}
               disabled={isPending || !defaultVariant}
-              className="font-display inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[#A9EC17]/80 px-4 text-xs font-bold uppercase text-[#A9EC17] transition hover:bg-[#A9EC17]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              className="font-display inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[var(--brand-color)]/80 px-4 text-xs font-bold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
             >
               {feedback === "added" ? (
                 <Check className="h-5 w-5" strokeWidth={2.4} />

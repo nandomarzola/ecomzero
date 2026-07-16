@@ -23,6 +23,13 @@ enum ProductKind {
 enum CouponDiscountType {
   percentual
   valor_fixo
+  frete_gratis
+}
+
+enum CouponAppliesTo {
+  toda_loja
+  categoria
+  produto
 }
 
 enum BannerPosition {
@@ -152,6 +159,7 @@ model Order {
   uf                             String?
   subtotal                       Decimal     @default(0) @db.Decimal(10, 2)
   valorFrete                     Decimal     @default(0) @db.Decimal(10, 2)
+  descontoCupom                  Decimal     @default(0) @db.Decimal(10, 2)
   total                          Decimal     @default(0) @db.Decimal(10, 2)
   shippingQuoteId                String?     @unique
   shippingOptionId               String?
@@ -174,12 +182,18 @@ model Coupon {
   codigo              String             @unique
   descricao           String?
   tipo                CouponDiscountType
-  valor               Decimal            @db.Decimal(10, 2)
+  valor               Decimal?           @db.Decimal(10, 2) // null quando tipo = frete_gratis
   valorMinimoPedido   Decimal?           @db.Decimal(10, 2)
   descontoMaximo      Decimal?           @db.Decimal(10, 2)
   limiteUsoTotal      Int?
   limiteUsoPorCliente Int                @default(1)
   usos                Int                @default(0)
+  aplicaEm            CouponAppliesTo    @default(toda_loja)
+  categoriaId         String?
+  produtoId           String?
+  combinavel          Boolean            @default(false)
+  exibirNoSite        Boolean            @default(false)
+  primeiraCompra      Boolean            @default(false)
   inicioEm            DateTime?
   expiraEm            DateTime?
   ativo               Boolean            @default(true)
@@ -223,6 +237,14 @@ model StoreSettings {
   linkInstagram     String?
   linkFacebook      String?
   linkTiktok        String?
+  logoUrl           String   @default("/images/logo2.png")
+  faviconUrl        String?
+  corPrincipal      String   @default("#A9EC17")
+  fusoHorario       String   @default("America/Sao_Paulo")
+  lojaAtiva         Boolean  @default(true)
+  plano             String   @default("Profissional")
+  moeda             String   @default("BRL")
+  idioma            String   @default("pt-BR")
   updatedAt         DateTime @updatedAt
 }
 

@@ -129,13 +129,13 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
           placeholder="Digite seu CEP"
           value={cep}
           onChange={(event) => setCepDraft(event.target.value)}
-          className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-[11px] text-white outline-none transition placeholder:text-white/35 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17]"
+          className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-[11px] text-white outline-none transition placeholder:text-white/35 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)]"
         />
         <button
           type="button"
           onClick={handleCalculate}
           disabled={status === "loading" || autoLoading || cep.trim().length === 0}
-          className="h-10 shrink-0 rounded-md bg-[#A9EC17] px-4 text-[10px] font-bold text-black transition duration-[250ms] hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
+          className="h-10 shrink-0 rounded-md bg-[var(--brand-color)] px-4 text-[10px] font-bold text-black transition duration-[250ms] hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
         >
           {status === "loading" ? "Calculando..." : "Calcular"}
         </button>
@@ -148,7 +148,7 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
 
         {showInitialAutoSkeleton && (
           <p className="mt-2 flex items-center gap-1.5 text-[10px] text-white/45">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#A9EC17]" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--brand-color)]" />
             Calculando frete para o seu CEP...
           </p>
         )}
@@ -164,12 +164,12 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
                   className="flex items-center justify-between gap-2 rounded-md border border-white/[0.08] bg-[#090909] px-3 py-2 text-[10px]"
                 >
                   <span className="flex items-center gap-1.5 text-white/70">
-                    <Truck className="h-3.5 w-3.5 shrink-0 text-[#A9EC17]" strokeWidth={1.8} />
+                    <Truck className="h-3.5 w-3.5 shrink-0 text-[var(--brand-color)]" strokeWidth={1.8} />
                     {option.transportadora} · {option.servico}
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
                     <span className="text-white/45">{option.prazoDias} dias úteis</span>
-                    <span className="font-semibold text-[#A9EC17]">
+                    <span className="font-semibold text-[var(--brand-color)]">
                       {formatPrice(option.preco)}
                     </span>
                   </span>
@@ -179,7 +179,7 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
 
             {autoLoading && (
               <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
-                <Loader2 className="h-4 w-4 animate-spin text-[#A9EC17]" />
+                <Loader2 className="h-4 w-4 animate-spin text-[var(--brand-color)]" />
               </div>
             )}
           </div>

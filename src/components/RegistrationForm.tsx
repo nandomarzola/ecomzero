@@ -14,7 +14,7 @@ type FieldName =
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
+  "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -301,7 +301,7 @@ export default function RegistrationForm({
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/55 transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A9EC17]"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/55 transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-color)]"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -337,7 +337,7 @@ export default function RegistrationForm({
                 type="button"
                 onClick={() => setShowConfirmPassword((current) => !current)}
                 aria-label={showConfirmPassword ? "Ocultar confirmação de senha" : "Mostrar confirmação de senha"}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/55 transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A9EC17]"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/55 transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-color)]"
               >
                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -355,10 +355,10 @@ export default function RegistrationForm({
               {passwordRequirements.map((requirement) => (
                 <li
                   key={requirement.label}
-                  className={`flex items-center gap-2 text-xs ${requirement.met ? "text-[#A9EC17]" : "text-white/48"}`}
+                  className={`flex items-center gap-2 text-xs ${requirement.met ? "text-[var(--brand-color)]" : "text-white/48"}`}
                 >
                   <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${requirement.met ? "border-[#A9EC17]" : "border-white/35"}`}
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${requirement.met ? "border-[var(--brand-color)]" : "border-white/35"}`}
                   >
                     {requirement.met && <Check className="h-2.5 w-2.5" strokeWidth={2.5} />}
                   </span>
@@ -374,7 +374,7 @@ export default function RegistrationForm({
               name="acceptsMarketing"
               checked={acceptsMarketing}
               onChange={(event) => setAcceptsMarketing(event.target.checked)}
-              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-white/25 bg-black accent-[#A9EC17]"
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-white/25 bg-black accent-[var(--brand-color)]"
             />
             <span>Quero receber ofertas e novidades por e-mail e WhatsApp</span>
           </label>
@@ -382,7 +382,7 @@ export default function RegistrationForm({
           {statusMessage && (
             <p
               role="status"
-              className={`rounded-md border px-4 py-3 text-xs leading-5 ${statusIsError ? "border-red-400/30 bg-red-400/[0.06] text-red-200" : "border-[#A9EC17]/30 bg-[#A9EC17]/[0.06] text-[#D5FF7B]"}`}
+              className={`rounded-md border px-4 py-3 text-xs leading-5 ${statusIsError ? "border-red-400/30 bg-red-400/[0.06] text-red-200" : "border-[var(--brand-color)]/30 bg-[var(--brand-color)]/[0.06] text-[#D5FF7B]"}`}
             >
               {statusMessage}
             </p>
@@ -391,7 +391,7 @@ export default function RegistrationForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="font-display flex min-h-12 w-full items-center justify-center rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-px disabled:cursor-wait disabled:opacity-70"
+            className="font-display flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-px disabled:cursor-wait disabled:opacity-70"
           >
             {isSubmitting ? "Criando conta..." : "Criar conta"}
           </button>

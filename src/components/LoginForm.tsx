@@ -11,7 +11,7 @@ type FieldName = "email" | "password";
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
+  "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -169,7 +169,7 @@ export default function LoginForm() {
                 type="button"
                 onClick={() => setShowPassword((current) => !current)}
                 aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/55 transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A9EC17]"
+                className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/55 transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-color)]"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -195,14 +195,14 @@ export default function LoginForm() {
                 name="rememberMe"
                 checked={rememberMe}
                 onChange={(event) => setRememberMe(event.target.checked)}
-                className="h-5 w-5 shrink-0 cursor-pointer rounded border-white/25 bg-black accent-[#A9EC17]"
+                className="h-5 w-5 shrink-0 cursor-pointer rounded border-white/25 bg-black accent-[var(--brand-color)]"
               />
               <span>Lembrar meus dados</span>
             </label>
             <button
               type="button"
               onClick={() => showUnavailableMessage("A recuperação de senha")}
-              className="shrink-0 rounded-sm text-xs font-semibold text-[#A9EC17] transition hover:text-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              className="shrink-0 rounded-sm text-xs font-semibold text-[var(--brand-color)] transition hover:text-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
             >
               Esqueci minha senha
             </button>
@@ -211,7 +211,7 @@ export default function LoginForm() {
           {statusMessage && (
             <p
               role="status"
-              className={`mt-5 rounded-md border px-4 py-3 text-xs leading-5 ${statusIsError ? "border-red-400/30 bg-red-400/[0.06] text-red-200" : "border-[#A9EC17]/30 bg-[#A9EC17]/[0.06] text-[#D5FF7B]"}`}
+              className={`mt-5 rounded-md border px-4 py-3 text-xs leading-5 ${statusIsError ? "border-red-400/30 bg-red-400/[0.06] text-red-200" : "border-[var(--brand-color)]/30 bg-[var(--brand-color)]/[0.06] text-[#D5FF7B]"}`}
             >
               {statusMessage}
             </p>
@@ -220,7 +220,7 @@ export default function LoginForm() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="font-display mt-6 flex min-h-12 w-full items-center justify-center rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-px disabled:cursor-wait disabled:opacity-70"
+            className="font-display mt-6 flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-px disabled:cursor-wait disabled:opacity-70"
           >
             {isSubmitting ? "Entrando..." : "Entrar"}
           </button>
@@ -236,7 +236,7 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => showUnavailableMessage("O acesso com Google")}
-            className="relative flex h-12 items-center justify-center rounded-md border border-white/[0.16] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+            className="relative flex h-12 items-center justify-center rounded-md border border-white/[0.16] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
           >
             <span
               aria-hidden="true"
@@ -250,7 +250,7 @@ export default function LoginForm() {
           <button
             type="button"
             onClick={() => showUnavailableMessage("O acesso com Facebook")}
-            className="relative flex h-12 items-center justify-center rounded-md border border-white/[0.16] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+            className="relative flex h-12 items-center justify-center rounded-md border border-white/[0.16] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
           >
             <span
               aria-hidden="true"
@@ -266,7 +266,7 @@ export default function LoginForm() {
           Ainda não tem uma conta?{" "}
           <Link
             href="/cadastro"
-            className="font-semibold text-[#A9EC17] transition hover:text-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+            className="font-semibold text-[var(--brand-color)] transition hover:text-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
           >
             Criar conta
           </Link>

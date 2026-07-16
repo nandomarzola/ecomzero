@@ -102,7 +102,7 @@ export default function ProductMarketplaces({ links }: ProductMarketplacesProps)
               target="_blank"
               rel="noopener noreferrer sponsored"
               aria-label={`${marketplace.action}, abre em uma nova aba`}
-              className={`group flex min-h-[76px] min-w-[210px] flex-1 items-center gap-3 rounded-lg border border-white/[0.09] bg-[#111111] px-4 py-3 transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#151515] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] motion-reduce:transform-none motion-reduce:transition-none ${marketplace.accent}`}
+              className={`group flex min-h-[76px] min-w-[210px] flex-1 items-center gap-3 rounded-lg border border-white/[0.09] bg-[#111111] px-4 py-3 transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#151515] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] motion-reduce:transform-none motion-reduce:transition-none ${marketplace.accent}`}
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-white/[0.08] bg-black/35">
                 {marketplace.icon}

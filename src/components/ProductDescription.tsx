@@ -185,7 +185,7 @@ export default function ProductDescription(props: ProductDescriptionProps) {
               Descrição, especificações e conteúdo da embalagem.
             </span>
           </span>
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-[#A9EC17] transition group-open:rotate-180">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 text-[var(--brand-color)] transition group-open:rotate-180">
             <ChevronDown className="h-4 w-4" />
           </span>
         </summary>
@@ -196,7 +196,7 @@ export default function ProductDescription(props: ProductDescriptionProps) {
               key={section.title}
               className={`rounded-lg border border-white/[0.07] bg-[#111111] p-4 ${section.title === "Sobre o produto" ? "sm:col-span-2 lg:col-span-3" : ""}`}
             >
-              <h3 className="font-display text-[11px] font-bold uppercase tracking-wide text-[#A9EC17]">
+              <h3 className="font-display text-[11px] font-bold uppercase tracking-wide text-[var(--brand-color)]">
                 {section.title}
               </h3>
               {section.paragraphs.map((paragraph) => (
@@ -211,7 +211,7 @@ export default function ProductDescription(props: ProductDescriptionProps) {
                 <ul className="mt-2 space-y-1.5 text-[12px] leading-5 text-white/58 sm:text-[13px]">
                   {section.items.map((item) => (
                     <li key={item} className="flex gap-2">
-                      <span className="mt-[8px] h-1 w-1 shrink-0 rounded-full bg-[#A9EC17]" />
+                      <span className="mt-[8px] h-1 w-1 shrink-0 rounded-full bg-[var(--brand-color)]" />
                       <span>{item}</span>
                     </li>
                   ))}

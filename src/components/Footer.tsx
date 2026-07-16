@@ -4,7 +4,7 @@ import BrandLogo from "@/components/BrandLogo";
 import { getActiveCategories, getStoreSettings } from "@/lib/services/storeContentService";
 
 const linkClass =
-  "text-[11px] text-white/50 transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]";
+  "text-[11px] text-white/50 transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]";
 
 export default async function Footer() {
   const [allCategories, settings] = await Promise.all([getActiveCategories(), getStoreSettings()]);
@@ -17,9 +17,9 @@ export default async function Footer() {
           <Link
             href="/"
             aria-label="Ir para o início"
-            className="inline-flex rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+            className="inline-flex rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
           >
-            <BrandLogo />
+            <BrandLogo src={settings.logoUrl} name={settings.nomeLoja} />
           </Link>
           <p className="mt-4 max-w-[250px] text-[11px] leading-5 text-white/50">
             {settings.descricaoFooter}
@@ -29,7 +29,7 @@ export default async function Footer() {
             href={settings.linkShopee}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-[10px] font-semibold text-white/70 transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+            className="mt-5 inline-flex items-center gap-2 rounded-md border border-white/15 px-3 py-2 text-[10px] font-semibold text-white/70 transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
           >
             <ShoppingBag className="h-4 w-4" />
             Loja oficial na Shopee
@@ -80,7 +80,7 @@ export default async function Footer() {
             Compra protegida
           </h2>
           <div className="mt-4 flex items-start gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
-            <ShieldCheck className="h-7 w-7 shrink-0 text-[#A9EC17]" strokeWidth={1.5} />
+            <ShieldCheck className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.5} />
             <div>
               <strong className="font-display block text-[11px] text-white">
                 Compra segura
@@ -95,7 +95,7 @@ export default async function Footer() {
 
       <div className="border-t border-white/[0.07]">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-2 px-5 py-5 text-[10px] text-white/35 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-          <p>© {new Date().getFullYear()} ECOMZERO. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} {settings.nomeLoja.toUpperCase()}. Todos os direitos reservados.</p>
           <p>{settings.mensagemFooter}</p>
         </div>
       </div>

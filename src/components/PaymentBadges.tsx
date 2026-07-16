@@ -21,7 +21,7 @@ export default function PaymentBadges() {
             key={label}
             className="inline-flex min-h-12 min-w-[58px] flex-col items-center justify-center gap-1 rounded-md border border-white/15 bg-[#090909] px-2.5 text-white/70"
           >
-            <Icon className="h-4 w-4 text-[#A9EC17]" strokeWidth={1.7} />
+            <Icon className="h-4 w-4 text-[var(--brand-color)]" strokeWidth={1.7} />
             <span className="text-[8px] font-bold uppercase tracking-wide">{label}</span>
           </span>
         ))}

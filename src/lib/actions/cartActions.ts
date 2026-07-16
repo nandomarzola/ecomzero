@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCartSessionId, getOrCreateCartSessionId } from "@/lib/session";
 import * as cartService from "@/lib/services/cartService";
+import { CouponError, normalizeCode } from "@/lib/services/couponService";
 import {
   addToCartSchema,
   removeCartItemSchema,
@@ -76,6 +77,38 @@ export async function removeCartItemAction(input: unknown): Promise<CartActionRe
     await cartService.removeItem(sessionId, parsed.data.itemId);
   } catch {
     return { success: false, error: "Não foi possível remover o item" };
+  }
+
+  revalidateCart();
+  return { success: true };
+}
+
+export async function applyCouponAction(code: unknown): Promise<CartActionResult> {
+  if (typeof code !== "string" || normalizeCode(code).length < 3) {
+    return { success: false, error: "Informe um código de cupom válido." };
+  }
+  const sessionId = await getCartSessionId();
+  if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
+
+  try {
+    await cartService.applyCoupon(sessionId, code);
+  } catch (error) {
+    if (error instanceof CouponError) return { success: false, error: error.message };
+    return { success: false, error: "Não foi possível aplicar o cupom." };
+  }
+
+  revalidateCart();
+  return { success: true };
+}
+
+export async function removeCouponAction(): Promise<CartActionResult> {
+  const sessionId = await getCartSessionId();
+  if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
+
+  try {
+    await cartService.removeCoupon(sessionId);
+  } catch {
+    return { success: false, error: "Não foi possível remover o cupom." };
   }
 
   revalidateCart();

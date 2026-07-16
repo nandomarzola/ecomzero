@@ -321,6 +321,18 @@ export async function generateMelhorEnvioLabel(orderId: string) {
   }
 }
 
+// Silencia o aviso da última falha (Shipment.ultimoErro) sem consultar o Melhor
+// Envio — para quando o usuário só quer descartar a nota, sem forçar um sync.
+export async function dismissShipmentError(orderId: string) {
+  const result = await prisma.shipment.updateMany({
+    where: { orderId },
+    data: { ultimoErro: null },
+  });
+  if (result.count === 0) {
+    throw new Error("Envio não encontrado para este pedido.");
+  }
+}
+
 export async function syncMelhorEnvioTracking(orderId: string) {
   const shipment = await getShipmentForOperation(orderId);
   try {

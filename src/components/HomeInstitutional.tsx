@@ -21,11 +21,11 @@ export default function HomeInstitutional() {
     >
       <div className="grid overflow-hidden rounded-xl border border-white/[0.08] bg-[#101010] lg:grid-cols-[1.15fr_1.85fr]">
         <div className="flex items-center gap-5 p-6 sm:p-8 lg:border-r lg:border-white/[0.08] lg:p-10">
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[#A9EC17]/[0.08] ring-1 ring-[#A9EC17]/20 sm:h-24 sm:w-24">
-            <ShieldCheck className="h-11 w-11 text-[#A9EC17] sm:h-14 sm:w-14" strokeWidth={1.4} />
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/[0.08] ring-1 ring-[var(--brand-color)]/20 sm:h-24 sm:w-24">
+            <ShieldCheck className="h-11 w-11 text-[var(--brand-color)] sm:h-14 sm:w-14" strokeWidth={1.4} />
           </div>
           <div>
-            <p className="font-display text-[10px] font-bold uppercase tracking-wider text-[#A9EC17]">
+            <p className="font-display text-[10px] font-bold uppercase tracking-wider text-[var(--brand-color)]">
               Sobre a EcomZero
             </p>
             <h2 className="font-display mt-2 max-w-sm text-xl font-bold leading-tight text-white sm:text-2xl">
@@ -36,7 +36,7 @@ export default function HomeInstitutional() {
             </p>
             <Link
               href="/#sobre"
-              className="font-display mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-white/20 px-4 text-[10px] font-bold uppercase text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              className="font-display mt-5 inline-flex min-h-10 items-center justify-center rounded-md border border-white/20 px-4 text-[10px] font-bold uppercase text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
             >
               Conheça nossa história
             </Link>
@@ -49,7 +49,7 @@ export default function HomeInstitutional() {
               key={title}
               className={`flex flex-col items-center justify-center px-4 py-7 text-center sm:py-9 ${index % 2 === 0 ? "border-r border-white/[0.08]" : ""} ${index < 2 ? "border-b border-white/[0.08] lg:border-b-0" : ""} ${index > 0 ? "lg:border-l lg:border-white/[0.08]" : "lg:border-r-0"}`}
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#A9EC17]/[0.07] text-[#A9EC17]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--brand-color)]/[0.07] text-[var(--brand-color)]">
                 <Icon className="h-6 w-6" strokeWidth={1.6} />
               </span>
               <strong className="font-display mt-4 text-xs font-bold text-white sm:text-sm">

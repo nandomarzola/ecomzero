@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, ArrowRight, Info, LoaderCircle, Truck } from "lucide-react";
+import { AlertCircle, ArrowRight, Info, LoaderCircle, Tag, Truck, X } from "lucide-react";
 import PaymentBadges from "@/components/PaymentBadges";
+import { applyCouponAction, removeCouponAction } from "@/lib/actions/cartActions";
+import type { AppliedCartCoupon } from "@/types/cart";
 import {
   clearCheckoutShippingSelection,
   getCheckoutShippingSnapshot,
@@ -36,6 +38,8 @@ type QuoteResponse = {
 
 type CartCheckoutPanelProps = {
   subtotal: number;
+  discount: number;
+  coupon: AppliedCartCoupon | null;
   productCount: number;
   isLoggedIn: boolean;
 };
@@ -50,10 +54,15 @@ const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
 export default function CartCheckoutPanel({
   subtotal,
+  discount,
+  coupon,
   productCount,
   isLoggedIn,
 }: CartCheckoutPanelProps) {
   const router = useRouter();
+  const [couponCode, setCouponCode] = useState("");
+  const [couponError, setCouponError] = useState("");
+  const [couponPending, startCoupon] = useTransition();
   const storedRaw = useSyncExternalStore(
     subscribeCheckoutShippingSelection,
     getCheckoutShippingSnapshot,
@@ -99,8 +108,31 @@ export default function CartCheckoutPanel({
     ? isCheckoutShippingExpired(selection, now)
     : false;
   const shippingPrice = selection && !selectionExpired ? selection.preco : 0;
-  const total = subtotal + shippingPrice;
+  const freeShipping = coupon?.freeShipping ?? false;
+  const shippingDiscount = freeShipping ? shippingPrice : 0;
+  const total = subtotal - discount + shippingPrice - shippingDiscount;
   const canCheckout = Boolean(selection && !selectionExpired);
+
+  const applyCoupon = () => {
+    setCouponError("");
+    startCoupon(async () => {
+      const result = await applyCouponAction(couponCode);
+      if (!result.success) {
+        setCouponError(result.error);
+        return;
+      }
+      setCouponCode("");
+      router.refresh();
+    });
+  };
+
+  const removeCoupon = () => {
+    setCouponError("");
+    startCoupon(async () => {
+      await removeCouponAction();
+      router.refresh();
+    });
+  };
 
   const calculateShipping = async (mode: "manual" | "auto" = "manual") => {
     if (mode === "manual") {
@@ -231,11 +263,71 @@ export default function CartCheckoutPanel({
                   : "Calcular"}
               </dd>
             </div>
+            {discount > 0 && (
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-white/65">Desconto{coupon ? ` (${coupon.code})` : ""}</dt>
+                <dd className="font-medium text-[#A9EC17]">- {formatPrice(discount)}</dd>
+              </div>
+            )}
+            {freeShipping && shippingPrice > 0 && (
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-white/65">Frete grátis (cupom)</dt>
+                <dd className="font-medium text-[#A9EC17]">- {formatPrice(shippingPrice)}</dd>
+              </div>
+            )}
           </dl>
+
+          <div className="mt-4">
+            {coupon ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-[#A9EC17]/30 bg-[#A9EC17]/[0.06] px-3 py-2.5">
+                <span className="inline-flex items-center gap-2 text-[12px] font-semibold text-[#A9EC17]">
+                  <Tag className="h-3.5 w-3.5" /> {coupon.code}
+                  {coupon.freeShipping ? <span className="text-[10px] text-white/45">frete grátis</span> : null}
+                </span>
+                <button
+                  type="button"
+                  onClick={removeCoupon}
+                  disabled={couponPending}
+                  className="text-white/45 transition hover:text-white disabled:opacity-50"
+                  aria-label="Remover cupom"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <form
+                className="flex gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  applyCoupon();
+                }}
+              >
+                <input
+                  value={couponCode}
+                  onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
+                  placeholder="Cupom de desconto"
+                  aria-label="Código do cupom"
+                  className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs uppercase text-white outline-none transition placeholder:text-white/32 focus:border-[#A9EC17]"
+                />
+                <button
+                  type="submit"
+                  disabled={couponPending || couponCode.trim().length < 3}
+                  className="h-10 shrink-0 rounded-md border border-white/15 px-4 text-[11px] font-bold text-white transition hover:border-[#A9EC17]/40 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {couponPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Aplicar"}
+                </button>
+              </form>
+            )}
+            {couponError && (
+              <p role="alert" className="mt-2 flex gap-1.5 text-[10px] leading-4 text-red-400">
+                <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" /> {couponError}
+              </p>
+            )}
+          </div>
 
           <div className="mt-5 flex items-center justify-between border-t border-white/[0.09] pt-5">
             <span className="font-display text-sm font-bold uppercase text-white">Total</span>
-            <strong className="font-display text-[25px] font-extrabold text-[#A9EC17]">
+            <strong className="font-display text-[25px] font-extrabold text-[var(--brand-color)]">
               {formatPrice(total)}
             </strong>
           </div>
@@ -248,7 +340,7 @@ export default function CartCheckoutPanel({
           <button
             type="button"
             onClick={goToCheckout}
-            className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             {canCheckout ? "Finalizar compra" : "Escolher frete para continuar"}
             <ArrowRight className="h-4 w-4" />
@@ -279,12 +371,12 @@ export default function CartCheckoutPanel({
               onChange={(event) => setCepDraft(event.target.value)}
               placeholder="Digite seu CEP"
               aria-label="CEP"
-              className="h-11 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/32 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17]"
+              className="h-11 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/32 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)]"
             />
             <button
               type="submit"
               disabled={status === "loading" || autoLoading || onlyDigits(cep).length !== 8}
-              className="h-11 shrink-0 rounded-md bg-[#A9EC17] px-4 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:opacity-45"
+              className="h-11 shrink-0 rounded-md bg-[var(--brand-color)] px-4 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:opacity-45"
             >
               {status === "loading" ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -296,7 +388,7 @@ export default function CartCheckoutPanel({
 
           {autoLoading && !quote && (
             <p className="mt-3 flex items-center gap-1.5 text-[10px] text-white/45">
-              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[#A9EC17]" />
+              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[var(--brand-color)]" />
               Calculando frete para o seu CEP...
             </p>
           )}
@@ -327,7 +419,7 @@ export default function CartCheckoutPanel({
                 return (
                   <label
                     key={option.id}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition ${selected ? "border-[#A9EC17] bg-[#A9EC17]/[0.06]" : "border-white/[0.09] bg-[#090909] hover:border-white/20"}`}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition ${selected ? "border-[var(--brand-color)] bg-[var(--brand-color)]/[0.06]" : "border-white/[0.09] bg-[#090909] hover:border-white/20"}`}
                   >
                     <input
                       type="radio"
@@ -335,9 +427,9 @@ export default function CartCheckoutPanel({
                       value={option.id}
                       checked={selected}
                       onChange={() => selectShipping(option)}
-                      className="h-4 w-4 accent-[#A9EC17]"
+                      className="h-4 w-4 accent-[var(--brand-color)]"
                     />
-                    <Truck className="h-4 w-4 shrink-0 text-[#A9EC17]" />
+                    <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[11px] font-medium text-white">
                         {option.transportadora} · {option.servico}
@@ -346,7 +438,7 @@ export default function CartCheckoutPanel({
                         Até {option.prazoDias} dias úteis
                       </span>
                     </span>
-                    <strong className="text-xs text-[#A9EC17]">
+                    <strong className="text-xs text-[var(--brand-color)]">
                       {formatPrice(option.preco)}
                     </strong>
                   </label>
@@ -365,14 +457,14 @@ export default function CartCheckoutPanel({
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-[9px] uppercase text-white/40">Total</p>
-            <strong className="font-display text-lg font-extrabold text-[#A9EC17]">
+            <strong className="font-display text-lg font-extrabold text-[var(--brand-color)]">
               {formatPrice(total)}
             </strong>
           </div>
           <button
             type="button"
             onClick={goToCheckout}
-            className="font-display min-h-11 flex-1 rounded-md bg-[#A9EC17] px-4 text-[10px] font-extrabold uppercase text-black"
+            className="font-display min-h-11 flex-1 rounded-md bg-[var(--brand-color)] px-4 text-[10px] font-extrabold uppercase text-black"
           >
             {canCheckout ? "Finalizar compra" : "Escolher frete"}
           </button>

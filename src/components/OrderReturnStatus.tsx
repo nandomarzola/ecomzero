@@ -29,8 +29,8 @@ const styles: Record<
 > = {
   success: {
     icon: ShieldCheck,
-    color: "text-[#A9EC17]",
-    background: "bg-[#A9EC17]/10 border-[#A9EC17]/20",
+    color: "text-[var(--brand-color)]",
+    background: "bg-[var(--brand-color)]/10 border-[var(--brand-color)]/20",
   },
   pending: {
     icon: Clock3,
@@ -125,7 +125,7 @@ export default function OrderReturnStatus({
         </p>
         <Link
           href="/"
-          className="font-display mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-6 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+          className="font-display mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-6 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
         >
           <Home className="h-4 w-4" />
           Voltar para a loja

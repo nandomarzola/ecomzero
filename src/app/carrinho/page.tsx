@@ -74,7 +74,7 @@ export default async function CartPage() {
           aria-label="Navegação estrutural"
           className="flex items-center gap-2 text-[11px] text-white/42 sm:text-xs"
         >
-          <Link href="/" className="transition hover:text-[#A9EC17]">
+          <Link href="/" className="transition hover:text-[var(--brand-color)]">
             Início
           </Link>
           <span>/</span>
@@ -84,7 +84,7 @@ export default async function CartPage() {
         <header className="pb-5 pt-7 sm:pb-6 sm:pt-8">
           <Link
             href="/#vitrine"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#A9EC17] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:text-sm"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             Continuar comprando
@@ -99,7 +99,7 @@ export default async function CartPage() {
               </span>
               <span>
                 Total parcial: {" "}
-                <strong className="font-display text-base font-bold text-[#A9EC17]">
+                <strong className="font-display text-base font-bold text-[var(--brand-color)]">
                   {formatPrice(cart.total)}
                 </strong>
               </span>
@@ -112,7 +112,7 @@ export default async function CartPage() {
             <p className="text-sm text-white/65">Seu carrinho está vazio.</p>
             <Link
               href="/#vitrine"
-              className="font-display mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-[#A9EC17] px-6 text-xs font-bold uppercase text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="font-display mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-[var(--brand-color)] px-6 text-xs font-bold uppercase text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Ver produtos
             </Link>
@@ -134,7 +134,9 @@ export default async function CartPage() {
               </section>
 
               <CartCheckoutPanel
-                subtotal={cart.total}
+                subtotal={cart.subtotal}
+                discount={cart.discount}
+                coupon={cart.coupon}
                 productCount={productCount}
                 isLoggedIn={Boolean(session?.user?.id)}
               />

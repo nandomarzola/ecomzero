@@ -129,13 +129,13 @@ export default function HeaderActions({
         ref={accountMenuRef}
         className={`group/account relative ${compact ? "hidden" : "hidden lg:block"}`}
       >
-        <summary className="header-action header-action-account flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-left text-white transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] [&::-webkit-details-marker]:hidden">
+        <summary className="header-action header-action-account flex cursor-pointer list-none items-center gap-2 rounded-md py-2 text-left text-white transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] [&::-webkit-details-marker]:hidden">
           {isAuthenticated ? (
-            <span className="font-display flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#A9EC17] text-[11px] font-bold text-[#A9EC17]">
+            <span className="font-display flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--brand-color)] text-[11px] font-bold text-[var(--brand-color)]">
               {getInitials(activeAccount.name)}
             </span>
           ) : (
-            <UserRound className="h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
+            <UserRound className="h-5 w-5 shrink-0 text-[var(--brand-color)]" strokeWidth={1.7} />
           )}
 
           <span className="min-w-0">
@@ -155,7 +155,7 @@ export default function HeaderActions({
 
         <div className="absolute right-0 top-[calc(100%+10px)] z-50 w-[252px] overflow-hidden rounded-lg border border-white/[0.12] bg-[#101010] p-3 shadow-2xl shadow-black/70">
           <div className="flex items-center gap-3 border-b border-white/[0.08] px-1 pb-3">
-            <span className="font-display flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#A9EC17] text-xs font-bold text-[#A9EC17]">
+            <span className="font-display flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--brand-color)] text-xs font-bold text-[var(--brand-color)]">
               {isAuthenticated ? (
                 getInitials(activeAccount.name)
               ) : (
@@ -179,14 +179,14 @@ export default function HeaderActions({
               <Link
                 href="/login"
                 onClick={closeAccountMenu}
-                className="font-display flex h-9 w-full items-center justify-center rounded bg-[#A9EC17] text-[10px] font-bold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="font-display flex h-9 w-full items-center justify-center rounded bg-[var(--brand-color)] text-[10px] font-bold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Entrar
               </Link>
               <Link
                 href="/cadastro"
                 onClick={closeAccountMenu}
-                className="font-display flex h-9 w-full items-center justify-center rounded border border-[#A9EC17]/55 text-[10px] font-bold uppercase text-[#A9EC17] transition hover:border-[#A9EC17] hover:bg-[#A9EC17]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+                className="font-display flex h-9 w-full items-center justify-center rounded border border-[var(--brand-color)]/55 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:border-[var(--brand-color)] hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
               >
                 Cadastrar
               </Link>
@@ -204,7 +204,7 @@ export default function HeaderActions({
                       key={label}
                       href={destination}
                       onClick={closeAccountMenu}
-                      className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.05] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+                      className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.05] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
                     >
                       <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
                       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -246,7 +246,7 @@ export default function HeaderActions({
               <Link
                 href="/login"
                 onClick={closeAccountMenu}
-                className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.04] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+                className="flex w-full items-center gap-2.5 rounded px-1.5 py-1.5 text-left text-[10px] text-white/65 transition hover:bg-white/[0.04] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
               >
                 <LogIn className="h-4 w-4" strokeWidth={1.5} />
                 Entrar na conta
@@ -259,7 +259,7 @@ export default function HeaderActions({
       <Link
         href="/carrinho"
         aria-label="Carrinho"
-        className={`header-action header-cart relative inline-flex h-11 w-11 items-center justify-center transition ${compact ? "text-white/90 hover:text-[#A9EC17]" : "text-white hover:text-[#A9EC17]"}`}
+        className={`header-action header-cart relative inline-flex h-11 w-11 items-center justify-center transition ${compact ? "text-white/90 hover:text-[var(--brand-color)]" : "text-white hover:text-[var(--brand-color)]"}`}
       >
         <ShoppingCart className="h-6 w-6" strokeWidth={1.8} />
         <CartBadgeCount />

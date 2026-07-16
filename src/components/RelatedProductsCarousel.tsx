@@ -37,9 +37,9 @@ export default function RelatedProductsCarousel({
     <section aria-labelledby="related-products-title">
       <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
         <div>
-          <span className="mb-3 block h-0.5 w-11 bg-[#A9EC17]" />
+          <span className="mb-3 block h-0.5 w-11 bg-[var(--brand-color)]" />
           {eyebrow && (
-            <p className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-[#A9EC17]">
+            <p className="font-display text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--brand-color)]">
               {eyebrow}
             </p>
           )}
@@ -52,7 +52,7 @@ export default function RelatedProductsCarousel({
         </div>
         <Link
           href="/#vitrine"
-          className="font-display shrink-0 text-[10px] font-bold uppercase text-[#A9EC17] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:text-xs"
+          className="font-display shrink-0 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-xs"
         >
           Ver toda a vitrine →
         </Link>
@@ -63,7 +63,7 @@ export default function RelatedProductsCarousel({
           type="button"
           onClick={() => scrollByAmount(-1)}
           aria-label="Ver produtos anteriores"
-          className="absolute left-0 top-[42%] z-10 hidden h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:flex"
+          className="absolute left-0 top-[42%] z-10 hidden h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] lg:flex"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -86,7 +86,7 @@ export default function RelatedProductsCarousel({
           type="button"
           onClick={() => scrollByAmount(1)}
           aria-label="Ver mais produtos"
-          className="absolute right-0 top-[42%] z-10 hidden h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[#A9EC17] hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] lg:flex"
+          className="absolute right-0 top-[42%] z-10 hidden h-10 w-10 translate-x-1/2 items-center justify-center rounded-full border border-white/20 bg-black/90 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] lg:flex"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

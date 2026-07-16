@@ -37,7 +37,7 @@ export default function BottomNav() {
                 href={href}
                 aria-current={isActive ? "page" : undefined}
                 className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition ${
-                  isActive ? "text-[#A9EC17]" : "text-white/60 hover:text-white"
+                  isActive ? "text-[var(--brand-color)]" : "text-white/60 hover:text-white"
                 }`}
               >
                 <span className="relative">

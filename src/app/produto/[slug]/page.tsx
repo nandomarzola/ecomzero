@@ -181,7 +181,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           className="mb-5 flex flex-wrap items-center gap-2 text-[11px] text-white/42 sm:gap-3 sm:text-xs lg:mb-6"
           aria-label="Navegação estrutural"
         >
-          <Link href="/" className="transition hover:text-[#A9EC17]">
+          <Link href="/" className="transition hover:text-[var(--brand-color)]">
             Início
           </Link>
 
@@ -189,14 +189,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
           <Link
             href="/#vitrine"
-            className="transition hover:text-[#A9EC17]"
+            className="transition hover:text-[var(--brand-color)]"
           >
             Produtos
           </Link>
 
           <span>/</span>
 
-          <span className="font-semibold uppercase text-[#A9EC17]">
+          <span className="font-semibold uppercase text-[var(--brand-color)]">
             {categoryLabel}
           </span>
         </nav>
@@ -208,7 +208,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           />
 
           <div className="w-full min-w-0 lg:sticky lg:top-24">
-            <p className="font-display text-[11px] font-bold uppercase tracking-[0.24em] text-[#A9EC17] sm:text-xs">
+            <p className="font-display text-[11px] font-bold uppercase tracking-[0.24em] text-[var(--brand-color)] sm:text-xs">
               {categoryLabel}
             </p>
 
@@ -219,12 +219,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
               {product.nome}
             </h1>
 
-            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/72">
-              <BadgeCheck className="h-4 w-4 text-[#A9EC17]" strokeWidth={1.8} />
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--brand-color)]/20 bg-[var(--brand-color)]/[0.06] px-3 py-1.5 text-[11px] font-medium text-white/72">
+              <BadgeCheck className="h-4 w-4 text-[var(--brand-color)]" strokeWidth={1.8} />
               Produto selecionado pela EcomZero
             </div>
 
-            <div className="mt-5 max-w-2xl border-l-2 border-[#A9EC17]/55 pl-4">
+            <div className="mt-5 max-w-2xl border-l-2 border-[var(--brand-color)]/55 pl-4">
               {showSubtitle && (
                 <p className="line-clamp-2 text-sm font-medium leading-6 text-white/74 sm:text-[15px]">
                   {product.subtitulo}
@@ -245,7 +245,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     key={feature}
                     className="flex min-w-0 items-start gap-2"
                   >
-                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[#A9EC17]" strokeWidth={1.7} />
+                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand-color)]" strokeWidth={1.7} />
                     <span className="text-[10px] leading-[1.4] text-white/65 xl:text-[10.5px]">
                       {feature}
                     </span>

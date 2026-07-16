@@ -42,7 +42,7 @@ const emptyForm: AddressForm = {
 };
 
 const inputClassName =
-  "h-11 w-full rounded-md border border-white/[0.14] bg-[#080808] px-3 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17] disabled:cursor-wait disabled:opacity-60";
+  "h-11 w-full rounded-md border border-white/[0.14] bg-[#080808] px-3 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] disabled:cursor-wait disabled:opacity-60";
 
 const formatCep = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -203,7 +203,7 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
         <button
           type="button"
           onClick={openNewAddress}
-          className="font-display inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-5 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+          className="font-display inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
         >
           <Plus className="h-4 w-4" />
           Novo endereço
@@ -211,7 +211,7 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
       </div>
 
       {isFormOpen && (
-        <form onSubmit={saveAddress} className="rounded-xl border border-[#A9EC17]/25 bg-[#0D0D0D] p-5 sm:p-7">
+        <form onSubmit={saveAddress} className="rounded-xl border border-[var(--brand-color)]/25 bg-[#0D0D0D] p-5 sm:p-7">
           <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
             <h3 className="font-display text-lg font-bold text-white">
               {editingId ? "Editar endereço" : "Adicionar endereço"}
@@ -230,7 +230,7 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
               CEP
               <div className="mt-2 flex gap-2">
                 <input value={form.cep} onChange={(event) => updateField("cep", formatCep(event.target.value))} inputMode="numeric" required maxLength={9} placeholder="00000-000" className={inputClassName} />
-                <button type="button" onClick={lookupCep} disabled={isLookingUpCep} aria-label="Buscar CEP" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[#A9EC17]/50 text-[#A9EC17] transition hover:bg-[#A9EC17]/10 disabled:opacity-50">
+                <button type="button" onClick={lookupCep} disabled={isLookingUpCep} aria-label="Buscar CEP" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-[var(--brand-color)]/50 text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 disabled:opacity-50">
                   {isLookingUpCep ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                 </button>
               </div>
@@ -260,12 +260,12 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
               <input value={form.uf} onChange={(event) => updateField("uf", event.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 2))} required minLength={2} maxLength={2} autoComplete="address-level1" className={`${inputClassName} mt-2 uppercase`} />
             </label>
             <label className="flex items-center gap-3 self-end pb-3 text-xs text-white/65">
-              <input type="checkbox" checked={form.padrao} onChange={(event) => updateField("padrao", event.target.checked)} className="h-5 w-5 accent-[#A9EC17]" />
+              <input type="checkbox" checked={form.padrao} onChange={(event) => updateField("padrao", event.target.checked)} className="h-5 w-5 accent-[var(--brand-color)]" />
               Usar como endereço padrão
             </label>
           </div>
 
-          <button type="submit" disabled={isSaving} className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-6 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-wait disabled:opacity-60">
+          <button type="submit" disabled={isSaving} className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-6 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-wait disabled:opacity-60">
             {isSaving && <LoaderCircle className="h-4 w-4 animate-spin" />}
             {isSaving ? "Salvando" : "Salvar endereço"}
           </button>
@@ -274,20 +274,20 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
 
       {addresses.length === 0 && !isFormOpen ? (
         <div className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] px-6 py-12 text-center">
-          <MapPin className="mx-auto h-11 w-11 text-[#A9EC17]" strokeWidth={1.5} />
+          <MapPin className="mx-auto h-11 w-11 text-[var(--brand-color)]" strokeWidth={1.5} />
           <h3 className="font-display mt-4 text-lg font-bold text-white">Nenhum endereço salvo</h3>
           <p className="mt-2 text-sm text-white/45">Adicione um endereço para agilizar suas próximas compras.</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {addresses.map((address) => (
-            <article key={address.id} className={`rounded-xl border bg-[#0D0D0D] p-5 ${address.padrao ? "border-[#A9EC17]/35" : "border-white/[0.1]"}`}>
+            <article key={address.id} className={`rounded-xl border bg-[#0D0D0D] p-5 ${address.padrao ? "border-[var(--brand-color)]/35" : "border-white/[0.1]"}`}>
               <div className="flex items-start justify-between gap-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-[#A9EC17]">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-[var(--brand-color)]">
                   <Home className="h-5 w-5" />
                 </span>
                 {address.padrao && (
-                  <span className="rounded-full border border-[#A9EC17]/25 bg-[#A9EC17]/[0.08] px-2.5 py-1 text-[8px] font-bold uppercase text-[#D5FF7B]">Padrão</span>
+                  <span className="rounded-full border border-[var(--brand-color)]/25 bg-[var(--brand-color)]/[0.08] px-2.5 py-1 text-[8px] font-bold uppercase text-[#D5FF7B]">Padrão</span>
                 )}
               </div>
               <h3 className="font-display mt-4 text-sm font-bold text-white">{address.apelido || "Endereço"}</h3>
@@ -300,7 +300,7 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
               </p>
               <div className="mt-5 flex flex-wrap gap-2 border-t border-white/[0.08] pt-4">
                 {!address.padrao && (
-                  <button type="button" onClick={() => makeDefault(address.id)} disabled={busyAddressId === address.id} className="inline-flex min-h-9 items-center gap-1.5 rounded border border-white/15 px-3 text-[9px] font-semibold text-white/55 transition hover:border-[#A9EC17]/50 hover:text-[#A9EC17] disabled:opacity-50">
+                  <button type="button" onClick={() => makeDefault(address.id)} disabled={busyAddressId === address.id} className="inline-flex min-h-9 items-center gap-1.5 rounded border border-white/15 px-3 text-[9px] font-semibold text-white/55 transition hover:border-[var(--brand-color)]/50 hover:text-[var(--brand-color)] disabled:opacity-50">
                     <Star className="h-3.5 w-3.5" /> Padrão
                   </button>
                 )}

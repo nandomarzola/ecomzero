@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import TrustBadges from "@/components/TrustBadges";
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.15] bg-[#080808] pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 hover:border-white/25 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17] aria-[invalid=true]:border-red-400/80";
+  "h-12 w-full rounded-md border border-white/[0.15] bg-[#080808] pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80";
 
 const trustBadges = [
   {
@@ -113,7 +113,7 @@ export default function CheckoutIdentification() {
       <div className="mx-auto max-w-[1320px] px-4 pb-14 pt-6 sm:px-6 sm:pb-16 lg:px-8">
         <Link
           href="/carrinho"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[#A9EC17] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:text-sm"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-sm"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para o carrinho
@@ -134,7 +134,7 @@ export default function CheckoutIdentification() {
             className="rounded-xl border border-white/[0.12] bg-[linear-gradient(145deg,#101010,#0A0A0A)] p-5 sm:p-7"
           >
             <div className="flex items-center gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17] ring-1 ring-[#A9EC17]/15">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)] ring-1 ring-[var(--brand-color)]/15">
                 <UserRound className="h-7 w-7" strokeWidth={1.7} />
               </span>
               <div>
@@ -193,7 +193,7 @@ export default function CheckoutIdentification() {
                   type="button"
                   onClick={() => setShowPassword((current) => !current)}
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/50 transition hover:text-[#A9EC17] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#A9EC17]"
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/50 transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--brand-color)]"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -206,7 +206,7 @@ export default function CheckoutIdentification() {
               <button
                 type="button"
                 onClick={() => showUnavailableMessage("A recuperação de senha")}
-                className="mt-3 text-xs font-semibold text-[#A9EC17] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+                className="mt-3 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
               >
                 Esqueci minha senha
               </button>
@@ -223,7 +223,7 @@ export default function CheckoutIdentification() {
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="font-display mt-5 flex min-h-12 w-full items-center justify-center rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-65"
+                className="font-display mt-5 flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-65"
               >
                 {isLoggingIn ? "Acessando..." : "Acessar conta"}
               </button>
@@ -237,7 +237,7 @@ export default function CheckoutIdentification() {
               <button
                 type="button"
                 onClick={() => showUnavailableMessage("O acesso sem senha")}
-                className="font-display flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-[#A9EC17]/55 px-5 text-xs font-bold uppercase text-[#A9EC17] transition hover:bg-[#A9EC17]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+                className="font-display flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-[var(--brand-color)]/55 px-5 text-xs font-bold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
               >
                 Entrar sem senha
                 <MessageSquareText className="h-4 w-4" strokeWidth={1.8} />
@@ -250,7 +250,7 @@ export default function CheckoutIdentification() {
             className="flex flex-col rounded-xl border border-white/[0.12] bg-[linear-gradient(145deg,#101010,#0A0A0A)] p-5 sm:p-7"
           >
             <div className="flex items-center gap-4">
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17] ring-1 ring-[#A9EC17]/15">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)] ring-1 ring-[var(--brand-color)]/15">
                 <UserRoundPlus className="h-7 w-7" strokeWidth={1.7} />
               </span>
               <div>
@@ -292,7 +292,7 @@ export default function CheckoutIdentification() {
               )}
               <button
                 type="submit"
-                className="font-display mt-4 flex min-h-12 w-full items-center justify-center rounded-md bg-[#A9EC17] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="font-display mt-4 flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Criar conta e continuar
               </button>
@@ -300,7 +300,7 @@ export default function CheckoutIdentification() {
 
             <div className="mt-7 border-t border-white/10 pt-7 sm:mt-auto">
               <div className="flex items-start gap-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17]">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                   <ShieldCheck className="h-6 w-6" strokeWidth={1.7} />
                 </span>
                 <div>
@@ -333,7 +333,7 @@ export default function CheckoutIdentification() {
             <button
               type="button"
               onClick={() => showUnavailableMessage("O acesso com Facebook")}
-              className="relative flex min-h-12 items-center justify-center rounded-md border border-white/[0.14] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              className="relative flex min-h-12 items-center justify-center rounded-md border border-white/[0.14] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
             >
               <span className="absolute left-4 flex h-6 w-6 items-end justify-center rounded-full bg-[#1877F2] text-lg font-bold leading-[22px] text-white">
                 f
@@ -343,7 +343,7 @@ export default function CheckoutIdentification() {
             <button
               type="button"
               onClick={() => showUnavailableMessage("O acesso com Google")}
-              className="relative flex min-h-12 items-center justify-center rounded-md border border-white/[0.14] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]"
+              className="relative flex min-h-12 items-center justify-center rounded-md border border-white/[0.14] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
             >
               <span className="absolute left-4 bg-[conic-gradient(from_-45deg,#4285F4_0_25%,#34A853_0_45%,#FBBC05_0_70%,#EA4335_0)] bg-clip-text text-xl font-extrabold text-transparent">
                 G

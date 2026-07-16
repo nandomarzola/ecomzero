@@ -5,7 +5,7 @@ function BrazilMap() {
   return (
     <svg
       viewBox="0 0 220 180"
-      className="pointer-events-none absolute right-40 top-1/2 hidden h-40 w-52 -translate-y-1/2 text-[#A9EC17] lg:block"
+      className="pointer-events-none absolute right-40 top-1/2 hidden h-40 w-52 -translate-y-1/2 text-[var(--brand-color)] lg:block"
       fill="none"
       aria-hidden="true"
     >
@@ -33,7 +33,7 @@ export default function DeliveryBanner() {
       <div className="relative flex min-h-28 flex-col items-start justify-between gap-5 overflow-hidden rounded-xl border border-white/[0.1] bg-[linear-gradient(105deg,#0D0D0D_0%,#0A1104_55%,#080A06_100%)] px-6 py-6 sm:flex-row sm:items-center sm:px-8 lg:min-h-32 lg:px-10">
         <BrazilMap />
         <div className="relative z-10 flex items-center gap-5">
-          <Truck className="h-12 w-12 shrink-0 text-[#A9EC17] sm:h-14 sm:w-14" strokeWidth={1.4} />
+          <Truck className="h-12 w-12 shrink-0 text-[var(--brand-color)] sm:h-14 sm:w-14" strokeWidth={1.4} />
           <div>
             <h2 className="font-display text-base font-bold uppercase text-white sm:text-xl">
               Entrega para todo o Brasil
@@ -45,7 +45,7 @@ export default function DeliveryBanner() {
         </div>
         <Link
           href="/#sobre"
-          className="font-display relative z-10 inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-md border border-[#A9EC17]/60 px-6 text-[10px] font-bold uppercase text-[#A9EC17] transition hover:border-[#A9EC17] hover:bg-[#A9EC17] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17] sm:w-auto"
+          className="font-display relative z-10 inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-md border border-[var(--brand-color)]/60 px-6 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:border-[var(--brand-color)] hover:bg-[var(--brand-color)] hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:w-auto"
         >
           Saiba mais
           <ArrowRight className="h-4 w-4" />

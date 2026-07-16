@@ -14,7 +14,7 @@ type AccountProfileFormProps = {
 };
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/30 hover:border-white/25 focus:border-[#A9EC17] focus:ring-1 focus:ring-[#A9EC17] disabled:cursor-not-allowed disabled:opacity-50";
+  "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/30 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] disabled:cursor-not-allowed disabled:opacity-50";
 
 const formatPhone = (value: string) => {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -91,7 +91,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
     <div className="space-y-5">
       <form onSubmit={saveProfile} className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
         <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
             <UserRound className="h-5 w-5" />
           </span>
           <div>
@@ -134,7 +134,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
         <button
           type="submit"
           disabled={isSavingProfile}
-          className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[#A9EC17] px-6 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-wait disabled:opacity-60"
+          className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-6 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-wait disabled:opacity-60"
         >
           {isSavingProfile ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {isSavingProfile ? "Salvando" : "Salvar dados"}
@@ -143,7 +143,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
 
       <form onSubmit={savePassword} className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
         <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#A9EC17]/10 text-[#A9EC17]">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
             <LockKeyhole className="h-5 w-5" />
           </span>
           <div>
@@ -176,7 +176,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
                   type="button"
                   onClick={() => setShowPasswords((current) => !current)}
                   aria-label={showPasswords ? "Ocultar senhas" : "Mostrar senhas"}
-                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/45 transition hover:text-[#A9EC17]"
+                  className="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-white/45 transition hover:text-[var(--brand-color)]"
                 >
                   {showPasswords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -194,7 +194,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
         <button
           type="submit"
           disabled={isSavingPassword}
-          className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[#A9EC17]/60 px-6 text-[10px] font-extrabold uppercase text-[#A9EC17] transition hover:bg-[#A9EC17] hover:text-black disabled:cursor-wait disabled:opacity-60"
+          className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-[var(--brand-color)]/60 px-6 text-[10px] font-extrabold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)] hover:text-black disabled:cursor-wait disabled:opacity-60"
         >
           {isSavingPassword && <LoaderCircle className="h-4 w-4 animate-spin" />}
           {isSavingPassword ? "Alterando" : "Alterar senha"}
