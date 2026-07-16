@@ -52,5 +52,10 @@ export const createShipmentSchema = z.discriminatedUnion("tipoDocumentoFiscal", 
   }),
 ]);
 
+export const adminShippingSelectionSchema = z.object({
+  quoteId: z.string().uuid("Cotação de frete inválida"),
+  optionId: z.string().trim().min(1, "Selecione uma transportadora").max(100),
+});
+
 export type ShippingSettingsInput = z.infer<typeof shippingSettingsSchema>;
 export type CreateShipmentInput = z.infer<typeof createShipmentSchema>;

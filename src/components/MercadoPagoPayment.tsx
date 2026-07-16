@@ -30,6 +30,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from "lucide-react";
+import { useCart } from "@/components/CartProvider";
 import type { OrderPaymentPageData } from "@/lib/services/orderPaymentService";
 import { clearCheckoutShippingSelection } from "@/lib/client/checkoutShippingStorage";
 
@@ -98,6 +99,7 @@ export default function MercadoPagoPayment({
   publicKey,
 }: MercadoPagoPaymentProps) {
   const router = useRouter();
+  const { clearCart } = useCart();
   const attemptIdRef = useRef<string | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -107,6 +109,12 @@ export default function MercadoPagoPayment({
   const activePaymentId = activePayment?.id;
   const [errorMessage, setErrorMessage] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const finishApprovedPayment = useCallback(() => {
+    clearCheckoutShippingSelection();
+    clearCart();
+    router.replace(`/pedido/${order.orderId}/sucesso`);
+  }, [clearCart, order.orderId, router]);
 
   const nameParts = useMemo(() => order.customer.name.trim().split(/\s+/), [
     order.customer.name,
@@ -193,7 +201,7 @@ export default function MercadoPagoPayment({
           );
         }
         if (data.orderStatus === "pago") {
-          router.replace(`/pedido/${order.orderId}/sucesso`);
+          finishApprovedPayment();
           return;
         }
         if (data.orderStatus === "cancelado") {
@@ -219,7 +227,7 @@ export default function MercadoPagoPayment({
 
     void loadExistingPayment();
     return () => controller.abort();
-  }, [order.orderId, router]);
+  }, [finishApprovedPayment, order.orderId, router]);
 
   useEffect(() => {
     if (!activePaymentId) return;
@@ -237,7 +245,7 @@ export default function MercadoPagoPayment({
           data.orderStatus === "pago" ||
           data.payment?.status === "approved"
         ) {
-          router.replace(`/pedido/${order.orderId}/sucesso`);
+          finishApprovedPayment();
           return;
         }
         if (data.orderStatus === "cancelado") {
@@ -264,7 +272,7 @@ export default function MercadoPagoPayment({
       controller.abort();
       window.clearInterval(interval);
     };
-  }, [activePaymentId, order.orderId, router]);
+  }, [activePaymentId, finishApprovedPayment, order.orderId, router]);
 
   const handleSubmit = useCallback<
     NonNullable<ComponentProps<typeof Payment>["onSubmit"]>
@@ -298,7 +306,7 @@ export default function MercadoPagoPayment({
           data.orderStatus === "pago" ||
           data.payment?.status === "approved"
         ) {
-          router.replace(`/pedido/${order.orderId}/sucesso`);
+          finishApprovedPayment();
           return data;
         }
         if (data.payment && pendingStatuses.has(data.payment.status)) {
@@ -320,7 +328,7 @@ export default function MercadoPagoPayment({
         setIsSubmitting(false);
       }
     },
-    [order.orderId, router],
+    [finishApprovedPayment, order.orderId],
   );
 
   const copyPixCode = async () => {

@@ -43,6 +43,7 @@ type CartContextValue = {
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
+  clearCart: () => void;
   refreshCart: () => Promise<Cart>;
   refreshCartCount: () => void;
   addItem: (
@@ -172,6 +173,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const closeCart = useCallback(() => setIsOpen(false), []);
   const toggleCart = useCallback(() => setIsOpen((current) => !current), []);
+  const clearCart = useCallback(() => {
+    syncCart(EMPTY_CART);
+    setIsOpen(false);
+  }, [syncCart]);
   const refreshCartCount = useCallback(() => {
     void refreshCart().catch(() => {});
   }, [refreshCart]);
@@ -187,6 +192,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         openCart,
         closeCart,
         toggleCart,
+        clearCart,
         refreshCart,
         refreshCartCount,
         addItem,

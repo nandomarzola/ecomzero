@@ -3,12 +3,19 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CreditCard, MapPin, Package } from "lucide-react";
 import ShipmentActions from "@/components/pedidos/ShipmentActions";
+import { config } from "@/lib/config";
 import { getAdminOrderDetails } from "@/lib/services/shippingFulfillmentAdminService";
 
 export const dynamic = "force-dynamic";
 
 const money = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+const productImageUrl = (image: string) => {
+  if (/^(?:https?:|data:|blob:)/i.test(image)) return image;
+  const storefrontUrl = config.storefrontUrl ?? "https://www.ecomzero.com.br";
+  return new URL(image.startsWith("/") ? image : `/${image}`, storefrontUrl).toString();
+};
 
 const orderStatusLabel = {
   draft: "Carrinho",
@@ -44,7 +51,13 @@ export default async function AdminOrderDetailsPage({
             {order.items.map((item) => (
               <li key={item.id} className="flex gap-3 py-4 first:pt-0 last:pb-0">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white">
-                  <Image src={item.variant.product.imagem} alt={item.variant.product.nome} fill sizes="64px" className="object-contain" />
+                  <Image
+                    src={productImageUrl(item.variant.product.imagem)}
+                    alt={item.variant.product.nome}
+                    fill
+                    sizes="64px"
+                    className="object-contain"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-white/85">{item.variant.product.nome}</p>
@@ -87,7 +100,11 @@ export default async function AdminOrderDetailsPage({
       </div>
 
       {order.status === "pago" ? (
-        <ShipmentActions orderId={order.id} shipment={order.shipment} />
+        <ShipmentActions
+          orderId={order.id}
+          shipment={order.shipment}
+          requiresShippingSelection={!order.shippingQuoteId || !order.shippingOptionId}
+        />
       ) : (
         <p className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] p-4 text-sm text-amber-200">A expedição será liberada quando o pagamento for confirmado.</p>
       )}

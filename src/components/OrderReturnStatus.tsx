@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
+import { useCart } from "@/components/CartProvider";
+import { clearCheckoutShippingSelection } from "@/lib/client/checkoutShippingStorage";
 
 type OrderReturnStatusProps = {
   tone: "success" | "pending" | "failure";
@@ -51,6 +53,7 @@ export default function OrderReturnStatus({
   orderId,
   initialOrderStatus,
 }: OrderReturnStatusProps) {
+  const { clearCart } = useCart();
   const [orderStatus, setOrderStatus] = useState(initialOrderStatus);
   const effectiveTone =
     orderStatus === "pago"
@@ -66,6 +69,12 @@ export default function OrderReturnStatus({
       : description;
   const style = styles[effectiveTone];
   const Icon = style.icon;
+
+  useEffect(() => {
+    if (orderStatus !== "pago") return;
+    clearCheckoutShippingSelection();
+    clearCart();
+  }, [clearCart, orderStatus]);
 
   useEffect(() => {
     if (orderStatus !== "aguardando_pagamento") return;

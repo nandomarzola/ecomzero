@@ -9,13 +9,27 @@ import type {
   ShippingSettingsInput,
 } from "@/lib/validation/shipping";
 
-type ShippingOption = {
+export type ShippingOption = {
   id: string;
   transportadora: string;
   servico: string;
   preco: number;
   prazoDias: number;
 };
+
+export type AdminShippingQuote = {
+  quoteId: string;
+  expiresAt: string;
+  options: ShippingOption[];
+};
+
+export type AdminShippingSelection = {
+  quoteId: string;
+  optionId: string;
+};
+
+const MELHOR_ENVIO_SERVICES = "1,2,3,4,17,27,31,32,33";
+const ADMIN_QUOTE_TTL_MS = 15 * 60 * 1000;
 
 type JsonObject = Record<string, unknown>;
 
@@ -87,9 +101,111 @@ export async function getAdminOrderDetails(orderId: string) {
   });
 }
 
+export async function calculateOrderShipping(
+  orderId: string,
+): Promise<AdminShippingQuote> {
+  const [order, settings] = await Promise.all([
+    getAdminOrderDetails(orderId),
+    getShippingSettings(),
+  ]);
+
+  if (!order || order.status === "draft") throw new Error("Pedido não encontrado.");
+  if (order.status !== "pago") {
+    throw new Error("A cotação só pode ser feita após a confirmação do pagamento.");
+  }
+  if (!settings) {
+    throw new Error("Cadastre os dados do remetente na página Fretes antes de cotar.");
+  }
+  if (!order.cepDestino || order.items.length === 0) {
+    throw new Error("O pedido não possui CEP ou produtos para calcular o frete.");
+  }
+
+  const weight = order.items.reduce(
+    (total, item) => total + item.variant.pesoKg * item.quantidade,
+    0,
+  );
+  const response = await melhorEnvioRequest("/api/v2/me/shipment/calculate", {
+    method: "POST",
+    body: {
+      from: { postal_code: settings.cepOrigem.replace(/\D/g, "") },
+      to: { postal_code: order.cepDestino.replace(/\D/g, "") },
+      package: {
+        height: Math.max(...order.items.map((item) => item.variant.alturaCm)),
+        width: Math.max(...order.items.map((item) => item.variant.larguraCm)),
+        length: Math.max(...order.items.map((item) => item.variant.comprimentoCm)),
+        weight: Math.round(weight * 1000) / 1000,
+      },
+      services: MELHOR_ENVIO_SERVICES,
+    },
+  });
+
+  if (!Array.isArray(response)) {
+    throw new Error("O Melhor Envio retornou uma cotação inválida.");
+  }
+
+  const options = response
+    .map((entry): ShippingOption | null => {
+      const quote = asObject(entry);
+      const company = asObject(quote?.company);
+      const id = quote?.id;
+      const price = Number(quote?.price);
+      const deliveryTime = Number(quote?.delivery_time);
+      if (
+        quote?.error ||
+        (typeof id !== "number" && typeof id !== "string") ||
+        !Number.isFinite(price) ||
+        price < 0 ||
+        !Number.isFinite(deliveryTime)
+      ) {
+        return null;
+      }
+      return {
+        id: String(id),
+        transportadora: optionalString(company?.name) ?? "Transportadora",
+        servico: optionalString(quote?.name) ?? "Serviço de entrega",
+        preco: price,
+        prazoDias: deliveryTime,
+      };
+    })
+    .filter((option): option is ShippingOption => option !== null)
+    .sort((a, b) => a.preco - b.preco || a.prazoDias - b.prazoDias);
+
+  if (options.length === 0) {
+    throw new Error("Nenhuma transportadora atende o endereço deste pedido.");
+  }
+
+  const createdAt = new Date();
+  const expiresAt = new Date(createdAt.getTime() + ADMIN_QUOTE_TTL_MS);
+  const quote = await prisma.checkoutShippingQuote.upsert({
+    where: { orderId },
+    create: {
+      orderId,
+      cep: order.cepDestino.replace(/\D/g, ""),
+      options,
+      createdAt,
+      expiresAt,
+    },
+    update: {
+      cep: order.cepDestino.replace(/\D/g, ""),
+      options,
+      createdAt,
+      expiresAt,
+    },
+    select: { id: true },
+  });
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { shippingQuoteId: quote.id, shippingOptionId: null },
+  });
+
+  return { quoteId: quote.id, expiresAt: expiresAt.toISOString(), options };
+}
+
 export async function createMelhorEnvioShipment(
   orderId: string,
   input: CreateShipmentInput,
+  selection?: AdminShippingSelection,
 ) {
   const [order, settings] = await Promise.all([
     getAdminOrderDetails(orderId),
@@ -101,8 +217,6 @@ export async function createMelhorEnvioShipment(
   if (!settings) throw new Error("Cadastre os dados do remetente na página Fretes antes de continuar.");
   if (order.shipment?.melhorEnvioId) return order.shipment;
   if (
-    !order.shippingQuoteId ||
-    !order.shippingOptionId ||
     !order.nomeCliente ||
     !order.emailCliente ||
     !order.telefoneCliente ||
@@ -117,6 +231,12 @@ export async function createMelhorEnvioShipment(
     throw new Error("O pedido não possui todos os dados necessários para criar o envio.");
   }
 
+  const shippingQuoteId = selection?.quoteId ?? order.shippingQuoteId;
+  const shippingOptionId = selection?.optionId ?? order.shippingOptionId;
+  if (!shippingQuoteId || !shippingOptionId) {
+    throw new Error("Calcule o frete e selecione uma transportadora antes de criar o envio.");
+  }
+
   const senderDocument = settings.cpfCnpjRemetente.replace(/\D/g, "");
   const recipientDocument = order.cpfCnpj.replace(/\D/g, "");
   if (input.tipoDocumentoFiscal === "nota_fiscal") {
@@ -129,17 +249,31 @@ export async function createMelhorEnvioShipment(
   }
 
   const quote = await prisma.checkoutShippingQuote.findUnique({
-    where: { id: order.shippingQuoteId },
+    where: { id: shippingQuoteId },
   });
+  if (!quote || quote.orderId !== order.id) {
+    throw new Error("A cotação selecionada não pertence a este pedido.");
+  }
+  if (selection && quote.expiresAt <= new Date()) {
+    throw new Error("A cotação expirou. Calcule novamente antes de comprar a etiqueta.");
+  }
   const options = Array.isArray(quote?.options)
     ? (quote.options as unknown as ShippingOption[])
     : [];
   const selectedOption = options.find(
-    (option) => String(option.id) === order.shippingOptionId,
+    (option) => String(option.id) === shippingOptionId,
   );
   if (!selectedOption) {
     throw new Error("Não foi possível recuperar o serviço de frete escolhido neste pedido.");
   }
+
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      shippingQuoteId: quote.id,
+      shippingOptionId: selectedOption.id,
+    },
+  });
 
   await prisma.shipment.upsert({
     where: { orderId },
@@ -169,7 +303,7 @@ export async function createMelhorEnvioShipment(
     unitary_value: Number(item.precoUnitario),
   }));
   const payload: JsonObject = {
-    service: Number(order.shippingOptionId),
+    service: Number(selectedOption.id),
     from: {
       name: settings.nomeRemetente,
       email: settings.emailRemetente,

@@ -1,15 +1,30 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Loader2, PackageCheck, Printer, RefreshCw, ShoppingCart, WandSparkles, X } from "lucide-react";
 import {
+  calculateOrderShippingAction,
   createShipmentAction,
   dismissShipmentErrorAction,
   generateLabelAction,
   purchaseShipmentAction,
   syncTrackingAction,
 } from "@/lib/actions/shipping";
+
+type ShippingOption = {
+  id: string;
+  transportadora: string;
+  servico: string;
+  preco: number;
+  prazoDias: number;
+};
+
+type ShippingQuote = {
+  quoteId: string;
+  expiresAt: string;
+  options: ShippingOption[];
+};
 
 type Shipment = {
   melhorEnvioId: string | null;
@@ -40,9 +55,11 @@ const statusLabel: Record<string, string> = {
 export default function ShipmentActions({
   orderId,
   shipment,
+  requiresShippingSelection,
 }: {
   orderId: string;
   shipment: Shipment;
+  requiresShippingSelection: boolean;
 }) {
   const router = useRouter();
   const [fiscalType, setFiscalType] = useState<"nota_fiscal" | "declaracao_conteudo">("nota_fiscal");
@@ -51,6 +68,28 @@ export default function ShipmentActions({
   const [error, setError] = useState<string | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [quotePending, startQuoteTransition] = useTransition();
+  const [shippingQuote, setShippingQuote] = useState<ShippingQuote | null>(null);
+  const [selectedShippingOptionId, setSelectedShippingOptionId] = useState("");
+
+  const calculateShipping = useCallback(() => {
+    setError(null);
+    startQuoteTransition(async () => {
+      const result = await calculateOrderShippingAction(orderId);
+      if (!result.ok) {
+        setError(result.error ?? "Não foi possível calcular o frete deste pedido.");
+        return;
+      }
+      setShippingQuote(result.data);
+      setSelectedShippingOptionId(result.data.options[0]?.id ?? "");
+    });
+  }, [orderId]);
+
+  useEffect(() => {
+    if (!requiresShippingSelection || shipment?.melhorEnvioId) return;
+    const timer = window.setTimeout(calculateShipping, 0);
+    return () => window.clearTimeout(timer);
+  }, [calculateShipping, requiresShippingSelection, shipment?.melhorEnvioId]);
 
   function run(name: string, action: () => Promise<{ ok: boolean; error?: string }>) {
     setError(null);
@@ -64,6 +103,10 @@ export default function ShipmentActions({
   }
 
   function createShipment() {
+    if (requiresShippingSelection && (!shippingQuote || !selectedShippingOptionId)) {
+      setError("Calcule o frete e selecione uma transportadora antes de continuar.");
+      return;
+    }
     run("create", () =>
       createShipmentAction(
         orderId,
@@ -73,6 +116,12 @@ export default function ShipmentActions({
               tipoDocumentoFiscal: fiscalType,
               declaracaoConfirmada: declarationConfirmed,
             },
+        requiresShippingSelection && shippingQuote
+          ? {
+              quoteId: shippingQuote.quoteId,
+              optionId: selectedShippingOptionId,
+            }
+          : undefined,
       ),
     );
   }
@@ -148,6 +197,75 @@ export default function ShipmentActions({
 
       {noRemoteShipment ? (
         <div className="mt-5 space-y-4">
+          {requiresShippingSelection ? (
+            <div className="rounded-xl border border-[#A9EC17]/20 bg-[#A9EC17]/[0.03] p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-white">Escolha a transportadora</h3>
+                  <p className="mt-1 text-xs leading-5 text-white/40">
+                    Pedido com frete grátis. A opção mais barata é selecionada automaticamente, mas você pode trocar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={quotePending}
+                  onClick={calculateShipping}
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/60 transition hover:border-[#A9EC17]/40 hover:text-white disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${quotePending ? "animate-spin" : ""}`} />
+                  Recalcular
+                </button>
+              </div>
+
+              {quotePending && !shippingQuote ? (
+                <div className="mt-4 flex items-center gap-2 rounded-lg border border-white/[0.07] bg-black/20 px-3 py-4 text-xs text-white/45">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#A9EC17]" />
+                  Consultando transportadoras para este endereço...
+                </div>
+              ) : null}
+
+              {shippingQuote ? (
+                <fieldset className="mt-4 grid gap-2 lg:grid-cols-2">
+                  <legend className="sr-only">Selecione a transportadora e o serviço</legend>
+                  {shippingQuote.options.map((option, index) => {
+                    const selected = selectedShippingOptionId === option.id;
+                    return (
+                      <label
+                        key={option.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${selected ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.06]" : "border-white/[0.08] bg-[#090909] hover:border-white/20"}`}
+                      >
+                        <input
+                          type="radio"
+                          name="admin-shipping-option"
+                          value={option.id}
+                          checked={selected}
+                          onChange={() => setSelectedShippingOptionId(option.id)}
+                          className="h-4 w-4 accent-[#A9EC17]"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-white/85">
+                            {option.transportadora} · {option.servico}
+                            {index === 0 ? (
+                              <span className="rounded-full bg-[#A9EC17]/10 px-2 py-0.5 text-[9px] uppercase tracking-wide text-[#A9EC17]">
+                                Mais barato
+                              </span>
+                            ) : null}
+                          </span>
+                          <span className="mt-1 block text-xs text-white/40">
+                            Entrega em até {option.prazoDias} dias úteis
+                          </span>
+                        </span>
+                        <strong className="text-sm text-[#A9EC17]">
+                          {option.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </strong>
+                      </label>
+                    );
+                  })}
+                </fieldset>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="grid gap-3 sm:grid-cols-2">
             <label className={`cursor-pointer rounded-lg border p-4 ${fiscalType === "nota_fiscal" ? "border-[#A9EC17]/40 bg-[#A9EC17]/5" : "border-white/10"}`}>
               <input type="radio" name="fiscal" value="nota_fiscal" checked={fiscalType === "nota_fiscal"} onChange={() => setFiscalType("nota_fiscal")} className="mr-2 accent-[#A9EC17]" />
@@ -173,7 +291,7 @@ export default function ShipmentActions({
             </label>
           )}
 
-          <button type="button" disabled={pending} onClick={createShipment} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60">
+          <button type="button" disabled={pending || quotePending || (requiresShippingSelection && !selectedShippingOptionId)} onClick={createShipment} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-60">
             {operation === "create" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}
             Enviar ao carrinho do Melhor Envio
           </button>

@@ -171,8 +171,10 @@ model Order {
   pagoEm                         DateTime?
   createdAt                      DateTime    @default(now())
 
-  items    OrderItem[]
-  shipment Shipment?
+  items                 OrderItem[]
+  shipment              Shipment?
+  shippingQuote         CheckoutShippingQuote? @relation("CartShippingQuote")
+  selectedShippingQuote CheckoutShippingQuote? @relation("SelectedShippingQuote", fields: [shippingQuoteId], references: [id], onDelete: SetNull)
 
   @@index([userId])
 }
@@ -277,8 +279,16 @@ model MelhorEnvioCredential {
 }
 
 model CheckoutShippingQuote {
-  id      String @id @default(uuid())
-  options Json
+  id              String   @id @default(uuid())
+  orderId         String   @unique
+  order           Order    @relation("CartShippingQuote", fields: [orderId], references: [id], onDelete: Cascade)
+  selectedByOrder Order?   @relation("SelectedShippingQuote")
+  cep             String
+  options         Json
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  @@index([expiresAt])
 }
 
 model OrderItem {
