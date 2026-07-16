@@ -61,6 +61,32 @@ export async function getAllProducts(): Promise<Product[]> {
   return records.map(toProduct);
 }
 
+// Produtos de uma categoria. Vínculo duplo (decisão de produto): pelo FK
+// `categoryId` (produtos salvos no admin novo) E pelo path legado `categoria`
+// ("Pesca / Canivetes") — produtos antigos/vindos do Hub só têm o path. Uma
+// query só (sem N+1): categoryId IN (...) OR categoria = path OR começa com
+// "path / " (descendentes). Para raiz, `categoryIds` já traz ela + descendentes;
+// para sub, só ela (e o `startsWith` não pega nada, pois sub é folha).
+export async function getProductsByCategory(
+  categoryIds: string[],
+  path: string,
+): Promise<Product[]> {
+  const records = await prisma.product.findMany({
+    where: {
+      ativo: true,
+      OR: [
+        ...(categoryIds.length > 0 ? [{ categoryId: { in: categoryIds } }] : []),
+        { categoria: path },
+        { categoria: { startsWith: `${path} / ` } },
+      ],
+    },
+    include: { variantes: { orderBy: { id: "asc" } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return records.map(toProduct);
+}
+
 export async function getBestSellingProducts(limit = 5): Promise<Product[]> {
   if (limit <= 0) return [];
 

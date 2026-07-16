@@ -9,6 +9,17 @@ export type StoreCategory = {
   depth: number;
   path: string;
   descendantIds: string[];
+  descricao: string | null;
+  metaTitulo: string | null;
+  metaDescricao: string | null;
+};
+
+// Categoria resolvida a partir do caminho de slugs da URL (raiz ou raiz+sub).
+export type ResolvedCategory = {
+  category: StoreCategory;
+  breadcrumb: StoreCategory[]; // do topo até a categoria atual
+  children: StoreCategory[]; // subcategorias diretas (para os chips de navegação)
+  targetCategoryIds: string[]; // ids elegíveis: raiz → ela + descendentes; sub → só ela
 };
 
 export type StoreBanner = {
@@ -27,7 +38,10 @@ export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
   const visit = (parentId: string | null, depth: number, parentPath: string) => {
     for (const row of children.get(parentId) ?? []) {
       const path = parentPath ? `${parentPath} / ${row.nome}` : row.nome;
-      result.push({ id: row.id, nome: row.nome, slug: row.slug, parentId: row.parentId, depth, path, descendantIds: [] });
+      result.push({
+        id: row.id, nome: row.nome, slug: row.slug, parentId: row.parentId, depth, path, descendantIds: [],
+        descricao: row.descricao, metaTitulo: row.metaTitulo, metaDescricao: row.metaDescricao,
+      });
       visit(row.id, depth + 1, path);
     }
   };
@@ -42,6 +56,40 @@ export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
   }
   return result;
 });
+
+// Resolve o caminho de slugs da URL (/categorias/[...slug]) para uma categoria.
+// Hoje a hierarquia é de 2 níveis (raiz → subcategoria), imposta pelo admin;
+// caminhos de 1 ou 2 segmentos são aceitos, o resto é inválido (→ 404).
+// `cache()` deduplica a chamada entre generateMetadata e o componente da página.
+export const resolveCategoryPath = cache(
+  async (slugs: string[]): Promise<ResolvedCategory | null> => {
+    if (slugs.length < 1 || slugs.length > 2) return null;
+
+    const all = await getActiveCategories();
+    const bySlug = new Map(all.map((category) => [category.slug, category]));
+
+    const root = bySlug.get(slugs[0]);
+    if (!root || root.parentId !== null) return null; // 1º segmento tem que ser raiz
+
+    let category = root;
+    const breadcrumb: StoreCategory[] = [root];
+
+    if (slugs.length === 2) {
+      const sub = bySlug.get(slugs[1]);
+      if (!sub || sub.parentId !== root.id) return null; // sub tem que ser filha da raiz
+      category = sub;
+      breadcrumb.push(sub);
+    }
+
+    const children = all.filter((c) => c.parentId === category.id);
+    const targetCategoryIds =
+      category.parentId === null
+        ? [category.id, ...category.descendantIds] // raiz: ela + todas as descendentes
+        : [category.id]; // sub: só ela
+
+    return { category, breadcrumb, children, targetCategoryIds };
+  },
+);
 
 export const getActiveBanners = cache(async (): Promise<StoreBanner[]> => {
   const now = new Date();

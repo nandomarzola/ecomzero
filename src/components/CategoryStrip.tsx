@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useProductFilters } from "@/components/ProductFiltersProvider";
+import { usePathname } from "next/navigation";
 import {
   Grid2X2,
   Heart,
@@ -24,8 +24,7 @@ const iconMap = {
 };
 
 export default function CategoryStrip({ categories }: { categories: StoreCategory[] }) {
-  const { cat } = useProductFilters();
-  const active = cat ?? "tudo";
+  const pathname = usePathname();
   const roots = categories.filter((category) => category.depth === 0);
   const items = [{ id: "tudo", nome: "Todas as categorias", slug: "tudo" }, ...roots];
 
@@ -35,17 +34,18 @@ export default function CategoryStrip({ categories }: { categories: StoreCategor
         {items.map((categoria) => {
           const Icon =
             categoria.id === "tudo" ? Menu : iconMap[categoria.slug as keyof typeof iconMap] ?? Grid2X2;
-          const isActive = active === categoria.slug;
-          const href =
+          const categoryPath = `/categorias/${categoria.slug}`;
+          const isActive =
             categoria.id === "tudo"
-              ? "/#vitrine"
-              : `/?cat=${categoria.slug}#vitrine`;
+              ? pathname === "/"
+              : pathname === categoryPath || pathname.startsWith(`${categoryPath}/`);
+          const href = categoria.id === "tudo" ? "/#vitrine" : categoryPath;
 
           return (
             <Link
               key={categoria.id}
               href={href}
-              scroll={false}
+              scroll={categoria.id !== "tudo"}
               aria-current={isActive ? "page" : undefined}
               className={`group relative flex shrink-0 items-center gap-2.5 px-3 text-center sm:px-4 ${categoria.id === "tudo" ? "min-w-[176px]" : ""}`}
             >
