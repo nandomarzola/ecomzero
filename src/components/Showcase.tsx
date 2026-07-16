@@ -1,17 +1,15 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, PackageOpen, XCircle } from "lucide-react";
 
 import ProductCard from "@/components/ProductCard";
 import { useProductFilters } from "@/components/ProductFiltersProvider";
-import type { StoreCategory } from "@/lib/services/storeContentService";
 import type { Product } from "@/types/product";
 
 type ShowcaseProps = {
   produtos: Product[];
-  categories: StoreCategory[];
   bestSellers: Product[];
   releases: Product[];
 };
@@ -107,43 +105,15 @@ function ProductShelf({ title, subtitle, products }: ProductShelfProps) {
 
 export default function Showcase({
   produtos: allProdutos,
-  categories,
   bestSellers,
   releases,
 }: ShowcaseProps) {
-  const { cat, searchQuery, setSearchQuery } = useProductFilters();
+  const { searchQuery, setSearchQuery } = useProductFilters();
   const sectionRef = useRef<HTMLDivElement | null>(null);
-  const isFirstRender = useRef(true);
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    if (!cat) return;
-
-    const element = sectionRef.current;
-    if (!element) return;
-
-    const rect = element.getBoundingClientRect();
-    const currentTop = window.scrollY + rect.top;
-    window.scrollTo({
-      top: Math.max(0, currentTop - 88),
-      behavior: "smooth",
-    });
-  }, [cat]);
 
   let products = allProdutos;
   let title = "Todos os produtos";
   let subtitle: ReactNode = "Produtos selecionados para facilitar sua rotina.";
-
-  if (cat && cat !== "tudo") {
-    const category = categories.find((item) => item.slug === cat);
-    const categoryIds = new Set(category ? [category.id, ...category.descendantIds] : []);
-    products = products.filter((product) => product.categoryId && categoryIds.has(product.categoryId));
-    title = category?.nome ?? cat;
-    subtitle = `Produtos da categoria ${category?.nome ?? cat}.`;
-  }
 
   const trimmedSearch = searchQuery.trim();
   if (trimmedSearch) {
@@ -155,7 +125,7 @@ export default function Showcase({
     subtitle = `${products.length} ${products.length === 1 ? "produto encontrado" : "produtos encontrados"}.`;
   }
 
-  const hasFilter = Boolean((cat && cat !== "tudo") || trimmedSearch);
+  const hasFilter = Boolean(trimmedSearch);
 
   return (
     <div

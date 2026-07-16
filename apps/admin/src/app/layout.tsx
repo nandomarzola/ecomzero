@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Montserrat } from "next/font/google";
+import { Geist, Inter, Montserrat, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 
 const geist = Geist({
@@ -14,6 +14,10 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
   display: "swap",
 });
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-poppins", display: "swap" });
+const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-roboto", display: "swap" });
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body
-        className={`${geist.variable} ${montserrat.variable} font-sans antialiased`}
+        className={`${geist.variable} ${montserrat.variable} ${inter.variable} ${poppins.variable} ${roboto.variable} font-sans antialiased`}
       >
         {children}
       </body>

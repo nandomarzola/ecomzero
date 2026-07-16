@@ -99,7 +99,7 @@ export default function CepCaptureModal() {
           <button
             type="button"
             onClick={handleSave}
-            className="h-10 shrink-0 rounded-md bg-[var(--brand-color)] px-4 text-[11px] font-bold text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="store-primary-action h-10 shrink-0 px-4 text-[11px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             Salvar
           </button>

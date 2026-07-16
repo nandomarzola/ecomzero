@@ -116,7 +116,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
 
                     <Link
                       href={isPrimary ? "/#vitrine" : slide.href}
-                      className="font-display mt-6 inline-flex h-12 items-center justify-center gap-3 rounded-lg bg-[var(--brand-color)] px-7 text-xs font-extrabold uppercase text-black transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#B7FF23] hover:shadow-[0_10px_28px_rgba(169,236,23,0.14)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-color)] motion-reduce:transform-none motion-reduce:transition-none"
+                      className="store-primary-action font-display mt-6 inline-flex h-12 items-center justify-center gap-3 px-7 text-xs font-extrabold uppercase transition duration-[250ms] hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(169,236,23,0.14)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-color)] motion-reduce:transform-none motion-reduce:transition-none"
                     >
                       {isPrimary ? "Ver todos os produtos" : "Ver produto"}
                       <ArrowRight className="h-4 w-4" strokeWidth={2} />

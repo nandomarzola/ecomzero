@@ -245,6 +245,12 @@ model StoreSettings {
   plano             String   @default("Profissional")
   moeda             String   @default("BRL")
   idioma            String   @default("pt-BR")
+  fontFamily        String   @default("geist")
+  productCardStyle  String   @default("standard")
+  cardCornerStyle   String   @default("rounded")
+  showRating        Boolean  @default(true)
+  showBuyNowButton  Boolean  @default(true)
+  buttonStyle       String   @default("filled")
   updatedAt         DateTime @updatedAt
 }
 

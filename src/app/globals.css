@@ -5,7 +5,36 @@
   --foreground: #ffffff;
   --brand-color: #a9ec17;
   --accent: var(--brand-color);
+  --store-font-family: var(--font-geist), Inter, Arial, Helvetica, sans-serif;
+  --store-display-font-family: var(--font-montserrat), var(--font-geist), Inter, Arial, sans-serif;
+  --store-primary-button-background: var(--brand-color);
+  --store-primary-button-color: #050505;
+  --store-primary-button-radius: 0.5rem;
   color-scheme: dark;
+}
+
+html[data-font-family="inter"] {
+  --store-font-family: var(--font-inter), Arial, sans-serif;
+  --store-display-font-family: var(--font-inter), Arial, sans-serif;
+}
+
+html[data-font-family="poppins"] {
+  --store-font-family: var(--font-poppins), Arial, sans-serif;
+  --store-display-font-family: var(--font-poppins), Arial, sans-serif;
+}
+
+html[data-font-family="roboto"] {
+  --store-font-family: var(--font-roboto), Arial, sans-serif;
+  --store-display-font-family: var(--font-roboto), Arial, sans-serif;
+}
+
+html[data-button-style="outline"] {
+  --store-primary-button-background: transparent;
+  --store-primary-button-color: var(--brand-color);
+}
+
+html[data-button-style="pill"] {
+  --store-primary-button-radius: 9999px;
 }
 
 * {
@@ -22,11 +51,86 @@ body {
   overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist), Inter, Arial, Helvetica, sans-serif;
+  font-family: var(--store-font-family);
 }
 
 .font-display {
-  font-family: var(--font-montserrat), var(--font-geist), Inter, Arial, sans-serif;
+  font-family: var(--store-display-font-family);
+}
+
+.store-primary-action {
+  border: 1px solid var(--brand-color);
+  border-radius: var(--store-primary-button-radius);
+  background: var(--store-primary-button-background);
+  color: var(--store-primary-button-color);
+}
+
+.store-primary-action:hover {
+  filter: brightness(1.08);
+}
+
+html[data-button-style="outline"] .store-primary-action:hover {
+  background: color-mix(in srgb, var(--brand-color) 12%, transparent);
+  filter: none;
+}
+
+.store-product-card {
+  border-radius: 1rem;
+}
+
+html[data-card-corner-style="straight"] .store-product-card {
+  border-radius: 0.2rem;
+}
+
+html[data-product-card-style="compact"] .store-product-card-media {
+  aspect-ratio: 1.35 / 1;
+}
+
+html[data-product-card-style="compact"] .store-product-card-image {
+  padding: 0.75rem;
+}
+
+html[data-product-card-style="compact"] .store-product-card-content {
+  padding: 0.85rem;
+}
+
+html[data-product-card-style="compact"] .store-product-card-title {
+  min-height: 2.5rem;
+  font-size: 1rem;
+  line-height: 1.25rem;
+}
+
+html[data-product-card-style="compact"] .store-product-card-subtitle {
+  display: none;
+}
+
+html[data-product-card-style="compact"] .store-product-card-price-area {
+  padding-top: 0.85rem;
+}
+
+html[data-product-card-style="compact"] .store-product-card-actions {
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+}
+
+html[data-product-card-style="discount"] .store-product-card-has-discount {
+  border-color: color-mix(in srgb, var(--brand-color) 62%, transparent);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--brand-color) 14%, transparent);
+}
+
+html[data-product-card-style="discount"] .store-product-card-discount-badge {
+  transform: scale(1.08);
+  transform-origin: left top;
+}
+
+html[data-product-card-style="discount"] .store-product-card-discount-pill {
+  background: var(--brand-color);
+  color: #050505;
+}
+
+html[data-show-rating="false"] .store-product-card-rating,
+html[data-show-buy-now="false"] .store-product-card-buy-now {
+  display: none;
 }
 
 ::selection {

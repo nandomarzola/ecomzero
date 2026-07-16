@@ -635,7 +635,7 @@ export default function CheckoutForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:bg-[var(--brand-color)]/10 disabled:text-white/35"
+              className="store-primary-action font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-xs font-extrabold uppercase transition disabled:cursor-not-allowed disabled:opacity-45"
             >
               {isSubmitting ? (
                 <>

@@ -189,6 +189,55 @@ export async function createCategory(input: CategoryInput) {
   });
 }
 
+// Recomputa o path denormalizado Product.categoria de todos os produtos
+// vinculados (por categoryId) à categoria e às suas descendentes. Chamado após
+// rename/move — mantém o path em sincronia com a nova estrutura e evita que
+// produtos fiquem órfãos silenciosos nas listagens da loja que casam por texto.
+// (Produtos sem categoryId — legado/Hub — não são alcançáveis aqui; por isso o
+// backfill de categoryId é o passo complementar.)
+async function recomputeCategoriaPaths(rootId: string): Promise<void> {
+  const cats = await prisma.category.findMany({ select: { id: true, nome: true, parentId: true } });
+  const byId = new Map(cats.map((category) => [category.id, category]));
+
+  const pathOf = (id: string): string => {
+    const names: string[] = [];
+    let current: string | null = id;
+    const seen = new Set<string>();
+    while (current && !seen.has(current)) {
+      seen.add(current);
+      const category = byId.get(current);
+      if (!category) break;
+      names.unshift(category.nome);
+      current = category.parentId;
+    }
+    return names.join(" / ");
+  };
+
+  const childrenByParent = new Map<string, string[]>();
+  for (const category of cats) {
+    if (category.parentId) {
+      childrenByParent.set(category.parentId, [
+        ...(childrenByParent.get(category.parentId) ?? []),
+        category.id,
+      ]);
+    }
+  }
+
+  const subtree: string[] = [];
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    subtree.push(current);
+    stack.push(...(childrenByParent.get(current) ?? []));
+  }
+
+  await prisma.$transaction(
+    subtree.map((categoryId) =>
+      prisma.product.updateMany({ where: { categoryId }, data: { categoria: pathOf(categoryId) } }),
+    ),
+  );
+}
+
 export async function updateCategory(id: string, input: CategoryInput) {
   const existing = await prisma.category.findUnique({
     where: { id },
@@ -205,7 +254,7 @@ export async function updateCategory(id: string, input: CategoryInput) {
     ? existing.ordem
     : await nextCategoryOrder(input.parentId);
 
-  return prisma.category.update({
+  const updated = await prisma.category.update({
     where: { id },
     data: {
       nome: input.nome,
@@ -221,6 +270,12 @@ export async function updateCategory(id: string, input: CategoryInput) {
     },
     select: { id: true },
   });
+
+  // Rename/move altera o path desta categoria e das descendentes —
+  // ressincroniza o Product.categoria denormalizado dos produtos vinculados.
+  await recomputeCategoriaPaths(updated.id);
+
+  return updated;
 }
 
 export async function reorderCategories(input: CategoryReorderInput): Promise<void> {

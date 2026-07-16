@@ -39,7 +39,6 @@ export default async function HomePage() {
 
       <Showcase
         produtos={produtos}
-        categories={categories}
         bestSellers={bestSellers}
         releases={releases}
       />

@@ -87,7 +87,7 @@ export default async function AccountOrderDetailsPage({
             })}
           </div>
           {order.shipment?.urlRastreio ? (
-            <a href={order.shipment.urlRastreio} target="_blank" rel="noreferrer" className="font-display mt-6 inline-flex min-h-11 items-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]">
+            <a href={order.shipment.urlRastreio} target="_blank" rel="noreferrer" className="store-primary-action font-display mt-6 inline-flex min-h-11 items-center gap-2 px-5 text-[10px] font-extrabold uppercase transition">
               Acompanhar entrega <ExternalLink className="h-3.5 w-3.5" />
             </a>
           ) : (
@@ -124,7 +124,7 @@ export default async function AccountOrderDetailsPage({
             <div className="flex items-center gap-2"><Truck className="h-4 w-4 text-[var(--brand-color)]" /><h3 className="font-display text-sm font-bold text-white">Forma de envio</h3></div>
             <div className="mt-4 text-xs leading-6 text-white/50"><p className="font-semibold text-white/75">{order.shipment?.transportadora ?? "Transportadora selecionada no checkout"}</p><p>{order.shipment?.servico ?? "Aguardando preparação da etiqueta"}</p>{order.shipment?.codigoRastreio ? <p className="mt-2 font-mono text-[var(--brand-color)]">{order.shipment.codigoRastreio}</p> : null}</div>
           </section>
-          {order.status === "aguardando_pagamento" ? <Link href={`/checkout/pagamento/${order.id}`} className="font-display flex min-h-11 items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-[10px] font-extrabold uppercase text-black">Continuar pagamento</Link> : null}
+          {order.status === "aguardando_pagamento" ? <Link href={`/checkout/pagamento/${order.id}`} className="store-primary-action font-display flex min-h-11 items-center justify-center px-5 text-[10px] font-extrabold uppercase">Continuar pagamento</Link> : null}
         </div>
       </div>
     </div>

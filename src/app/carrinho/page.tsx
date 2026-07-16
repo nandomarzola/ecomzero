@@ -112,7 +112,7 @@ export default async function CartPage() {
             <p className="text-sm text-white/65">Seu carrinho está vazio.</p>
             <Link
               href="/#vitrine"
-              className="font-display mt-5 inline-flex min-h-11 items-center justify-center rounded-md bg-[var(--brand-color)] px-6 text-xs font-bold uppercase text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="store-primary-action font-display mt-5 inline-flex min-h-11 items-center justify-center px-6 text-xs font-bold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Ver produtos
             </Link>

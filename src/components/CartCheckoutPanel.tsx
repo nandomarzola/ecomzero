@@ -340,7 +340,7 @@ export default function CartCheckoutPanel({
           <button
             type="button"
             onClick={goToCheckout}
-            className="font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="store-primary-action font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             {canCheckout ? "Finalizar compra" : "Escolher frete para continuar"}
             <ArrowRight className="h-4 w-4" />
@@ -376,7 +376,7 @@ export default function CartCheckoutPanel({
             <button
               type="submit"
               disabled={status === "loading" || autoLoading || onlyDigits(cep).length !== 8}
-              className="h-11 shrink-0 rounded-md bg-[var(--brand-color)] px-4 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] disabled:cursor-not-allowed disabled:opacity-45"
+              className="store-primary-action h-11 shrink-0 px-4 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45"
             >
               {status === "loading" ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -464,7 +464,7 @@ export default function CartCheckoutPanel({
           <button
             type="button"
             onClick={goToCheckout}
-            className="font-display min-h-11 flex-1 rounded-md bg-[var(--brand-color)] px-4 text-[10px] font-extrabold uppercase text-black"
+            className="store-primary-action font-display min-h-11 flex-1 px-4 text-[10px] font-extrabold uppercase"
           >
             {canCheckout ? "Finalizar compra" : "Escolher frete"}
           </button>

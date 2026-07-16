@@ -179,7 +179,7 @@ export default function HeaderActions({
               <Link
                 href="/login"
                 onClick={closeAccountMenu}
-                className="font-display flex h-9 w-full items-center justify-center rounded bg-[var(--brand-color)] text-[10px] font-bold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="store-primary-action font-display flex h-9 w-full items-center justify-center text-[10px] font-bold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Entrar
               </Link>

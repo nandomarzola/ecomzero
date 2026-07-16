@@ -487,7 +487,7 @@ export default function MercadoPagoPayment({
                     <button
                       type="button"
                       onClick={copyPixCode}
-                      className="font-display inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-4 text-[11px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+                      className="store-primary-action font-display inline-flex h-12 shrink-0 items-center justify-center gap-2 px-4 text-[11px] font-extrabold uppercase transition"
                     >
                       {copied ? (
                         <Check className="h-4 w-4" />

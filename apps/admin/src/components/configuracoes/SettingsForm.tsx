@@ -3,6 +3,7 @@
 
 import { useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import {
+  BadgePercent,
   CheckCircle2,
   Clock3,
   Code2,
@@ -10,11 +11,14 @@ import {
   Globe2,
   Headphones,
   Image as ImageIcon,
+  LayoutGrid,
   Languages,
   Loader2,
   Megaphone,
   MessageSquare,
+  Monitor,
   MonitorSmartphone,
+  MousePointerClick,
   Palette,
   PanelBottom,
   RotateCcw,
@@ -22,8 +26,10 @@ import {
   Settings2,
   Share2,
   ShieldCheck,
+  Star,
   Store,
   Ticket,
+  Type,
   Upload,
   UserRoundCog,
   Users,
@@ -53,6 +59,12 @@ export type SettingsFormInitial = {
   plano: string;
   moeda: string;
   idioma: string;
+  fontFamily: "geist" | "inter" | "poppins" | "roboto";
+  productCardStyle: "standard" | "compact" | "discount";
+  cardCornerStyle: "straight" | "rounded";
+  showRating: boolean;
+  showBuyNowButton: boolean;
+  buttonStyle: "filled" | "outline" | "pill";
   updatedAt: string;
 };
 
@@ -127,6 +139,40 @@ const navigation: Array<{ label: string; items: NavItem[] }> = [
 
 const inputClass = "h-10 rounded-md border border-white/[0.09] bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/25 focus:border-[#A9EC17]/45";
 
+const fontOptions = [
+  { value: "geist", label: "Geist + Montserrat (atual)" },
+  { value: "inter", label: "Inter" },
+  { value: "poppins", label: "Poppins" },
+  { value: "roboto", label: "Roboto" },
+] as const;
+
+const cardStyleOptions = [
+  { value: "standard", label: "Padrão", description: "Informações completas e duas ações." },
+  { value: "compact", label: "Compacto", description: "Menos altura para mostrar mais produtos." },
+  { value: "discount", label: "Destaque de desconto", description: "Realça ofertas e percentual economizado." },
+] as const;
+
+const cornerOptions = [
+  { value: "straight", label: "Retos" },
+  { value: "rounded", label: "Arredondados" },
+] as const;
+
+const buttonStyleOptions = [
+  { value: "filled", label: "Preenchido" },
+  { value: "outline", label: "Contornado" },
+  { value: "pill", label: "Pill" },
+] as const;
+
+function previewFontFamily(font: FormState["fontFamily"]) {
+  const families: Record<FormState["fontFamily"], string> = {
+    geist: "var(--font-geist), Arial, sans-serif",
+    inter: "var(--font-inter), Arial, sans-serif",
+    poppins: "var(--font-poppins), Arial, sans-serif",
+    roboto: "var(--font-roboto), Arial, sans-serif",
+  };
+  return families[font];
+}
+
 function normalize(initial: SettingsFormInitial): FormState {
   const { updatedAt: _updatedAt, ...values } = initial;
   return {
@@ -196,6 +242,14 @@ export default function SettingsForm({
   const previewColor = validColor ? form.corPrincipal : savedForm.corPrincipal;
   const logoPreview = resolveAsset(form.logoUrl, storefrontUrl);
   const faviconPreview = resolveAsset(form.faviconUrl || form.logoUrl, storefrontUrl);
+  const appearancePreviewFont = previewFontFamily(form.fontFamily);
+  const appearanceCardRadius = form.cardCornerStyle === "rounded" ? "14px" : "3px";
+  const appearanceButtonStyle = {
+    borderRadius: form.buttonStyle === "pill" ? "9999px" : "7px",
+    border: `1px solid ${previewColor}`,
+    backgroundColor: form.buttonStyle === "outline" ? "transparent" : previewColor,
+    color: form.buttonStyle === "outline" ? previewColor : "#050505",
+  };
   const activeItem = navigation.flatMap((group) => group.items).find((item) => item.id === activeSection);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -376,6 +430,92 @@ export default function SettingsForm({
                 </label>
               </section>
             </div>
+          ) : activeSection === "aparencia" ? (
+            <div className="space-y-5">
+              <header>
+                <h2 className="font-display text-[15px] font-bold text-white">Aparência</h2>
+                <p className="mt-1 text-[10px] text-white/38">Personalize tipografia, cards e botões da loja.</p>
+              </header>
+
+              <section className="rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-white/45"><Monitor className="h-4 w-4" /></span>
+                  <div className="min-w-0 flex-1">
+                    <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
+                      Tema visual
+                      <select disabled value="dark" className={`${inputClass} cursor-not-allowed opacity-55`}>
+                        <option value="dark">Escuro — tema atual</option>
+                      </select>
+                    </label>
+                    <p className="mt-2 text-[9px] leading-4 text-white/30">Tema claro e automático exigem a próxima fase de tokens visuais do storefront.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#A9EC17]/10 text-[#A9EC17]"><Type className="h-4 w-4" /></span>
+                  <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-[10px] text-white/55">
+                    Fonte principal da loja
+                    <select value={form.fontFamily} onChange={(event) => set("fontFamily", event.target.value as FormState["fontFamily"])} className={inputClass}>
+                      {fontOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                    <span className="text-[9px] text-white/30">Aplicada a textos, títulos e elementos de destaque da loja.</span>
+                  </label>
+                </div>
+              </section>
+
+              <section className="space-y-4 rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-sky-400/10 text-sky-300"><LayoutGrid className="h-4 w-4" /></span>
+                  <div><h3 className="text-[10px] font-semibold text-white/70">Cards de produto</h3><p className="mt-0.5 text-[9px] text-white/30">Defina densidade, cantos e informações visíveis.</p></div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-[10px] text-white/55">Formato do card</p>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {cardStyleOptions.map((option) => (
+                      <button key={option.value} type="button" onClick={() => set("productCardStyle", option.value)} className={`min-h-24 rounded-md border p-3 text-left transition ${form.productCardStyle === option.value ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.07]" : "border-white/[0.08] bg-[#090909] hover:border-white/15"}`}>
+                        <span className={`block text-[10px] font-semibold ${form.productCardStyle === option.value ? "text-[#A9EC17]" : "text-white/65"}`}>{option.label}</span>
+                        <span className="mt-2 block text-[9px] leading-4 text-white/30">{option.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-2 text-[10px] text-white/55">Cantos do card</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {cornerOptions.map((option) => (
+                      <button key={option.value} type="button" onClick={() => set("cardCornerStyle", option.value)} className={`h-10 border text-[10px] font-semibold transition ${option.value === "rounded" ? "rounded-xl" : "rounded-sm"} ${form.cardCornerStyle === option.value ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.07] text-[#A9EC17]" : "border-white/[0.08] bg-[#090909] text-white/55 hover:border-white/15"}`}>{option.label}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="divide-y divide-white/[0.06] rounded-md border border-white/[0.07] bg-[#090909] px-3">
+                  <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-2.5"><Star className="h-4 w-4 text-amber-300" /><div><p className="text-[10px] font-medium text-white/65">Mostrar avaliação</p><p className="mt-0.5 text-[9px] text-white/28">Exibe estrelas quando houver avaliações.</p></div></div>
+                    <button type="button" role="switch" aria-checked={form.showRating} onClick={() => set("showRating", !form.showRating)} className={`relative h-5 w-9 shrink-0 rounded-full transition ${form.showRating ? "bg-[#A9EC17]" : "bg-white/15"}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-black transition ${form.showRating ? "left-[18px]" : "left-0.5"}`} /></button>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 py-3">
+                    <div className="flex items-center gap-2.5"><BadgePercent className="h-4 w-4 text-[#A9EC17]" /><div><p className="text-[10px] font-medium text-white/65">Mostrar “Comprar agora”</p><p className="mt-0.5 text-[9px] text-white/28">Mantém também “Adicionar ao carrinho”.</p></div></div>
+                    <button type="button" role="switch" aria-checked={form.showBuyNowButton} onClick={() => set("showBuyNowButton", !form.showBuyNowButton)} className={`relative h-5 w-9 shrink-0 rounded-full transition ${form.showBuyNowButton ? "bg-[#A9EC17]" : "bg-white/15"}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-black transition ${form.showBuyNowButton ? "left-[18px]" : "left-0.5"}`} /></button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-violet-400/10 text-violet-300"><MousePointerClick className="h-4 w-4" /></span>
+                  <div><h3 className="text-[10px] font-semibold text-white/70">Botão principal</h3><p className="mt-0.5 text-[9px] text-white/30">Aplicado aos CTAs principais pertencentes à loja.</p></div>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {buttonStyleOptions.map((option) => (
+                    <button key={option.value} type="button" onClick={() => set("buttonStyle", option.value)} className={`h-11 border text-[10px] font-semibold transition ${option.value === "pill" ? "rounded-full" : "rounded-md"} ${form.buttonStyle === option.value ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.07] text-[#A9EC17]" : "border-white/[0.08] bg-[#090909] text-white/55 hover:border-white/15"}`}>{option.label}</button>
+                  ))}
+                </div>
+              </section>
+            </div>
           ) : (
             <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
               {activeItem ? <activeItem.icon className="h-10 w-10 text-white/20" strokeWidth={1.4} /> : <Settings2 className="h-10 w-10 text-white/20" />}
@@ -389,7 +529,7 @@ export default function SettingsForm({
           <section className="rounded-[9px] border border-white/[0.09] bg-[linear-gradient(145deg,#111111,#0C0C0C)] p-4">
             <h2 className="font-display text-[14px] font-bold text-white">Prévia da loja</h2>
             <p className="mt-1 text-[9px] text-white/35">Veja como as informações aparecem para o cliente.</p>
-            <div className="mt-4 overflow-hidden rounded-md border border-white/[0.1] bg-black">
+            <div className="mt-4 overflow-hidden rounded-md border border-white/[0.1] bg-black" style={{ fontFamily: appearancePreviewFont }}>
               <div className="px-3 py-2 text-center text-[9px] font-bold text-black" style={{ backgroundColor: previewColor }}>Frete grátis acima de R$ 99,00</div>
               <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-4">
                 <span className="text-lg text-white/60">☰</span>
@@ -397,10 +537,31 @@ export default function SettingsForm({
                 <span className="text-lg text-white/60">⌕　♧</span>
               </div>
               <div className="flex min-h-[196px] flex-col justify-center bg-[radial-gradient(circle_at_75%_30%,rgba(255,255,255,0.1),transparent_38%),linear-gradient(135deg,#151B23,#09090C_70%)] p-5">
-                <h3 className="font-display max-w-[250px] text-xl font-extrabold leading-6 text-white"><HighlightedDescription text={form.mensagemFooter} color={previewColor} /></h3>
+                <h3 className="max-w-[250px] text-xl font-extrabold leading-6 text-white"><HighlightedDescription text={form.mensagemFooter} color={previewColor} /></h3>
                 <p className="mt-3 line-clamp-3 text-[10px] leading-4 text-white/55">{form.descricaoFooter}</p>
                 <div className="mt-5 flex justify-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-white/25" /><span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: previewColor }} /><span className="h-1.5 w-1.5 rounded-full bg-white/25" /></div>
               </div>
+              {activeSection === "aparencia" ? (
+                <div className="border-t border-white/[0.08] bg-[#080808] p-4">
+                  <p className="mb-3 text-[8px] font-bold uppercase tracking-[0.16em] text-white/35">Prévia do card</p>
+                  <article className={`mx-auto max-w-[220px] overflow-hidden border bg-[linear-gradient(145deg,#151515,#0A0A0A)] transition ${form.productCardStyle === "discount" ? "shadow-[0_0_24px_rgba(169,236,23,0.12)]" : "border-white/10"}`} style={{ borderColor: form.productCardStyle === "discount" ? previewColor : undefined, borderRadius: appearanceCardRadius }}>
+                    <div className={`relative flex items-center justify-center bg-[radial-gradient(circle,#303030,#121212_70%)] ${form.productCardStyle === "compact" ? "h-20" : "h-28"}`}>
+                      <ImageIcon className="h-10 w-10 text-white/25" />
+                      {form.productCardStyle === "discount" ? <span className="absolute left-2 top-2 rounded px-2 py-1 text-[8px] font-black text-black" style={{ backgroundColor: previewColor }}>-25%</span> : null}
+                    </div>
+                    <div className={form.productCardStyle === "compact" ? "p-2.5" : "p-3.5"}>
+                      <p className="text-[8px] font-bold uppercase tracking-wider" style={{ color: previewColor }}>Categoria</p>
+                      <h4 className={`mt-1 font-extrabold text-white ${form.productCardStyle === "compact" ? "text-[10px]" : "text-xs"}`}>Produto em destaque</h4>
+                      {form.showRating ? <div className="mt-2 flex items-center gap-1 text-[8px]" style={{ color: previewColor }}><Star className="h-3 w-3 fill-current" /> 4,9 <span className="text-white/35">(18)</span></div> : null}
+                      <strong className="mt-3 block text-sm font-black" style={{ color: previewColor }}>R$ 89,90</strong>
+                      <div className="mt-3 space-y-1.5">
+                        {form.showBuyNowButton ? <button type="button" className="flex h-8 w-full items-center justify-center text-[8px] font-black uppercase" style={appearanceButtonStyle}>Comprar agora</button> : null}
+                        <button type="button" className="flex h-8 w-full items-center justify-center rounded-[7px] border text-[8px] font-bold uppercase" style={{ borderColor: previewColor, color: previewColor }}>Adicionar ao carrinho</button>
+                      </div>
+                    </div>
+                  </article>
+                </div>
+              ) : null}
             </div>
           </section>
 

@@ -6,6 +6,8 @@ const defaults = {
   mensagemFooter: "Produtos úteis para facilitar o seu dia a dia.", barraAnuncioAtiva: false,
   logoUrl: "/images/logo2.png", corPrincipal: "#A9EC17", fusoHorario: "America/Sao_Paulo",
   lojaAtiva: true, plano: "Profissional", moeda: "BRL", idioma: "pt-BR",
+  fontFamily: "geist", productCardStyle: "standard", cardCornerStyle: "rounded",
+  showRating: true, showBuyNowButton: true, buttonStyle: "filled",
 };
 
 export async function getStoreSettings() {

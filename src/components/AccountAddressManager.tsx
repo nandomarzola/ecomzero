@@ -203,7 +203,7 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
         <button
           type="button"
           onClick={openNewAddress}
-          className="font-display inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-5 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+          className="store-primary-action font-display inline-flex min-h-11 items-center justify-center gap-2 px-5 text-[10px] font-extrabold uppercase transition"
         >
           <Plus className="h-4 w-4" />
           Novo endereço
@@ -265,7 +265,7 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
             </label>
           </div>
 
-          <button type="submit" disabled={isSaving} className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-6 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-wait disabled:opacity-60">
+          <button type="submit" disabled={isSaving} className="store-primary-action font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 px-6 text-[10px] font-extrabold uppercase transition disabled:cursor-wait disabled:opacity-60">
             {isSaving && <LoaderCircle className="h-4 w-4 animate-spin" />}
             {isSaving ? "Salvando" : "Salvar endereço"}
           </button>

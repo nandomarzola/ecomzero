@@ -70,7 +70,7 @@ export default async function AccountOrdersPage() {
           </p>
           <Link
             href="/"
-            className="font-display mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-[var(--brand-color)] px-6 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+            className="store-primary-action font-display mt-6 inline-flex min-h-11 items-center justify-center px-6 text-xs font-extrabold uppercase transition"
           >
             Ver produtos
           </Link>

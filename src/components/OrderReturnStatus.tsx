@@ -125,7 +125,7 @@ export default function OrderReturnStatus({
         </p>
         <Link
           href="/"
-          className="font-display mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-6 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28]"
+          className="store-primary-action font-display mt-7 inline-flex min-h-12 items-center justify-center gap-2 px-6 text-xs font-extrabold uppercase transition"
         >
           <Home className="h-4 w-4" />
           Voltar para a loja

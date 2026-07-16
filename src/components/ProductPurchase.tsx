@@ -173,7 +173,7 @@ export default function ProductPurchase({
             type="button"
             onClick={() => addToCart("add")}
             disabled={isPending}
-            className="font-display flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] text-black transition duration-[250ms] hover:-translate-y-0.5 hover:bg-[#B8FF28] hover:shadow-[0_8px_24px_rgba(169,236,23,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
+            className="store-primary-action font-display flex min-h-11 w-full items-center justify-center gap-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.2px] transition duration-[250ms] hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(169,236,23,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-70 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none"
           >
             <ShoppingCart className="h-4 w-4" strokeWidth={2} />
             {submittingAction === "add" && isPending ? "Adicionando..." : "Adicionar ao carrinho"}

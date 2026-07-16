@@ -134,7 +134,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
         <button
           type="submit"
           disabled={isSavingProfile}
-          className="font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--brand-color)] px-6 text-[10px] font-extrabold uppercase text-black transition hover:bg-[#B8FF28] disabled:cursor-wait disabled:opacity-60"
+          className="store-primary-action font-display mt-6 inline-flex min-h-11 items-center justify-center gap-2 px-6 text-[10px] font-extrabold uppercase transition disabled:cursor-wait disabled:opacity-60"
         >
           {isSavingProfile ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {isSavingProfile ? "Salvando" : "Salvar dados"}

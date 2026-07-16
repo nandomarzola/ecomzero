@@ -135,7 +135,7 @@ export default function ShippingCalculator({ variantId, quantity }: ShippingCalc
           type="button"
           onClick={handleCalculate}
           disabled={status === "loading" || autoLoading || cep.trim().length === 0}
-          className="h-10 shrink-0 rounded-md bg-[var(--brand-color)] px-4 text-[10px] font-bold text-black transition duration-[250ms] hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
+          className="store-primary-action h-10 shrink-0 px-4 text-[10px] font-bold transition duration-[250ms] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
         >
           {status === "loading" ? "Calculando..." : "Calcular"}
         </button>

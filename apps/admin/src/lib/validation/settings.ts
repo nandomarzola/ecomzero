@@ -33,6 +33,12 @@ export const storeSettingsSchema = z.object({
   plano: z.string().trim().min(2).max(40),
   moeda: z.string().trim().min(3).max(8),
   idioma: z.string().trim().min(2).max(12),
+  fontFamily: z.enum(["geist", "inter", "poppins", "roboto"]),
+  productCardStyle: z.enum(["standard", "compact", "discount"]),
+  cardCornerStyle: z.enum(["straight", "rounded"]),
+  showRating: z.boolean(),
+  showBuyNowButton: z.boolean(),
+  buttonStyle: z.enum(["filled", "outline", "pill"]),
 }).superRefine((input, context) => {
   if (input.barraAnuncioAtiva && !input.barraAnuncioTexto) context.addIssue({ code: "custom", path: ["barraAnuncioTexto"], message: "Informe o texto da barra de anúncio" });
 });

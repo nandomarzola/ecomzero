@@ -8,6 +8,10 @@ export default async function ConfiguracoesPage() {
   const settings = await getStoreSettings();
   const initial: SettingsFormInitial = {
     ...settings,
+    fontFamily: settings.fontFamily as SettingsFormInitial["fontFamily"],
+    productCardStyle: settings.productCardStyle as SettingsFormInitial["productCardStyle"],
+    cardCornerStyle: settings.cardCornerStyle as SettingsFormInitial["cardCornerStyle"],
+    buttonStyle: settings.buttonStyle as SettingsFormInitial["buttonStyle"],
     updatedAt: settings.updatedAt.toISOString(),
   };
   return <SettingsForm initial={initial} storefrontUrl={config.storefrontUrl ?? "https://www.ecomzero.com.br"} />;

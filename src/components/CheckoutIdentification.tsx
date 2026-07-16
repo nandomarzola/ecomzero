@@ -223,7 +223,7 @@ export default function CheckoutIdentification() {
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="font-display mt-5 flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-65"
+                className="store-primary-action font-display mt-5 flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-65"
               >
                 {isLoggingIn ? "Acessando..." : "Acessar conta"}
               </button>
@@ -292,7 +292,7 @@ export default function CheckoutIdentification() {
               )}
               <button
                 type="submit"
-                className="font-display mt-4 flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="store-primary-action font-display mt-4 flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
                 Criar conta e continuar
               </button>

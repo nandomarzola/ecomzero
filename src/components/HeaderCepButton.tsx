@@ -118,7 +118,7 @@ export default function HeaderCepButton({ className = "" }: { className?: string
             <button
               type="button"
               onClick={handleSave}
-              className="h-9 shrink-0 rounded-md bg-[var(--brand-color)] px-3 text-[10px] font-bold text-black transition hover:bg-[#B8FF28] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="store-primary-action h-9 shrink-0 px-3 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Salvar
             </button>

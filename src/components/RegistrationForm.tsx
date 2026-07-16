@@ -391,7 +391,7 @@ export default function RegistrationForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="font-display flex min-h-12 w-full items-center justify-center rounded-md bg-[var(--brand-color)] px-5 text-xs font-extrabold uppercase text-black transition hover:bg-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-px disabled:cursor-wait disabled:opacity-70"
+            className="store-primary-action font-display flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white active:translate-y-px disabled:cursor-wait disabled:opacity-70"
           >
             {isSubmitting ? "Criando conta..." : "Criar conta"}
           </button>

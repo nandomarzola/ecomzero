@@ -41,7 +41,7 @@ export default function NewsletterBanner() {
           />
           <button
             type="submit"
-            className="font-display h-11 rounded-md bg-[var(--brand-color)] px-6 text-[10px] font-extrabold uppercase text-black transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="store-primary-action font-display h-11 px-6 text-[10px] font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             Cadastrar
           </button>

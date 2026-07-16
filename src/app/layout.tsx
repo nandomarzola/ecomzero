@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Metadata, Viewport } from "next";
-import { Geist, Montserrat } from "next/font/google";
+import { Geist, Inter, Montserrat, Poppins, Roboto } from "next/font/google";
 import { Toaster } from "sonner";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
 import BottomNav from "@/components/BottomNav";
@@ -24,6 +24,10 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
   display: "swap",
 });
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const poppins = Poppins({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-poppins", display: "swap" });
+const roboto = Roboto({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800", "900"], variable: "--font-roboto", display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getStoreSettings();
@@ -76,11 +80,17 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       data-scroll-behavior="smooth"
+      data-font-family={settings.fontFamily}
+      data-product-card-style={settings.productCardStyle}
+      data-card-corner-style={settings.cardCornerStyle}
+      data-show-rating={String(settings.showRating)}
+      data-show-buy-now={String(settings.showBuyNowButton)}
+      data-button-style={settings.buttonStyle}
       suppressHydrationWarning
       style={{ "--brand-color": settings.corPrincipal, "--accent": settings.corPrincipal } as CSSProperties}
     >
       <body
-        className={`${geist.variable} ${montserrat.variable} flex min-h-screen flex-col antialiased`}
+        className={`${geist.variable} ${montserrat.variable} ${inter.variable} ${poppins.variable} ${roboto.variable} flex min-h-screen flex-col antialiased`}
         suppressHydrationWarning
       >
         <script
