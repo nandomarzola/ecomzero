@@ -6,10 +6,18 @@ import { config } from "@/lib/config";
 // (padrão recomendado pelo Next.js: https://pris.ly/d/help/next-js-best-practices)
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const adapter = new PrismaPg({ connectionString: config.databaseUrl });
+function createPrismaClient() {
+  const adapter = new PrismaPg({
+    connectionString: config.databaseUrl,
+    max: config.nodeEnv === "production" ? 1 : 5,
+    connectionTimeoutMillis: 10_000,
+    idleTimeoutMillis: 10_000,
+    allowExitOnIdle: true,
+  });
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
-
-if (config.nodeEnv !== "production") {
-  globalForPrisma.prisma = prisma;
+  return new PrismaClient({ adapter });
 }
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+globalForPrisma.prisma = prisma;
