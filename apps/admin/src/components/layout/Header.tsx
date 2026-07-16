@@ -4,15 +4,17 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen, User } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/navigation";
+import AdminLogo from "@/components/layout/AdminLogo";
 
 type HeaderProps = {
   collapsed: boolean;
   onOpenMobileSidebar: () => void;
   onToggleCollapse: () => void;
   userLabel: string;
+  logoUrl: string;
 };
 
-export default function Header({ collapsed, onOpenMobileSidebar, onToggleCollapse, userLabel }: HeaderProps) {
+export default function Header({ collapsed, onOpenMobileSidebar, onToggleCollapse, userLabel, logoUrl }: HeaderProps) {
   const pathname = usePathname();
   const current = NAV_ITEMS.find((item) =>
     item.href === "/" ? pathname === "/" : pathname.startsWith(item.href),
@@ -20,7 +22,8 @@ export default function Header({ collapsed, onOpenMobileSidebar, onToggleCollaps
   const title = current?.label ?? "Admin";
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-white/[0.08] bg-[#050505]/95 px-4 backdrop-blur sm:px-6">
+    <header className="sticky top-0 z-20 flex h-[58px] items-center gap-3 border-b border-white/[0.08] bg-[#050505]/95 px-4 backdrop-blur sm:px-6">
+      <AdminLogo logoUrl={logoUrl} compact className="mr-1 lg:hidden" />
       <button
         type="button"
         onClick={onOpenMobileSidebar}

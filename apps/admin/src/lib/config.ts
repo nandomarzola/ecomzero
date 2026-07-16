@@ -13,6 +13,7 @@ const envSchema = z.object({
   MELHOR_ENVIO_CLIENT_ID: z.string().min(1).optional(),
   MELHOR_ENVIO_CLIENT_SECRET: z.string().min(1).optional(),
   NEXT_PUBLIC_STOREFRONT_URL: z.string().url().optional(),
+  NEXT_PUBLIC_ADMIN_LOGO_URL: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -34,4 +35,5 @@ export const config = {
   melhorEnvioClientId: parsed.data.MELHOR_ENVIO_CLIENT_ID,
   melhorEnvioClientSecret: parsed.data.MELHOR_ENVIO_CLIENT_SECRET,
   storefrontUrl: parsed.data.NEXT_PUBLIC_STOREFRONT_URL,
+  adminLogoUrl: parsed.data.NEXT_PUBLIC_ADMIN_LOGO_URL ?? "/admin-logo.svg",
 } as const;

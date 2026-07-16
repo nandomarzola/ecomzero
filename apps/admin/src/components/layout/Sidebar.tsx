@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { NAV_ITEMS } from "@/lib/navigation";
+import AdminLogo from "@/components/layout/AdminLogo";
 
 type SidebarProps = {
   collapsed: boolean;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  logoUrl: string;
 };
 
 function isActivePath(href: string, pathname: string) {
@@ -19,17 +21,17 @@ function SidebarContent({
   collapsed,
   pathname,
   onNavigate,
+  logoUrl,
 }: {
   collapsed: boolean;
   pathname: string;
   onNavigate?: () => void;
+  logoUrl: string;
 }) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 shrink-0 items-center gap-2 border-b border-white/[0.08] px-4">
-        <span className="font-display text-lg font-extrabold tracking-tight text-white">
-          {collapsed ? "EZ" : "ECOMZERO"}
-        </span>
+      <div className="flex h-[58px] shrink-0 items-center justify-center border-b border-white/[0.08] px-3">
+        <AdminLogo logoUrl={logoUrl} compact={collapsed} />
       </div>
 
       {!collapsed && (
@@ -63,18 +65,18 @@ function SidebarContent({
   );
 }
 
-export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
+export default function Sidebar({ collapsed, mobileOpen, onCloseMobile, logoUrl }: SidebarProps) {
   const pathname = usePathname();
 
   return (
     <>
       {/* Desktop — fixa */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden border-r border-white/[0.08] bg-[#111111] transition-[width] duration-200 lg:block ${
-          collapsed ? "w-[72px]" : "w-[240px]"
+        className={`fixed inset-y-0 left-0 z-30 hidden border-r border-white/[0.08] bg-[#070707] transition-[width] duration-200 lg:block ${
+          collapsed ? "w-[68px]" : "w-[204px]"
         }`}
       >
-        <SidebarContent collapsed={collapsed} pathname={pathname} />
+        <SidebarContent collapsed={collapsed} pathname={pathname} logoUrl={logoUrl} />
       </aside>
 
       {/* Mobile — drawer sobreposto */}
@@ -86,7 +88,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }: Sideba
             className="absolute inset-0 bg-black/60"
             onClick={onCloseMobile}
           />
-          <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-white/[0.08] bg-[#111111]">
+          <aside className="absolute inset-y-0 left-0 w-[260px] border-r border-white/[0.08] bg-[#070707]">
             <button
               type="button"
               onClick={onCloseMobile}
@@ -95,7 +97,7 @@ export default function Sidebar({ collapsed, mobileOpen, onCloseMobile }: Sideba
             >
               <X className="h-5 w-5" />
             </button>
-            <SidebarContent collapsed={false} pathname={pathname} onNavigate={onCloseMobile} />
+            <SidebarContent collapsed={false} pathname={pathname} onNavigate={onCloseMobile} logoUrl={logoUrl} />
           </aside>
         </div>
       )}
