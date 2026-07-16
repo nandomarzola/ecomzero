@@ -5,43 +5,220 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { getCartSummaryAction } from "@/lib/actions/cartActions";
+import {
+  addToCartAction,
+  applyCouponAction,
+  getCartAction,
+  removeCartItemAction,
+  removeCouponAction,
+  updateCartItemAction,
+  type CartActionResult,
+} from "@/lib/actions/cartActions";
+import type { Cart } from "@/types/cart";
 
-type CartContextValue = {
-  itemCount: number;
-  refreshCartCount: () => void;
+const EMPTY_CART: Cart = {
+  id: null,
+  items: [],
+  subtotal: 0,
+  discount: 0,
+  total: 0,
+  itemCount: 0,
+  coupon: null,
 };
 
-const CartContext = createContext<CartContextValue>({
-  itemCount: 0,
-  refreshCartCount: () => {},
-});
+type AddItemOptions = {
+  openDrawer?: boolean;
+  showSuccess?: boolean;
+};
 
-export function useCartCount() {
-  return useContext(CartContext);
+type CartContextValue = {
+  cart: Cart;
+  itemCount: number;
+  isOpen: boolean;
+  isLoading: boolean;
+  isMutating: boolean;
+  addedMessageVisible: boolean;
+  openCart: () => void;
+  closeCart: () => void;
+  toggleCart: () => void;
+  dismissAddedMessage: () => void;
+  refreshCart: () => Promise<Cart>;
+  refreshCartCount: () => void;
+  addItem: (
+    variantId: string,
+    quantidade: number,
+    options?: AddItemOptions,
+  ) => Promise<CartActionResult>;
+  updateQuantity: (
+    itemId: string,
+    quantidade: number,
+  ) => Promise<CartActionResult>;
+  removeItem: (itemId: string) => Promise<CartActionResult>;
+  applyCoupon: (code: string) => Promise<CartActionResult>;
+  removeCoupon: () => Promise<CartActionResult>;
+};
+
+const CartContext = createContext<CartContextValue | null>(null);
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error("useCart deve ser usado dentro de CartProvider");
+  }
+  return context;
 }
 
-// Mantém o Header (e portanto "/") fora do congelamento de cookies() —
-// a contagem do carrinho é hidratada no client via Server Action, não lida
-// direto num Server Component. Ver getCartSummaryAction em cartActions.ts.
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [itemCount, setItemCount] = useState(0);
+export const useCartCount = useCart;
 
-  const refreshCartCount = useCallback(() => {
-    void getCartSummaryAction()
-      .then((summary) => setItemCount(summary.itemCount))
-      .catch(() => {});
+export function CartProvider({ children }: { children: ReactNode }) {
+  const [cart, setCart] = useState<Cart>(EMPTY_CART);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mutationCount, setMutationCount] = useState(0);
+  const [addedMessageVisible, setAddedMessageVisible] = useState(false);
+  const requestSequence = useRef(0);
+
+  const syncCart = useCallback((nextCart: Cart) => {
+    requestSequence.current += 1;
+    setCart(nextCart);
+    setIsLoading(false);
+    return nextCart;
+  }, []);
+
+  const refreshCart = useCallback(async () => {
+    const sequence = ++requestSequence.current;
+    setIsLoading(true);
+    try {
+      const nextCart = await getCartAction();
+      if (requestSequence.current === sequence) {
+        setCart(nextCart);
+      }
+      return nextCart;
+    } finally {
+      if (requestSequence.current === sequence) {
+        setIsLoading(false);
+      }
+    }
   }, []);
 
   useEffect(() => {
-    refreshCartCount();
-  }, [refreshCartCount]);
+    const sequence = ++requestSequence.current;
+    void getCartAction()
+      .then((nextCart) => {
+        if (requestSequence.current === sequence) setCart(nextCart);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (requestSequence.current === sequence) setIsLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!addedMessageVisible) return;
+    const timer = window.setTimeout(() => setAddedMessageVisible(false), 3200);
+    return () => window.clearTimeout(timer);
+  }, [addedMessageVisible]);
+
+  const runMutation = useCallback(
+    async (mutation: () => Promise<CartActionResult>) => {
+      setMutationCount((current) => current + 1);
+      try {
+        const result = await mutation();
+        if (result.success) syncCart(result.cart);
+        return result;
+      } finally {
+        setMutationCount((current) => Math.max(0, current - 1));
+      }
+    },
+    [syncCart],
+  );
+
+  const addItem = useCallback(
+    async (
+      variantId: string,
+      quantidade: number,
+      options: AddItemOptions = {},
+    ) => {
+      const result = await runMutation(() =>
+        addToCartAction({ variantId, quantidade }),
+      );
+
+      if (result.success) {
+        if (options.showSuccess !== false) setAddedMessageVisible(true);
+        if (options.openDrawer !== false) setIsOpen(true);
+      }
+
+      return result;
+    },
+    [runMutation],
+  );
+
+  const updateQuantity = useCallback(
+    (itemId: string, quantidade: number) =>
+      runMutation(() => updateCartItemAction({ itemId, quantidade })),
+    [runMutation],
+  );
+
+  const removeItem = useCallback(
+    (itemId: string) =>
+      runMutation(() => removeCartItemAction({ itemId })),
+    [runMutation],
+  );
+
+  const applyCoupon = useCallback(
+    (code: string) => runMutation(() => applyCouponAction(code)),
+    [runMutation],
+  );
+
+  const removeCoupon = useCallback(
+    () => runMutation(() => removeCouponAction()),
+    [runMutation],
+  );
+
+  const openCart = useCallback(() => {
+    setAddedMessageVisible(false);
+    setIsOpen(true);
+  }, []);
+
+  const closeCart = useCallback(() => setIsOpen(false), []);
+  const toggleCart = useCallback(() => {
+    setAddedMessageVisible(false);
+    setIsOpen((current) => !current);
+  }, []);
+  const dismissAddedMessage = useCallback(
+    () => setAddedMessageVisible(false),
+    [],
+  );
+  const refreshCartCount = useCallback(() => {
+    void refreshCart().catch(() => {});
+  }, [refreshCart]);
 
   return (
-    <CartContext.Provider value={{ itemCount, refreshCartCount }}>
+    <CartContext.Provider
+      value={{
+        cart,
+        itemCount: cart.itemCount,
+        isOpen,
+        isLoading,
+        isMutating: mutationCount > 0,
+        addedMessageVisible,
+        openCart,
+        closeCart,
+        toggleCart,
+        dismissAddedMessage,
+        refreshCart,
+        refreshCartCount,
+        addItem,
+        updateQuantity,
+        removeItem,
+        applyCoupon,
+        removeCoupon,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

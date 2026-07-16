@@ -17,6 +17,7 @@ import {
   UserRound,
 } from "lucide-react";
 import CartBadgeCount from "@/components/CartBadgeCount";
+import { useCart } from "@/components/CartProvider";
 import HeaderCepButton from "@/components/HeaderCepButton";
 
 type HeaderAccount = {
@@ -56,6 +57,7 @@ export default function HeaderActions({
   account = null,
 }: HeaderActionsProps) {
   const { data: session } = useSession();
+  const { openCart } = useCart();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const sessionAccount = session?.user?.email
     ? {
@@ -256,14 +258,15 @@ export default function HeaderActions({
         </div>
       </details>
 
-      <Link
-        href="/carrinho"
+      <button
+        type="button"
+        onClick={openCart}
         aria-label="Carrinho"
         className={`header-action header-cart relative inline-flex h-11 w-11 items-center justify-center transition ${compact ? "text-white/90 hover:text-[var(--brand-color)]" : "text-white hover:text-[var(--brand-color)]"}`}
       >
         <ShoppingCart className="h-6 w-6" strokeWidth={1.8} />
         <CartBadgeCount />
-      </Link>
+      </button>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Accessibility, ShoppingCart } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import CartBadgeCount from "@/components/CartBadgeCount";
+import { useCart } from "@/components/CartProvider";
 import HeaderActions from "@/components/HeaderActions";
 import HeaderCepButton from "@/components/HeaderCepButton";
 import MobileMenu from "@/components/MobileMenu";
@@ -18,6 +19,7 @@ const navigation = [
 
 export default function Header({ logoUrl, storeName }: { logoUrl?: string; storeName?: string }) {
   const pathname = usePathname();
+  const { openCart } = useCart();
   const isProductPage = pathname.startsWith("/produto/");
   const isHomePage = pathname === "/";
   const isCartPage = pathname === "/carrinho";
@@ -41,14 +43,15 @@ export default function Header({ logoUrl, storeName }: { logoUrl?: string; store
         <Link href="/" aria-label={`${storeName ?? "EcomZero"} — página inicial`} className="relative z-[1] shrink-0">
           <BrandLogo priority src={logoUrl} name={storeName} />
         </Link>
-        <Link
-          href="/carrinho"
+        <button
+          type="button"
+          onClick={openCart}
           aria-label="Carrinho"
           className="relative ml-auto inline-flex h-11 w-11 items-center justify-center text-white transition hover:text-[var(--brand-color)]"
         >
           <ShoppingCart className="h-6 w-6" strokeWidth={1.8} />
           <CartBadgeCount />
-        </Link>
+        </button>
         <MobileMenu items={navigation} />
       </div>
 

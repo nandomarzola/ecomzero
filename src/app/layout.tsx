@@ -4,6 +4,7 @@ import { Geist, Inter, Montserrat, Poppins, Roboto } from "next/font/google";
 import { Toaster } from "sonner";
 import AuthSessionProvider from "@/components/AuthSessionProvider";
 import BottomNav from "@/components/BottomNav";
+import CartDrawer from "@/components/cart/CartDrawer";
 import { CartProvider } from "@/components/CartProvider";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
@@ -108,6 +109,7 @@ export default async function RootLayout({
 
         <AuthSessionProvider>
           <CartProvider>
+            <CartDrawer />
             <ProductFiltersProvider>
               {settings.barraAnuncioAtiva && announcementItems.length ? (
                 <AnnouncementBar

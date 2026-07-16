@@ -11,8 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useCartCount } from "@/components/CartProvider";
-import { addToCartAction } from "@/lib/actions/cartActions";
+import { useCart } from "@/components/CartProvider";
 import type { Product } from "@/types/product";
 
 type ProductCardProps = {
@@ -30,7 +29,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [feedback, setFeedback] = useState<"idle" | "added">("idle");
   const [pendingAction, setPendingAction] = useState<"buy" | "cart" | null>(null);
   const isPending = pendingAction !== null;
-  const { refreshCartCount } = useCartCount();
+  const { addItem } = useCart();
 
   const href = `/produto/${product.slug}`;
   const orderedVariants = [...product.variantes].sort(
@@ -62,9 +61,9 @@ export default function ProductCard({ product }: ProductCardProps) {
 
     setPendingAction(action);
     try {
-      const result = await addToCartAction({
-        variantId: defaultVariant.id,
-        quantidade: 1,
+      const result = await addItem(defaultVariant.id, 1, {
+        openDrawer: action === "cart",
+        showSuccess: action === "cart",
       });
 
       if (!result.success) {
@@ -72,15 +71,12 @@ export default function ProductCard({ product }: ProductCardProps) {
         return;
       }
 
-      refreshCartCount();
-
       if (action === "buy") {
         window.location.assign("/carrinho");
         return;
       }
 
       setFeedback("added");
-      toast.success("Produto adicionado ao carrinho");
       window.setTimeout(() => setFeedback("idle"), 1800);
     } catch {
       toast.error("Não foi possível adicionar o produto ao carrinho");

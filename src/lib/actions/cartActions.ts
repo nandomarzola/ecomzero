@@ -9,11 +9,14 @@ import {
   removeCartItemSchema,
   updateCartItemSchema,
 } from "@/lib/validation/cart";
+import type { Cart } from "@/types/cart";
 
 // Actions "burras": validam com Zod, chamam o service, revalidam as rotas
 // afetadas. Nenhuma regra de negócio aqui — isso vive em cartService.
 
-export type CartActionResult = { success: true } | { success: false; error: string };
+export type CartActionResult =
+  | { success: true; cart: Cart }
+  | { success: false; error: string };
 
 function getCartActionError(error: unknown, fallback: string): CartActionResult {
   if (error instanceof cartService.CartQuantityLimitError) {
@@ -36,13 +39,16 @@ export async function addToCartAction(input: unknown): Promise<CartActionResult>
 
   const sessionId = await getOrCreateCartSessionId();
   try {
-    await cartService.addItem(sessionId, parsed.data.variantId, parsed.data.quantidade);
+    const cart = await cartService.addItem(
+      sessionId,
+      parsed.data.variantId,
+      parsed.data.quantidade,
+    );
+    revalidateCart();
+    return { success: true, cart };
   } catch (error) {
     return getCartActionError(error, "Não foi possível adicionar ao carrinho");
   }
-
-  revalidateCart();
-  return { success: true };
 }
 
 export async function updateCartItemAction(input: unknown): Promise<CartActionResult> {
@@ -53,17 +59,16 @@ export async function updateCartItemAction(input: unknown): Promise<CartActionRe
   if (!sessionId) return { success: false, error: "Carrinho não encontrado" };
 
   try {
-    await cartService.updateItemQuantity(
+    const cart = await cartService.updateItemQuantity(
       sessionId,
       parsed.data.itemId,
       parsed.data.quantidade,
     );
+    revalidateCart();
+    return { success: true, cart };
   } catch (error) {
     return getCartActionError(error, "Não foi possível atualizar a quantidade");
   }
-
-  revalidateCart();
-  return { success: true };
 }
 
 export async function removeCartItemAction(input: unknown): Promise<CartActionResult> {
@@ -74,13 +79,12 @@ export async function removeCartItemAction(input: unknown): Promise<CartActionRe
   if (!sessionId) return { success: false, error: "Carrinho não encontrado" };
 
   try {
-    await cartService.removeItem(sessionId, parsed.data.itemId);
+    const cart = await cartService.removeItem(sessionId, parsed.data.itemId);
+    revalidateCart();
+    return { success: true, cart };
   } catch {
     return { success: false, error: "Não foi possível remover o item" };
   }
-
-  revalidateCart();
-  return { success: true };
 }
 
 export async function applyCouponAction(code: unknown): Promise<CartActionResult> {
@@ -91,14 +95,13 @@ export async function applyCouponAction(code: unknown): Promise<CartActionResult
   if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
 
   try {
-    await cartService.applyCoupon(sessionId, code);
+    const cart = await cartService.applyCoupon(sessionId, code);
+    revalidateCart();
+    return { success: true, cart };
   } catch (error) {
     if (error instanceof CouponError) return { success: false, error: error.message };
     return { success: false, error: "Não foi possível aplicar o cupom." };
   }
-
-  revalidateCart();
-  return { success: true };
 }
 
 export async function removeCouponAction(): Promise<CartActionResult> {
@@ -106,13 +109,12 @@ export async function removeCouponAction(): Promise<CartActionResult> {
   if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
 
   try {
-    await cartService.removeCoupon(sessionId);
+    const cart = await cartService.removeCoupon(sessionId);
+    revalidateCart();
+    return { success: true, cart };
   } catch {
     return { success: false, error: "Não foi possível remover o cupom." };
   }
-
-  revalidateCart();
-  return { success: true };
 }
 
 // Chamada pelo client (CartProvider) para hidratar/atualizar o badge do
@@ -122,4 +124,9 @@ export async function getCartSummaryAction(): Promise<{ itemCount: number }> {
   const sessionId = await getCartSessionId();
   const cart = await cartService.getCart(sessionId);
   return { itemCount: cart.itemCount };
+}
+
+export async function getCartAction(): Promise<Cart> {
+  const sessionId = await getCartSessionId();
+  return cartService.getCart(sessionId);
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Grid2X2, Home, Info, ShoppingCart, UserRound } from "lucide-react";
 import CartBadgeCount from "@/components/CartBadgeCount";
+import { useCart } from "@/components/CartProvider";
 
 // usePathname() não é uma Dynamic API (ao contrário de useSearchParams()) —
 // não exige Suspense nem tira "/" da geração estática.
@@ -17,6 +18,7 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { openCart } = useCart();
 
   return (
     <nav
@@ -33,19 +35,33 @@ export default function BottomNav() {
 
           return (
             <li key={label} className="flex-1">
-              <Link
-                href={href}
-                aria-current={isActive ? "page" : undefined}
-                className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition ${
-                  isActive ? "text-[var(--brand-color)]" : "text-white/60 hover:text-white"
-                }`}
-              >
-                <span className="relative">
-                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.8} />
-                  {isCarrinho && <CartBadgeCount />}
-                </span>
-                {label}
-              </Link>
+              {isCarrinho ? (
+                <button
+                  type="button"
+                  onClick={openCart}
+                  className="flex min-h-16 w-full flex-col items-center justify-center gap-1 text-[10px] font-semibold text-white/60 transition hover:text-white"
+                  aria-label="Abrir carrinho"
+                >
+                  <span className="relative">
+                    <Icon className="h-5 w-5" strokeWidth={1.8} />
+                    <CartBadgeCount />
+                  </span>
+                  {label}
+                </button>
+              ) : (
+                <Link
+                  href={href}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition ${
+                    isActive ? "text-[var(--brand-color)]" : "text-white/60 hover:text-white"
+                  }`}
+                >
+                  <span className="relative">
+                    <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.8} />
+                  </span>
+                  {label}
+                </Link>
+              )}
             </li>
           );
         })}

@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
-import { useCartCount } from "@/components/CartProvider";
+import { useCart } from "@/components/CartProvider";
 import ShippingCalculator from "@/components/ShippingCalculator";
-import { addToCartAction } from "@/lib/actions/cartActions";
 import type { ProductVariant } from "@/types/product";
 
 type ProductPurchaseProps = {
@@ -22,14 +21,12 @@ const formatPrice = (price: number) =>
 
 export default function ProductPurchase({
   variants,
-  productName,
-  productImage,
 }: ProductPurchaseProps) {
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
   const [submittingAction, setSubmittingAction] = useState<"add" | "buy" | null>(null);
   const isPending = submittingAction !== null;
-  const { refreshCartCount } = useCartCount();
+  const { addItem } = useCart();
 
   const selectedVariant =
     variants.find((variant) => variant.id === selectedId) ?? variants[0];
@@ -48,23 +45,14 @@ export default function ProductPurchase({
 
     setSubmittingAction(action);
     try {
-      const result = await addToCartAction({
-        variantId: selectedVariant.id,
-        quantidade: quantity,
+      const result = await addItem(selectedVariant.id, quantity, {
+        openDrawer: action === "add",
+        showSuccess: action === "add",
       });
 
       if (result.success) {
-        refreshCartCount();
         if (action === "buy") {
           window.location.assign("/carrinho");
-        } else {
-          toast.success("Produto adicionado ao carrinho", {
-            description: productName,
-            icon: (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={productImage} alt="" className="h-8 w-8 rounded object-cover" />
-            ),
-          });
         }
       } else {
         toast.error(result.error);
