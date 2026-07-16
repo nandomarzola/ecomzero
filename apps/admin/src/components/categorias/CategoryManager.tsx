@@ -250,9 +250,28 @@ function CategoryDrawer({
   onClose,
   onSubmit,
 }: CategoryDrawerProps) {
-  const editedCategory = categories.find((category) => category.id === draft.id);
-  const parentLocked = Boolean(editedCategory?.childrenCount);
-  const rootCategories = categories.filter((category) => category.depth === 0 && category.id !== draft.id);
+  // Sem limite de profundidade: qualquer categoria pode ser pai, exceto a
+  // própria e suas descendentes (isso criaria um ciclo). As opções vêm em ordem
+  // de árvore (DFS, do service) e são indentadas por nível no <select>.
+  const excludedIds = new Set<string>();
+  if (draft.id) {
+    excludedIds.add(draft.id);
+    const childrenByParent = new Map<string | null, string[]>();
+    for (const category of categories) {
+      const group = childrenByParent.get(category.parentId) ?? [];
+      group.push(category.id);
+      childrenByParent.set(category.parentId, group);
+    }
+    const stack = [draft.id];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      for (const childId of childrenByParent.get(current) ?? []) {
+        excludedIds.add(childId);
+        stack.push(childId);
+      }
+    }
+  }
+  const parentOptions = categories.filter((category) => !excludedIds.has(category.id));
   const title = draft.id ? "Editar categoria" : draft.parentId ? "Nova subcategoria" : "Nova categoria";
 
   return (
@@ -262,7 +281,7 @@ function CategoryDrawer({
         <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-5 sm:px-6">
           <div>
             <h2 id="category-drawer-title" className="font-display text-base font-bold text-white">{title}</h2>
-            <p className="mt-0.5 text-[10px] text-white/40">A hierarquia aceita categoria principal e um nível de subcategoria.</p>
+            <p className="mt-0.5 text-[10px] text-white/40">Escolha a categoria pai em qualquer nível, ou deixe como categoria principal.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Fechar" className="rounded-md p-2 text-white/45 transition hover:bg-white/[0.05] hover:text-white"><X className="h-5 w-5" /></button>
         </header>
@@ -276,11 +295,14 @@ function CategoryDrawer({
               </label>
               <label className="flex flex-col gap-1.5 text-xs text-white/60">
                 Categoria pai
-                <select value={draft.parentId} disabled={parentLocked} onChange={(event) => onChange({ ...draft, parentId: event.target.value })} className={inputClass}>
+                <select value={draft.parentId} onChange={(event) => onChange({ ...draft, parentId: event.target.value })} className={inputClass}>
                   <option value="">Categoria principal</option>
-                  {rootCategories.map((category) => <option key={category.id} value={category.id}>{category.nome}</option>)}
+                  {parentOptions.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {" ".repeat(category.depth * 3)}{category.depth > 0 ? "└ " : ""}{category.nome}
+                    </option>
+                  ))}
                 </select>
-                {parentLocked ? <span className="text-[10px] leading-4 text-amber-300/70">Mova ou remova as subcategorias antes de alterar o nível desta categoria.</span> : null}
               </label>
             </div>
 

@@ -230,6 +230,8 @@ model StoreSettings {
   barraAnuncioAtiva Boolean  @default(false)
   barraAnuncioTexto String?
   barraAnuncioLink  String?
+  barraAnuncioCor   String?
+  barraAnuncioVelocidade Int @default(5)
   emailSuporte      String?
   telefoneSuporte   String?
   whatsapp          String?
@@ -252,6 +254,18 @@ model StoreSettings {
   showBuyNowButton  Boolean  @default(true)
   buttonStyle       String   @default("filled")
   updatedAt         DateTime @updatedAt
+}
+
+model AnnouncementBarItem {
+  id        String   @id @default(uuid())
+  texto     String
+  link      String?
+  ordem     Int      @default(0)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ativo, ordem])
 }
 
 model MelhorEnvioCredential {

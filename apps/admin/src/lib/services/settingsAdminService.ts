@@ -4,6 +4,7 @@ import type { StoreSettingsInput } from "@/lib/validation/settings";
 const defaults = {
   id: "singleton", nomeLoja: "EcomZero", descricaoFooter: "Produtos inteligentes, úteis e de qualidade para transformar sua rotina.",
   mensagemFooter: "Produtos úteis para facilitar o seu dia a dia.", barraAnuncioAtiva: false,
+  barraAnuncioVelocidade: 5,
   logoUrl: "/images/logo2.png", corPrincipal: "#A9EC17", fusoHorario: "America/Sao_Paulo",
   lojaAtiva: true, plano: "Profissional", moeda: "BRL", idioma: "pt-BR",
   fontFamily: "geist", productCardStyle: "standard", cardCornerStyle: "rounded",
@@ -14,19 +15,38 @@ export async function getStoreSettings() {
   return prisma.storeSettings.upsert({ where: { id: "singleton" }, create: defaults, update: {} });
 }
 
+export async function getAnnouncementBarItems() {
+  return prisma.announcementBarItem.findMany({
+    orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
+    select: { id: true, texto: true, link: true, ordem: true, ativo: true },
+  });
+}
+
 export async function updateStoreSettings(input: StoreSettingsInput) {
+  const { announcementItems, ...settingsInput } = input;
+  const firstActiveItem = announcementItems.find((item) => item.ativo);
   const data = {
-    ...input,
-    barraAnuncioTexto: input.barraAnuncioTexto ?? null,
-    barraAnuncioLink: input.barraAnuncioLink ?? null,
-    emailSuporte: input.emailSuporte ?? null,
-    telefoneSuporte: input.telefoneSuporte ?? null,
-    whatsapp: input.whatsapp ?? null,
-    linkShopee: input.linkShopee ?? null,
-    linkInstagram: input.linkInstagram ?? null,
-    linkFacebook: input.linkFacebook ?? null,
-    linkTiktok: input.linkTiktok ?? null,
-    faviconUrl: input.faviconUrl ?? null,
+    ...settingsInput,
+    barraAnuncioTexto: firstActiveItem?.texto ?? null,
+    barraAnuncioLink: firstActiveItem?.link ?? null,
+    barraAnuncioCor: settingsInput.barraAnuncioCor ?? null,
+    emailSuporte: settingsInput.emailSuporte ?? null,
+    telefoneSuporte: settingsInput.telefoneSuporte ?? null,
+    whatsapp: settingsInput.whatsapp ?? null,
+    linkShopee: settingsInput.linkShopee ?? null,
+    linkInstagram: settingsInput.linkInstagram ?? null,
+    linkFacebook: settingsInput.linkFacebook ?? null,
+    linkTiktok: settingsInput.linkTiktok ?? null,
+    faviconUrl: settingsInput.faviconUrl ?? null,
   };
-  return prisma.storeSettings.upsert({ where: { id: "singleton" }, create: { id: "singleton", ...data }, update: data });
+  return prisma.$transaction(async (transaction) => {
+    const settings = await transaction.storeSettings.upsert({ where: { id: "singleton" }, create: { id: "singleton", ...data }, update: data });
+    const ids = announcementItems.map((item) => item.id);
+    await transaction.announcementBarItem.deleteMany(ids.length ? { where: { id: { notIn: ids } } } : undefined);
+    for (const [index, item] of announcementItems.entries()) {
+      const itemData = { texto: item.texto, link: item.link ?? null, ordem: index, ativo: item.ativo };
+      await transaction.announcementBarItem.upsert({ where: { id: item.id }, create: { id: item.id, ...itemData }, update: itemData });
+    }
+    return settings;
+  });
 }

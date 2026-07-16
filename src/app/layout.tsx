@@ -8,7 +8,7 @@ import { CartProvider } from "@/components/CartProvider";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
-import { getStoreSettings } from "@/lib/services/storeContentService";
+import { getActiveAnnouncementBarItems, getStoreSettings } from "@/lib/services/storeContentService";
 import { ProductFiltersProvider } from "@/components/ProductFiltersProvider";
 import "./globals.css";
 
@@ -59,7 +59,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const settings = await getStoreSettings();
+  const [settings, announcementItems] = await Promise.all([getStoreSettings(), getActiveAnnouncementBarItems()]);
   const logoUrl = new URL(settings.logoUrl, "https://www.ecomzero.com.br").toString();
   const organizationJsonLd = {
     "@context": "https://schema.org",
@@ -109,7 +109,13 @@ export default async function RootLayout({
         <AuthSessionProvider>
           <CartProvider>
             <ProductFiltersProvider>
-              {settings.barraAnuncioAtiva && settings.barraAnuncioTexto ? <AnnouncementBar text={settings.barraAnuncioTexto} href={settings.barraAnuncioLink} /> : null}
+              {settings.barraAnuncioAtiva && announcementItems.length ? (
+                <AnnouncementBar
+                  items={announcementItems}
+                  rotationSeconds={settings.barraAnuncioVelocidade}
+                  backgroundColor={settings.barraAnuncioCor ?? settings.corPrincipal}
+                />
+              ) : null}
               <Header logoUrl={settings.logoUrl} storeName={settings.nomeLoja} />
 
               <main className="flex-1 pb-16 md:pb-0">{children}</main>

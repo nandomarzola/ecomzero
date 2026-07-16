@@ -118,10 +118,10 @@ async function assertValidParent(categoryId: string | undefined, parentId?: stri
     select: { parentId: true },
   });
   if (!selectedParent) throw new CategoryAdminError("Categoria pai não encontrada.");
-  if (selectedParent.parentId) {
-    throw new CategoryAdminError("A hierarquia aceita somente categoria raiz e subcategoria.");
-  }
 
+  // Sem limite de profundidade: qualquer categoria pode ser pai. O único
+  // impedimento é ciclo — definir como pai a própria categoria ou uma
+  // descendente dela — verificado no walk-up abaixo.
   let currentId: string | null = parentId;
   const visited = new Set<string>();
   while (currentId) {
@@ -142,15 +142,6 @@ async function assertValidParent(categoryId: string | undefined, parentId?: stri
 export async function duplicateCategory(id: string) {
   const category = await prisma.category.findUnique({ where: { id } });
   if (!category) throw new CategoryAdminError("Categoria não encontrada.");
-  if (category.parentId) {
-    const parent = await prisma.category.findUnique({
-      where: { id: category.parentId },
-      select: { parentId: true },
-    });
-    if (parent?.parentId) {
-      throw new CategoryAdminError("Categorias abaixo do segundo nível não podem ser duplicadas.");
-    }
-  }
 
   const nome = `${category.nome} (cópia)`;
   return prisma.category.create({
@@ -241,15 +232,12 @@ async function recomputeCategoriaPaths(rootId: string): Promise<void> {
 export async function updateCategory(id: string, input: CategoryInput) {
   const existing = await prisma.category.findUnique({
     where: { id },
-    select: { id: true, parentId: true, ordem: true, _count: { select: { children: true } } },
+    select: { id: true, parentId: true, ordem: true },
   });
   if (!existing) throw new CategoryAdminError("Categoria não encontrada.");
   await assertValidParent(id, input.parentId);
 
   const parentId = input.parentId ?? null;
-  if (parentId && existing._count.children > 0) {
-    throw new CategoryAdminError("Mova ou remova as subcategorias antes de transformar esta categoria em subcategoria.");
-  }
   const ordem = existing.parentId === parentId
     ? existing.ordem
     : await nextCategoryOrder(input.parentId);

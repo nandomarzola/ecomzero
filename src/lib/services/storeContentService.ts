@@ -30,6 +30,12 @@ export type StoreBanner = {
   posicao: "hero_slide" | "home_middle" | "home_bottom";
 };
 
+export type StoreAnnouncementBarItem = {
+  id: string;
+  texto: string;
+  link: string | null;
+};
+
 export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
   const rows = await prisma.category.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
   const children = new Map<string | null, typeof rows>();
@@ -97,6 +103,14 @@ export const getActiveBanners = cache(async (): Promise<StoreBanner[]> => {
     where: { ativo: true, AND: [{ OR: [{ inicioEm: null }, { inicioEm: { lte: now } }] }, { OR: [{ expiraEm: null }, { expiraEm: { gt: now } }] }] },
     orderBy: [{ posicao: "asc" }, { ordem: "asc" }],
     select: { id: true, imagemUrl: true, altText: true, linkUrl: true, posicao: true },
+  });
+});
+
+export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnouncementBarItem[]> => {
+  return prisma.announcementBarItem.findMany({
+    where: { ativo: true },
+    orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
+    select: { id: true, texto: true, link: true },
   });
 });
 

@@ -1,7 +1,24 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   BadgePercent,
   CheckCircle2,
@@ -9,6 +26,7 @@ import {
   Code2,
   ExternalLink,
   Globe2,
+  GripVertical,
   Headphones,
   Image as ImageIcon,
   LayoutGrid,
@@ -21,6 +39,7 @@ import {
   MousePointerClick,
   Palette,
   PanelBottom,
+  Plus,
   RotateCcw,
   Save,
   Settings2,
@@ -29,6 +48,7 @@ import {
   Star,
   Store,
   Ticket,
+  Trash2,
   Type,
   Upload,
   UserRoundCog,
@@ -44,6 +64,15 @@ export type SettingsFormInitial = {
   barraAnuncioAtiva: boolean;
   barraAnuncioTexto: string | null;
   barraAnuncioLink: string | null;
+  barraAnuncioCor: string | null;
+  barraAnuncioVelocidade: number;
+  announcementItems: Array<{
+    id: string;
+    texto: string;
+    link: string | null;
+    ordem: number;
+    ativo: boolean;
+  }>;
   emailSuporte: string | null;
   telefoneSuporte: string | null;
   whatsapp: string | null;
@@ -68,9 +97,13 @@ export type SettingsFormInitial = {
   updatedAt: string;
 };
 
-type FormState = Omit<SettingsFormInitial, "updatedAt" | "barraAnuncioTexto" | "barraAnuncioLink" | "emailSuporte" | "telefoneSuporte" | "whatsapp" | "linkShopee" | "linkInstagram" | "linkFacebook" | "linkTiktok" | "faviconUrl"> & {
+type AnnouncementFormItem = Omit<SettingsFormInitial["announcementItems"][number], "link"> & { link: string };
+
+type FormState = Omit<SettingsFormInitial, "updatedAt" | "barraAnuncioTexto" | "barraAnuncioLink" | "barraAnuncioCor" | "announcementItems" | "emailSuporte" | "telefoneSuporte" | "whatsapp" | "linkShopee" | "linkInstagram" | "linkFacebook" | "linkTiktok" | "faviconUrl"> & {
   barraAnuncioTexto: string;
   barraAnuncioLink: string;
+  barraAnuncioCor: string;
+  announcementItems: AnnouncementFormItem[];
   emailSuporte: string;
   telefoneSuporte: string;
   whatsapp: string;
@@ -173,12 +206,24 @@ function previewFontFamily(font: FormState["fontFamily"]) {
   return families[font];
 }
 
+function contrastText(hexColor: string) {
+  const hex = hexColor.replace("#", "");
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  return (red * 299 + green * 587 + blue * 114) / 1000 > 150 ? "#050505" : "#FFFFFF";
+}
+
 function normalize(initial: SettingsFormInitial): FormState {
   const { updatedAt: _updatedAt, ...values } = initial;
   return {
     ...values,
     barraAnuncioTexto: initial.barraAnuncioTexto ?? "",
     barraAnuncioLink: initial.barraAnuncioLink ?? "",
+    barraAnuncioCor: initial.barraAnuncioCor ?? "",
+    announcementItems: [...initial.announcementItems]
+      .sort((first, second) => first.ordem - second.ordem)
+      .map((item, index) => ({ ...item, link: item.link ?? "", ordem: index })),
     emailSuporte: initial.emailSuporte ?? "",
     telefoneSuporte: initial.telefoneSuporte ?? "",
     whatsapp: initial.whatsapp ?? "",
@@ -220,6 +265,49 @@ function HighlightedDescription({ text, color }: { text: string; color: string }
   );
 }
 
+function SortableAnnouncementItem({
+  item,
+  onChange,
+  onRemove,
+}: {
+  item: AnnouncementFormItem;
+  onChange: (patch: Partial<AnnouncementFormItem>) => void;
+  onRemove: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  return (
+    <article
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined }}
+      className={`rounded-md border bg-[#090909] p-3 transition ${isDragging ? "border-[#A9EC17]/55 shadow-2xl shadow-black" : "border-white/[0.08]"}`}
+    >
+      <div className="flex items-start gap-3">
+        <button type="button" aria-label="Reordenar mensagem" title="Arraste para reordenar" className="mt-1 flex h-8 w-7 shrink-0 touch-none cursor-grab items-center justify-center rounded text-white/30 transition hover:bg-white/[0.04] hover:text-white active:cursor-grabbing" {...attributes} {...listeners}>
+          <GripVertical className="h-4 w-4" />
+        </button>
+        <div className="min-w-0 flex-1 space-y-3">
+          <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
+            Mensagem
+            <input required maxLength={80} value={item.texto} onChange={(event) => onChange({ texto: event.target.value })} placeholder="Ex: Frete grátis acima de R$ 99,00" className={inputClass} />
+            <span className="self-end text-[9px] text-white/25">{item.texto.length}/80</span>
+          </label>
+          <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
+            Link opcional
+            <input value={item.link} onChange={(event) => onChange({ link: event.target.value })} placeholder="/ofertas ou https://..." className={inputClass} />
+          </label>
+          <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
+            <div className="flex items-center gap-2">
+              <button type="button" role="switch" aria-checked={item.ativo} onClick={() => onChange({ ativo: !item.ativo })} className={`relative h-5 w-9 shrink-0 rounded-full transition ${item.ativo ? "bg-[#A9EC17]" : "bg-white/15"}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-black transition ${item.ativo ? "left-[18px]" : "left-0.5"}`} /></button>
+              <span className="text-[9px] text-white/40">{item.ativo ? "Mensagem ativa" : "Mensagem oculta"}</span>
+            </div>
+            <button type="button" onClick={onRemove} className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[9px] font-semibold text-red-300/75 transition hover:bg-red-500/10 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /> Remover</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export default function SettingsForm({
   initial,
   storefrontUrl,
@@ -235,8 +323,13 @@ export default function SettingsForm({
   const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [previewAnnouncementIndex, setPreviewAnnouncementIndex] = useState(0);
   const logoInput = useRef<HTMLInputElement>(null);
   const faviconInput = useRef<HTMLInputElement>(null);
+  const announcementSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const dirty = JSON.stringify(form) !== JSON.stringify(savedForm);
   const validColor = /^#[0-9a-fA-F]{6}$/.test(form.corPrincipal);
   const previewColor = validColor ? form.corPrincipal : savedForm.corPrincipal;
@@ -250,10 +343,80 @@ export default function SettingsForm({
     backgroundColor: form.buttonStyle === "outline" ? "transparent" : previewColor,
     color: form.buttonStyle === "outline" ? previewColor : "#050505",
   };
+  const previewAnnouncements = form.announcementItems.filter((item) => item.ativo && item.texto.trim());
+  const currentPreviewAnnouncement = previewAnnouncements.length
+    ? previewAnnouncements[previewAnnouncementIndex % previewAnnouncements.length]
+    : null;
+  const validAnnouncementColor = /^#[0-9a-fA-F]{6}$/.test(form.barraAnuncioCor);
+  const announcementPreviewColor = validAnnouncementColor ? form.barraAnuncioCor : previewColor;
   const activeItem = navigation.flatMap((group) => group.items).find((item) => item.id === activeSection);
+
+  useEffect(() => {
+    if (!form.barraAnuncioAtiva || previewAnnouncements.length <= 1) return;
+    const interval = window.setInterval(
+      () => setPreviewAnnouncementIndex((current) => current + 1),
+      form.barraAnuncioVelocidade * 1000,
+    );
+    return () => window.clearInterval(interval);
+  }, [form.barraAnuncioAtiva, form.barraAnuncioVelocidade, previewAnnouncements.length]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+    setError(null);
+  }
+
+  function updateAnnouncementItem(id: string, patch: Partial<AnnouncementFormItem>) {
+    setForm((current) => ({
+      ...current,
+      announcementItems: current.announcementItems.map((item) => item.id === id ? { ...item, ...patch } : item),
+    }));
+    setError(null);
+  }
+
+  function addAnnouncementItem() {
+    if (form.announcementItems.length >= 10) return;
+    setForm((current) => ({
+      ...current,
+      announcementItems: [
+        ...current.announcementItems,
+        { id: crypto.randomUUID(), texto: "", link: "", ordem: current.announcementItems.length, ativo: true },
+      ],
+    }));
+    setError(null);
+  }
+
+  function toggleAnnouncementBar() {
+    setForm((current) => ({
+      ...current,
+      barraAnuncioAtiva: !current.barraAnuncioAtiva,
+      announcementItems: !current.barraAnuncioAtiva && current.announcementItems.length === 0
+        ? [{ id: crypto.randomUUID(), texto: "", link: "", ordem: 0, ativo: true }]
+        : current.announcementItems,
+    }));
+    setError(null);
+  }
+
+  function removeAnnouncementItem(id: string) {
+    setForm((current) => ({
+      ...current,
+      announcementItems: current.announcementItems
+        .filter((item) => item.id !== id)
+        .map((item, index) => ({ ...item, ordem: index })),
+    }));
+    setError(null);
+  }
+
+  function reorderAnnouncementItems(event: DragEndEvent) {
+    if (!event.over || event.active.id === event.over.id) return;
+    setForm((current) => {
+      const oldIndex = current.announcementItems.findIndex((item) => item.id === event.active.id);
+      const newIndex = current.announcementItems.findIndex((item) => item.id === event.over?.id);
+      if (oldIndex < 0 || newIndex < 0) return current;
+      return {
+        ...current,
+        announcementItems: arrayMove(current.announcementItems, oldIndex, newIndex).map((item, index) => ({ ...item, ordem: index })),
+      };
+    });
     setError(null);
   }
 
@@ -516,6 +679,70 @@ export default function SettingsForm({
                 </div>
               </section>
             </div>
+          ) : activeSection === "anuncio" ? (
+            <div className="space-y-5">
+              <header>
+                <h2 className="font-display text-[15px] font-bold text-white">Barra de anúncio</h2>
+                <p className="mt-1 text-[10px] text-white/38">Configure mensagens rotativas exibidas acima do cabeçalho da loja.</p>
+              </header>
+
+              <section className="flex items-center justify-between gap-4 rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#A9EC17]/10 text-[#A9EC17]"><Megaphone className="h-4 w-4" /></span>
+                  <div><h3 className="text-[10px] font-semibold text-white/70">Exibir barra de anúncio</h3><p className="mt-1 text-[9px] text-white/30">Quando desativada, a faixa some completamente da loja.</p></div>
+                </div>
+                <button type="button" role="switch" aria-checked={form.barraAnuncioAtiva} onClick={toggleAnnouncementBar} className={`relative h-6 w-11 shrink-0 rounded-full transition ${form.barraAnuncioAtiva ? "bg-[#A9EC17]" : "bg-white/15"}`}><span className={`absolute top-0.5 h-5 w-5 rounded-full bg-black transition ${form.barraAnuncioAtiva ? "left-5" : "left-0.5"}`} /></button>
+              </section>
+
+              <section className="space-y-4 rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div><h3 className="text-[10px] font-semibold text-white/70">Mensagens</h3><p className="mt-1 text-[9px] text-white/30">Arraste para definir a ordem de rotação. Máximo de 10 mensagens.</p></div>
+                  <button type="button" onClick={addAnnouncementItem} disabled={form.announcementItems.length >= 10} className="inline-flex h-9 items-center gap-2 rounded-md bg-[#A9EC17] px-3 text-[9px] font-bold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><Plus className="h-3.5 w-3.5" /> Adicionar mensagem</button>
+                </div>
+
+                {form.announcementItems.length ? (
+                  <DndContext sensors={announcementSensors} collisionDetection={closestCenter} onDragEnd={reorderAnnouncementItems}>
+                    <SortableContext items={form.announcementItems.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+                      <div className="space-y-2">
+                        {form.announcementItems.map((item) => (
+                          <SortableAnnouncementItem key={item.id} item={item} onChange={(patch) => updateAnnouncementItem(item.id, patch)} onRemove={() => removeAnnouncementItem(item.id)} />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                ) : (
+                  <div className="rounded-md border border-dashed border-white/[0.1] bg-[#090909] px-5 py-10 text-center"><Megaphone className="mx-auto h-7 w-7 text-white/20" /><p className="mt-3 text-[10px] font-semibold text-white/50">Nenhuma mensagem cadastrada</p><p className="mt-1 text-[9px] text-white/25">Adicione a primeira mensagem para configurar a rotação.</p></div>
+                )}
+              </section>
+
+              <section className="grid gap-4 rounded-md border border-white/[0.07] bg-black/[0.08] p-4 sm:grid-cols-2">
+                <div>
+                  <h3 className="text-[10px] font-semibold text-white/70">Cor de fundo</h3>
+                  <p className="mt-1 text-[9px] text-white/30">Use a identidade da loja ou uma cor específica para campanhas.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => set("barraAnuncioCor", "")} className={`h-10 rounded-md border text-[9px] font-semibold transition ${!form.barraAnuncioCor ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.07] text-[#A9EC17]" : "border-white/[0.08] bg-[#090909] text-white/45"}`}>Cor principal</button>
+                    <button type="button" onClick={() => set("barraAnuncioCor", validColor ? form.corPrincipal : savedForm.corPrincipal)} className={`h-10 rounded-md border text-[9px] font-semibold transition ${form.barraAnuncioCor ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.07] text-[#A9EC17]" : "border-white/[0.08] bg-[#090909] text-white/45"}`}>Personalizada</button>
+                  </div>
+                  {form.barraAnuncioCor ? (
+                    <span className="mt-3 flex h-10 overflow-hidden rounded-md border border-white/[0.09] bg-[#090909]">
+                      <input type="color" value={announcementPreviewColor} onChange={(event) => set("barraAnuncioCor", event.target.value.toUpperCase())} className="h-10 w-12 cursor-pointer border-0 bg-transparent p-1" />
+                      <input required pattern="#[0-9a-fA-F]{6}" value={form.barraAnuncioCor} onChange={(event) => set("barraAnuncioCor", event.target.value.toUpperCase())} className="min-w-0 flex-1 bg-transparent px-3 text-xs text-white outline-none" />
+                    </span>
+                  ) : null}
+                </div>
+
+                <label className="flex flex-col text-[10px] text-white/55">
+                  <span className="font-semibold text-white/70">Velocidade de rotação</span>
+                  <span className="mt-1 text-[9px] leading-4 text-white/30">Intervalo entre mensagens, de 3 a 30 segundos.</span>
+                  <span className="mt-3 flex h-10 items-center overflow-hidden rounded-md border border-white/[0.09] bg-[#090909]">
+                    <input type="number" min={3} max={30} required value={form.barraAnuncioVelocidade} onChange={(event) => set("barraAnuncioVelocidade", Number(event.target.value))} className="min-w-0 flex-1 bg-transparent px-3 text-xs text-white outline-none" />
+                    <span className="border-l border-white/[0.08] px-3 text-[9px] text-white/35">segundos</span>
+                  </span>
+                </label>
+              </section>
+
+              <div className="rounded-md border border-sky-400/15 bg-sky-400/[0.04] px-4 py-3 text-[9px] leading-4 text-sky-100/55">O agendamento individual por data ficará para a fase 2. Nesta versão, mensagens ativas participam da rotação imediatamente.</div>
+            </div>
           ) : (
             <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
               {activeItem ? <activeItem.icon className="h-10 w-10 text-white/20" strokeWidth={1.4} /> : <Settings2 className="h-10 w-10 text-white/20" />}
@@ -530,7 +757,16 @@ export default function SettingsForm({
             <h2 className="font-display text-[14px] font-bold text-white">Prévia da loja</h2>
             <p className="mt-1 text-[9px] text-white/35">Veja como as informações aparecem para o cliente.</p>
             <div className="mt-4 overflow-hidden rounded-md border border-white/[0.1] bg-black" style={{ fontFamily: appearancePreviewFont }}>
-              <div className="px-3 py-2 text-center text-[9px] font-bold text-black" style={{ backgroundColor: previewColor }}>Frete grátis acima de R$ 99,00</div>
+              {form.barraAnuncioAtiva && currentPreviewAnnouncement ? (
+                <div className="relative min-h-8 px-12 py-2 text-center text-[9px] font-bold" style={{ backgroundColor: announcementPreviewColor, color: contrastText(announcementPreviewColor) }}>
+                  <span className="line-clamp-1">{currentPreviewAnnouncement.texto}</span>
+                  {previewAnnouncements.length > 1 ? (
+                    <span className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1">
+                      {previewAnnouncements.map((item, index) => <button key={item.id} type="button" onClick={() => setPreviewAnnouncementIndex(index)} aria-label={`Visualizar mensagem ${index + 1}`} className={`h-1.5 rounded-full bg-current transition-all ${index === previewAnnouncementIndex % previewAnnouncements.length ? "w-3 opacity-90" : "w-1.5 opacity-35"}`} />)}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="flex h-14 items-center justify-between border-b border-white/[0.08] px-4">
                 <span className="text-lg text-white/60">☰</span>
                 {logoPreview ? <img src={logoPreview} alt="" className="h-9 max-w-28 object-contain" /> : <span className="font-display text-sm font-bold" style={{ color: previewColor }}>{form.nomeLoja}</span>}
