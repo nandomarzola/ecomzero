@@ -10,6 +10,7 @@ export type DashboardOrder = {
   tone?: "success" | "warning" | "danger";
   href?: string;
   shipmentStatus?: string | null;
+  labelStatus?: string | null;
 };
 
 const orderStatusLabel: Record<string, string> = {
@@ -33,11 +34,33 @@ const shipmentStatusLabel: Record<string, string> = {
   suspended: "Envio suspenso",
 };
 
+const labelStatusLabel: Record<string, string> = {
+  not_applicable: "Não aplicável",
+  awaiting_payment: "Aguardando pagamento",
+  awaiting_shipping_data: "Aguardando dados de envio",
+  awaiting_invoice: "Aguardando NF-e",
+  ready_to_purchase: "Pronto para compra",
+  insufficient_balance: "Saldo insuficiente",
+  processing: "Gerando etiqueta",
+  purchased: "Etiqueta comprada",
+  generated: "Etiqueta gerada",
+  printed: "Etiqueta impressa",
+  posted: "Postado",
+  in_transit: "Em trânsito",
+  delivered: "Entregue",
+  error: "Erro na etiqueta",
+  external: "Envio externo",
+  canceled: "Etiqueta cancelada",
+};
+
 const money = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function orderTone(order: DashboardOrder) {
   if (order.tone) return order.tone;
+  if (["error", "canceled", "insufficient_balance"].includes(order.labelStatus ?? "")) return "danger";
+  if (["awaiting_payment", "awaiting_shipping_data", "awaiting_invoice", "ready_to_purchase"].includes(order.labelStatus ?? "")) return "warning";
+  if (["purchased", "generated", "printed", "posted", "in_transit", "delivered"].includes(order.labelStatus ?? "")) return "success";
   if (order.status === "cancelado" || ["cancelled", "canceled", "undelivered"].includes(order.shipmentStatus ?? "")) return "danger";
   if (order.status === "pago" || ["released", "generated", "posted", "delivered"].includes(order.shipmentStatus ?? "")) return "success";
   return "warning";
@@ -66,9 +89,11 @@ export default function RecentOrdersTable({ orders }: { orders: DashboardOrder[]
         {orders.map((order) => {
           const tone = orderTone(order);
           const StatusIcon = tone === "success" ? CheckCircle2 : Clock3;
-          const status = order.shipmentStatus
-            ? shipmentStatusLabel[order.shipmentStatus] ?? order.shipmentStatus
-            : orderStatusLabel[order.status] ?? order.status;
+          const status = order.labelStatus && order.labelStatus !== "not_applicable"
+            ? labelStatusLabel[order.labelStatus] ?? order.labelStatus
+            : order.shipmentStatus
+              ? shipmentStatusLabel[order.shipmentStatus] ?? order.shipmentStatus
+              : orderStatusLabel[order.status] ?? order.status;
           return (
             <Link
               key={order.id}

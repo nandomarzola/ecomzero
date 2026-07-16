@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { productSlugSchema } from "@/lib/validation/product";
 import type { SyncProductInput } from "@/lib/validation/sync";
@@ -47,6 +48,8 @@ function toProduct(
     avaliacaoMedia: record.avaliacaoMedia,
     totalAvaliacoes: record.totalAvaliacoes,
     ativo: record.ativo,
+    isNovidade: record.isNovidade,
+    isPromocao: record.isPromocao,
     variantes: record.variantes.map(toVariant),
   };
 }
@@ -88,12 +91,25 @@ export async function getProductsByCategory(
   return records.map(toProduct);
 }
 
-export async function getBestSellingProducts(limit = 5): Promise<Product[]> {
+export async function getBestSellingProducts(
+  limit = 5,
+  sinceDays?: number,
+): Promise<Product[]> {
   if (limit <= 0) return [];
+
+  // "Mais vendidos" conta só pedidos PAGOS. Com janela (sinceDays), restringe
+  // pela data de confirmação do pagamento (pagoEm) para refletir tendência.
+  const paidWhere =
+    sinceDays && sinceDays > 0
+      ? {
+          status: "pago" as const,
+          pagoEm: { gte: new Date(Date.now() - sinceDays * 24 * 60 * 60 * 1000) },
+        }
+      : { status: "pago" as const };
 
   const salesByVariant = await prisma.orderItem.groupBy({
     by: ["variantId"],
-    where: { order: { status: "pago" } },
+    where: { order: paidWhere },
     _sum: { quantidade: true },
   });
 
@@ -141,6 +157,39 @@ export async function getBestSellingProducts(limit = 5): Promise<Product[]> {
     return product ? [product] : [];
   });
 }
+
+// Produtos marcados manualmente como "novidade" no admin. Mais recentes
+// primeiro (updatedAt = quando foi marcado/editado). Query própria e indexada.
+export async function getNovidades(limit = 10): Promise<Product[]> {
+  if (limit <= 0) return [];
+  const records = await prisma.product.findMany({
+    where: { ativo: true, isNovidade: true },
+    include: { variantes: { orderBy: { id: "asc" } } },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+  });
+  return records.map(toProduct);
+}
+
+// Produtos marcados manualmente como "promoção" no admin.
+export async function getPromocoes(limit = 10): Promise<Product[]> {
+  if (limit <= 0) return [];
+  const records = await prisma.product.findMany({
+    where: { ativo: true, isPromocao: true },
+    include: { variantes: { orderBy: { id: "asc" } } },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+  });
+  return records.map(toProduct);
+}
+
+// "Mais vendidos" (últimos 30 dias) com cache/revalidação de 1h — evita rodar a
+// agregação pesada a cada request da home. `next/cache` revalida por tempo.
+export const getTopSellers = unstable_cache(
+  async (limit = 10): Promise<Product[]> => getBestSellingProducts(limit, 30),
+  ["home-top-sellers-30d"],
+  { revalidate: 3600, tags: ["top-sellers"] },
+);
 
 export async function getLatestProducts(limit = 5): Promise<Product[]> {
   if (limit <= 0) return [];

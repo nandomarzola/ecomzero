@@ -24,6 +24,8 @@ export default async function EditarProdutoPage({
     subtitulo: product.subtitulo,
     descricao: product.descricao,
     ativo: product.ativo,
+    isNovidade: product.isNovidade,
+    isPromocao: product.isPromocao,
     imagem: product.imagem,
     imagens: product.imagens,
     linkShopee: product.linkShopee ?? "",

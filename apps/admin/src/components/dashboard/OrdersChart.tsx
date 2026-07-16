@@ -112,9 +112,11 @@ export default function OrdersChart({ periods }: { periods: OrdersChartPeriod[] 
           {chart.points.map((point, index) => (
             <g key={`${period.points[index].label}-${index}`}>
               <circle cx={point.x} cy={point.y} r="4.5" fill="#A9EC17" />
-              <text x={point.x} y="177" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="10">
-                {period.points[index].label}
-              </text>
+              {(period.points.length <= 10 || index === period.points.length - 1 || index % Math.ceil(period.points.length / 7) === 0) ? (
+                <text x={point.x} y="177" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="10">
+                  {period.points[index].label}
+                </text>
+              ) : null}
             </g>
           ))}
         </svg>

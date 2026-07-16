@@ -18,6 +18,8 @@ export type ProductFormInitial = {
   subtitulo: string;
   descricao: string;
   ativo: boolean;
+  isNovidade: boolean;
+  isPromocao: boolean;
   imagem: string;
   imagens: string[];
   linkShopee: string;
@@ -42,6 +44,8 @@ function blankInitial(): ProductFormInitial {
     subtitulo: "",
     descricao: "",
     ativo: true,
+    isNovidade: false,
+    isPromocao: false,
     imagem: "",
     imagens: [],
     linkShopee: "",
@@ -64,6 +68,8 @@ export default function ProductForm(props: ProductFormProps) {
   const [subtitulo, setSubtitulo] = useState(start.subtitulo);
   const [descricao, setDescricao] = useState(start.descricao);
   const [ativo, setAtivo] = useState(start.ativo);
+  const [isNovidade, setIsNovidade] = useState(start.isNovidade);
+  const [isPromocao, setIsPromocao] = useState(start.isPromocao);
   const [cover, setCover] = useState<string[]>(start.imagem ? [start.imagem] : []);
   const [galeria, setGaleria] = useState<string[]>(start.imagens);
   const [linkShopee, setLinkShopee] = useState(start.linkShopee);
@@ -83,6 +89,8 @@ export default function ProductForm(props: ProductFormProps) {
       subtitulo,
       descricao,
       ativo,
+      isNovidade,
+      isPromocao,
       imagem: cover[0] ?? "",
       imagens: galeria,
       linkShopee,
@@ -180,6 +188,24 @@ export default function ProductForm(props: ProductFormProps) {
             className="h-4 w-4 accent-[#B8E82E]"
           />
           Produto ativo (visível na loja)
+        </label>
+        <label className="flex items-center gap-2 text-xs text-white/60">
+          <input
+            type="checkbox"
+            checked={isNovidade}
+            onChange={(e) => setIsNovidade(e.target.checked)}
+            className="h-4 w-4 accent-[#B8E82E]"
+          />
+          Novidade (aparece na seção Novidades da home)
+        </label>
+        <label className="flex items-center gap-2 text-xs text-white/60">
+          <input
+            type="checkbox"
+            checked={isPromocao}
+            onChange={(e) => setIsPromocao(e.target.checked)}
+            className="h-4 w-4 accent-[#B8E82E]"
+          />
+          Promoção (aparece na seção Promoções da home)
         </label>
       </section>
 

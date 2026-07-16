@@ -4,11 +4,11 @@ import DeliveryBanner from "@/components/DeliveryBanner";
 import FeatureBar from "@/components/FeatureBar";
 import HomeInstitutional from "@/components/HomeInstitutional";
 import NewsletterBanner from "@/components/NewsletterBanner";
-import Showcase from "@/components/Showcase";
+import HomeProductSection from "@/components/HomeProductSection";
 import {
-  getAllProducts,
-  getBestSellingProducts,
-  getLatestProducts,
+  getNovidades,
+  getPromocoes,
+  getTopSellers,
 } from "@/lib/services/productService";
 import { getActiveBanners, getActiveCategories } from "@/lib/services/storeContentService";
 import { ManagedBannerSection, ManagedHero } from "@/components/ManagedBanners";
@@ -16,12 +16,12 @@ import { ManagedBannerSection, ManagedHero } from "@/components/ManagedBanners";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [produtos, categories, banners, bestSellers, releases] = await Promise.all([
-    getAllProducts(),
+  const [categories, banners, novidades, promocoes, maisVendidos] = await Promise.all([
     getActiveCategories(),
     getActiveBanners(),
-    getBestSellingProducts(),
-    getLatestProducts(),
+    getNovidades(10),
+    getPromocoes(10),
+    getTopSellers(10),
   ]);
   const hero = banners.filter((banner) => banner.posicao === "hero_slide");
   const middle = banners.filter((banner) => banner.posicao === "home_middle");
@@ -37,10 +37,26 @@ export default async function HomePage() {
 
       <ManagedHero banners={hero} />
 
-      <Showcase
-        produtos={produtos}
-        bestSellers={bestSellers}
-        releases={releases}
+      <HomeProductSection
+        title="Novidades"
+        products={novidades}
+        viewAllHref="/novidades"
+        emptyLabel="Em breve, novidades por aqui."
+      />
+
+      <HomeProductSection
+        title="Promoções"
+        products={promocoes}
+        viewAllHref="/promocoes"
+        variant="promo"
+        emptyLabel="Nenhuma promoção ativa no momento."
+      />
+
+      <HomeProductSection
+        title="Mais Vendidos"
+        products={maisVendidos}
+        viewAllHref="/mais-vendidos"
+        emptyLabel="Ainda calculando os mais vendidos."
       />
 
       <ManagedBannerSection banners={middle} position="home_middle" />

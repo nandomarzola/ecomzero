@@ -26,5 +26,7 @@ export type Product = {
   avaliacaoMedia: number | null;
   totalAvaliacoes: number;
   ativo: boolean;
+  isNovidade: boolean;
+  isPromocao: boolean;
   variantes: ProductVariant[];
 };

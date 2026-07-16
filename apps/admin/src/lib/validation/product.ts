@@ -57,6 +57,8 @@ export const productInputSchema = z.object({
   subtitulo: z.string().trim().min(1, "Informe o subtítulo"),
   descricao: z.string().trim().min(1, "Informe a descrição"),
   ativo: z.boolean().default(true),
+  isNovidade: z.boolean().default(false),
+  isPromocao: z.boolean().default(false),
   imagem: z.string().trim().min(1, "Envie a imagem de capa"),
   imagens: z.array(z.string().trim().min(1)).default([]),
   linkShopee: marketplaceUrl,

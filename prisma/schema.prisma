@@ -176,6 +176,8 @@ model Product {
   linkTiktokShop   String?
   linkShein        String?
   ativo            Boolean     @default(true)
+  isNovidade       Boolean     @default(false)
+  isPromocao       Boolean     @default(false)
   tipo             ProductKind @default(simples)
   categoryId       String?
   category         Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -193,6 +195,8 @@ model Product {
 
   @@index([categoria])
   @@index([categoryId])
+  @@index([ativo, isNovidade])
+  @@index([ativo, isPromocao])
 }
 
 model Category {
