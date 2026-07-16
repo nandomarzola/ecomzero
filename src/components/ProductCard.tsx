@@ -63,7 +63,6 @@ export default function ProductCard({ product }: ProductCardProps) {
     try {
       const result = await addItem(defaultVariant.id, 1, {
         openDrawer: action === "cart",
-        showSuccess: action === "cart",
       });
 
       if (!result.success) {

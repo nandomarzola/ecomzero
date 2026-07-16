@@ -149,7 +149,20 @@ export async function getOrderByUser(userId: string, orderId: string) {
 export async function getProfile(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, telefone: true },
+    select: {
+      name: true,
+      email: true,
+      telefone: true,
+      orders: {
+        where: {
+          status: { not: "draft" },
+          cpfCnpj: { not: null },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+        select: { cpfCnpj: true },
+      },
+    },
   });
 
   if (!user) {
@@ -160,6 +173,7 @@ export async function getProfile(userId: string) {
     nome: user.name,
     email: user.email,
     telefone: user.telefone,
+    cpfCnpj: user.orders[0]?.cpfCnpj ?? null,
   };
 }
 

@@ -32,7 +32,6 @@ const EMPTY_CART: Cart = {
 
 type AddItemOptions = {
   openDrawer?: boolean;
-  showSuccess?: boolean;
 };
 
 type CartContextValue = {
@@ -41,11 +40,9 @@ type CartContextValue = {
   isOpen: boolean;
   isLoading: boolean;
   isMutating: boolean;
-  addedMessageVisible: boolean;
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
-  dismissAddedMessage: () => void;
   refreshCart: () => Promise<Cart>;
   refreshCartCount: () => void;
   addItem: (
@@ -79,7 +76,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mutationCount, setMutationCount] = useState(0);
-  const [addedMessageVisible, setAddedMessageVisible] = useState(false);
   const requestSequence = useRef(0);
 
   const syncCart = useCallback((nextCart: Cart) => {
@@ -117,12 +113,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
   }, []);
 
-  useEffect(() => {
-    if (!addedMessageVisible) return;
-    const timer = window.setTimeout(() => setAddedMessageVisible(false), 3200);
-    return () => window.clearTimeout(timer);
-  }, [addedMessageVisible]);
-
   const runMutation = useCallback(
     async (mutation: () => Promise<CartActionResult>) => {
       setMutationCount((current) => current + 1);
@@ -148,7 +138,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       );
 
       if (result.success) {
-        if (options.showSuccess !== false) setAddedMessageVisible(true);
         if (options.openDrawer !== false) setIsOpen(true);
       }
 
@@ -179,20 +168,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [runMutation],
   );
 
-  const openCart = useCallback(() => {
-    setAddedMessageVisible(false);
-    setIsOpen(true);
-  }, []);
+  const openCart = useCallback(() => setIsOpen(true), []);
 
   const closeCart = useCallback(() => setIsOpen(false), []);
-  const toggleCart = useCallback(() => {
-    setAddedMessageVisible(false);
-    setIsOpen((current) => !current);
-  }, []);
-  const dismissAddedMessage = useCallback(
-    () => setAddedMessageVisible(false),
-    [],
-  );
+  const toggleCart = useCallback(() => setIsOpen((current) => !current), []);
   const refreshCartCount = useCallback(() => {
     void refreshCart().catch(() => {});
   }, [refreshCart]);
@@ -205,11 +184,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isOpen,
         isLoading,
         isMutating: mutationCount > 0,
-        addedMessageVisible,
         openCart,
         closeCart,
         toggleCart,
-        dismissAddedMessage,
         refreshCart,
         refreshCartCount,
         addItem,

@@ -17,6 +17,7 @@ import {
   LoaderCircle,
   LockKeyhole,
   MapPin,
+  ReceiptText,
   ShieldCheck,
   Truck,
 } from "lucide-react";
@@ -184,9 +185,7 @@ export default function CheckoutForm({
     [storedRaw],
   );
   const [cepOverride, setCepOverride] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
-  const [isLoadingAccount, setIsLoadingAccount] = useState(isLoggedIn);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
@@ -235,25 +234,40 @@ export default function CheckoutForm({
             nome: string;
             email: string;
             telefone: string | null;
+            cpfCnpj: string | null;
           };
           setValues((current) => ({
             ...current,
             nome: current.nome || profile.nome,
             email: current.email || profile.email,
             telefone: current.telefone || formatPhone(profile.telefone ?? ""),
+            cpfCnpj: current.cpfCnpj || formatDocument(profile.cpfCnpj ?? ""),
           }));
         }
         if (addressResponse.ok) {
           const payload = (await addressResponse.json()) as { addresses: SavedAddress[] };
-          setAddresses(payload.addresses);
+          const matchingAddress = payload.addresses.find(
+            (address) => onlyDigits(address.cep) === onlyDigits(selection?.cep ?? ""),
+          );
+          if (matchingAddress) {
+            setSelectedAddressId(matchingAddress.id);
+            setValues((current) => ({
+              ...current,
+              logradouro: matchingAddress.logradouro,
+              numero: matchingAddress.numero,
+              complemento: matchingAddress.complemento ?? "",
+              bairro: matchingAddress.bairro,
+              cidade: matchingAddress.cidade,
+              uf: matchingAddress.uf,
+            }));
+            setCepOverride(formatCep(matchingAddress.cep));
+          }
         }
-      } finally {
-        setIsLoadingAccount(false);
-      }
+      } catch {}
     };
 
     void loadAccount();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, selection?.cep]);
 
   const selectionExpired = Boolean(
     storedSelection && isCheckoutShippingExpired(storedSelection, now),
@@ -360,26 +374,6 @@ export default function CheckoutForm({
     }
     const issue = parsed.error.issues.find((item) => item.path[0] === field);
     setErrors((current) => ({ ...current, [field]: issue?.message }));
-  };
-
-  const selectAddress = (addressId: string) => {
-    setSelectedAddressId(addressId);
-    const address = addresses.find((item) => item.id === addressId);
-    if (!address) return;
-    setValues((current) => ({
-      ...current,
-      logradouro: address.logradouro,
-      numero: address.numero,
-      complemento: address.complemento ?? "",
-      bairro: address.bairro,
-      cidade: address.cidade,
-      uf: address.uf,
-    }));
-    setCepOverride(formatCep(address.cep));
-    setErrors({});
-    setStatusMessage("");
-    setCepLookupStatus("idle");
-    setCepLookupMessage("");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -494,7 +488,6 @@ export default function CheckoutForm({
               <Field id="nome" label="Nome completo" value={values.nome} error={errors.nome} autoComplete="name" placeholder="Digite seu nome completo" onChange={(value) => updateField("nome", value)} onBlur={() => validateField("nome")} />
               <Field id="email" label="E-mail" value={values.email} error={errors.email} type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" onChange={(value) => updateField("email", value)} onBlur={() => validateField("email")} />
               <Field id="telefone" label="Telefone / WhatsApp" value={values.telefone} error={errors.telefone} type="tel" inputMode="numeric" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={15} onChange={(value) => updateField("telefone", formatPhone(value))} onBlur={() => validateField("telefone")} />
-              <Field id="cpfCnpj" label="CPF ou CNPJ" value={values.cpfCnpj} error={errors.cpfCnpj} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" maxLength={18} onChange={(value) => updateField("cpfCnpj", formatDocument(value))} onBlur={() => validateField("cpfCnpj")} />
             </div>
           </section>
 
@@ -508,34 +501,6 @@ export default function CheckoutForm({
                 <p className="text-[11px] text-white/42">O CEP deve ser o mesmo usado na cotação.</p>
               </div>
             </div>
-
-            {isLoggedIn && (
-              <div className="mt-5">
-                <label htmlFor="saved-address" className="mb-2 block text-[12px] font-semibold text-white/85">
-                  Usar endereço salvo
-                </label>
-                <select
-                  id="saved-address"
-                  value={selectedAddressId}
-                  disabled={isLoadingAccount || addresses.length === 0}
-                  onChange={(event) => selectAddress(event.target.value)}
-                  className={`${inputClassName} disabled:cursor-not-allowed disabled:text-white/35`}
-                >
-                  <option value="">
-                    {isLoadingAccount
-                      ? "Carregando seus endereços..."
-                      : addresses.length > 0
-                        ? "Digitar um novo endereço"
-                        : "Nenhum endereço salvo"}
-                  </option>
-                  {addresses.map((address) => (
-                    <option key={address.id} value={address.id}>
-                      {address.apelido || "Endereço"}{address.padrao ? " · padrão" : ""} — {address.logradouro}, {address.numero}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             <div className="mt-5 grid gap-4 sm:grid-cols-6">
               <div className="sm:col-span-2">
@@ -591,6 +556,21 @@ export default function CheckoutForm({
                 Este CEP é diferente do cotado. Volte ao carrinho e recalcule o frete para continuar.
               </p>
             )}
+          </section>
+
+          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
+            <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
+                <ReceiptText className="h-4 w-4" />
+              </span>
+              <div>
+                <h2 className="font-display text-lg font-bold text-white">Dados para nota fiscal</h2>
+                <p className="text-[11px] text-white/42">Documento utilizado na emissão da nota e no pagamento.</p>
+              </div>
+            </div>
+            <div className="mt-5 max-w-[420px]">
+              <Field id="cpfCnpj" label="CPF ou CNPJ" value={values.cpfCnpj} error={errors.cpfCnpj} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" maxLength={18} onChange={(value) => updateField("cpfCnpj", formatDocument(value))} onBlur={() => validateField("cpfCnpj")} />
+            </div>
           </section>
         </div>
 

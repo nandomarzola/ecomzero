@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CheckCircle2,
   LoaderCircle,
   PackageOpen,
   ShoppingCart,
@@ -37,9 +36,7 @@ export default function CartDrawer() {
     isOpen,
     isLoading,
     isMutating,
-    addedMessageVisible,
     closeCart,
-    dismissAddedMessage,
   } = useCart();
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -177,25 +174,6 @@ export default function CartDrawer() {
             <X className="h-5 w-5" />
           </button>
         </header>
-
-        <div
-          className={`pointer-events-none absolute left-4 right-4 top-[82px] z-20 flex items-center gap-2 rounded-md border border-[var(--brand-color)]/20 bg-[#11180B]/95 px-3 py-2.5 text-[10px] text-white shadow-xl transition-all duration-200 ${addedMessageVisible && isOpen ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"}`}
-          role="status"
-          aria-live="polite"
-          aria-hidden={!addedMessageVisible}
-        >
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
-          Produto adicionado ao carrinho!
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={dismissAddedMessage}
-            className="pointer-events-auto ml-auto text-white/50 hover:text-white"
-            aria-label="Ocultar confirmação"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
 
         {isLoading ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">

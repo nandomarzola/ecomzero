@@ -47,7 +47,6 @@ export default function ProductPurchase({
     try {
       const result = await addItem(selectedVariant.id, quantity, {
         openDrawer: action === "add",
-        showSuccess: action === "add",
       });
 
       if (result.success) {
