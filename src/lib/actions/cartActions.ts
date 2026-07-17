@@ -117,6 +117,19 @@ export async function removeCouponAction(): Promise<CartActionResult> {
   }
 }
 
+export async function clearCartItemsAction(): Promise<CartActionResult> {
+  const sessionId = await getCartSessionId();
+  if (!sessionId) return { success: true, cart: await cartService.getCart(null) };
+
+  try {
+    const cart = await cartService.clearCart(sessionId);
+    revalidateCart();
+    return { success: true, cart };
+  } catch {
+    return { success: false, error: "Não foi possível limpar o carrinho." };
+  }
+}
+
 // Chamada pelo client (CartProvider) para hidratar/atualizar o badge do
 // Header — não afeta a classificação estática/dinâmica de nenhuma rota,
 // já que Server Actions rodam sob demanda, fora da renderização da página.

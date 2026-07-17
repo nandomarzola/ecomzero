@@ -159,6 +159,13 @@ export async function removeCoupon(sessionId: string): Promise<Cart> {
   return getCart(sessionId);
 }
 
+export async function clearCart(sessionId: string): Promise<Cart> {
+  await prisma.order.deleteMany({
+    where: { sessionId, status: "draft" },
+  });
+  return emptyCart();
+}
+
 export async function getCart(sessionId: string | null): Promise<Cart> {
   if (!sessionId) return emptyCart();
 

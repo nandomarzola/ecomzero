@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   PackageOpen,
   ShoppingCart,
+  Trash2,
   X,
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
@@ -18,6 +19,7 @@ import {
   getCheckoutShippingSnapshot,
   isCheckoutShippingExpired,
   parseCheckoutShippingSelection,
+  clearCheckoutShippingSelection,
   subscribeCheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
@@ -39,12 +41,14 @@ export default function CartDrawer({ promotionItems }: { promotionItems: StoreAn
     isOpen,
     isLoading,
     isMutating,
+    clearCartItems,
     closeCart,
   } = useCart();
   const panelRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
+  const [clearError, setClearError] = useState("");
   const [now, setNow] = useState(() => Date.now());
   const storedShippingRaw = useSyncExternalStore(
     subscribeCheckoutShippingSelection,
@@ -138,6 +142,18 @@ export default function CartDrawer({ promotionItems }: { promotionItems: StoreAn
     router.push("/checkout");
   };
 
+  const clearAllItems = async () => {
+    if (!window.confirm("Remover todos os produtos do carrinho?")) return;
+    setClearError("");
+    const result = await clearCartItems();
+    if (!result.success) {
+      setClearError(result.error);
+      return;
+    }
+    clearCheckoutShippingSelection();
+    setCheckoutError("");
+  };
+
   return (
     <div
       className={`fixed inset-0 z-[100] transition-[visibility] duration-300 motion-reduce:transition-none ${isOpen ? "visible" : "invisible pointer-events-none"}`}
@@ -169,6 +185,17 @@ export default function CartDrawer({ promotionItems }: { promotionItems: StoreAn
               {cart.itemCount} {cart.itemCount === 1 ? "item" : "itens"}
             </span>
           </span>
+          {cart.items.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => void clearAllItems()}
+              disabled={isMutating}
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-semibold text-red-300/75 transition hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isMutating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Limpar carrinho
+            </button>
+          ) : null}
           <button
             ref={closeButtonRef}
             type="button"
@@ -179,6 +206,8 @@ export default function CartDrawer({ promotionItems }: { promotionItems: StoreAn
             <X className="h-5 w-5" />
           </button>
         </header>
+
+        {clearError ? <p role="alert" className="shrink-0 border-b border-red-500/20 bg-red-500/[0.08] px-5 py-2 text-[10px] text-red-300">{clearError}</p> : null}
 
         {isLoading ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">

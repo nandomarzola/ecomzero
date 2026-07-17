@@ -12,6 +12,7 @@ import {
 import {
   addToCartAction,
   applyCouponAction,
+  clearCartItemsAction,
   getCartAction,
   removeCartItemAction,
   removeCouponAction,
@@ -44,6 +45,7 @@ type CartContextValue = {
   closeCart: () => void;
   toggleCart: () => void;
   clearCart: () => void;
+  clearCartItems: () => Promise<CartActionResult>;
   refreshCart: () => Promise<Cart>;
   refreshCartCount: () => void;
   addItem: (
@@ -169,6 +171,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [runMutation],
   );
 
+  const clearCartItems = useCallback(
+    () => runMutation(() => clearCartItemsAction()),
+    [runMutation],
+  );
+
   const openCart = useCallback(() => setIsOpen(true), []);
 
   const closeCart = useCallback(() => setIsOpen(false), []);
@@ -193,6 +200,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         closeCart,
         toggleCart,
         clearCart,
+        clearCartItems,
         refreshCart,
         refreshCartCount,
         addItem,
