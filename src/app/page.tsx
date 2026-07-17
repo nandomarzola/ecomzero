@@ -19,9 +19,9 @@ export default async function HomePage() {
   const [categories, banners, novidades, promocoes, maisVendidos] = await Promise.all([
     getActiveCategories(),
     getActiveBanners(),
-    getNovidades(10),
-    getPromocoes(10),
-    getTopSellers(10),
+    getNovidades(4),
+    getPromocoes(4),
+    getTopSellers(4),
   ]);
   const hero = banners.filter((banner) => banner.posicao === "hero_slide");
   const middle = banners.filter((banner) => banner.posicao === "home_middle");
@@ -45,6 +45,8 @@ export default async function HomePage() {
         emptyLabel="Em breve, novidades por aqui."
       />
 
+      <ManagedBannerSection banners={middle} position="home_middle" />
+
       <HomeProductSection
         title="Promoções"
         products={promocoes}
@@ -54,6 +56,8 @@ export default async function HomePage() {
         emptyLabel="Nenhuma promoção ativa no momento."
       />
 
+      <ManagedBannerSection banners={bottom} position="home_bottom" />
+
       <HomeProductSection
         title="Mais Vendidos"
         products={maisVendidos}
@@ -62,13 +66,9 @@ export default async function HomePage() {
         emptyLabel="Ainda calculando os mais vendidos."
       />
 
-      <ManagedBannerSection banners={middle} position="home_middle" />
-
       <DeliveryBanner />
 
       <HomeInstitutional />
-
-      <ManagedBannerSection banners={bottom} position="home_bottom" />
 
       <NewsletterBanner />
     </div>

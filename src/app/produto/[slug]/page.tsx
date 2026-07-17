@@ -151,6 +151,33 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const relatedProducts = getRelatedProducts(product, allProducts);
   const categoryLabel = findCategoryLabel(product.categoria) ?? product.categoria;
+
+  // Cadeia completa de categorias do produto (raiz → folha), para o breadcrumb
+  // refletir todos os N níveis. Casa por categoryId (FK) ou, no legado/Hub sem
+  // FK, pelo path denormalizado `categoria`. Cada nível vira link para a rota
+  // real /categorias/<caminho-de-slugs>.
+  const catById = new Map(categories.map((c) => [c.id, c]));
+  const catByPath = new Map(categories.map((c) => [c.path, c]));
+  const leafCategory = product.categoryId
+    ? catById.get(product.categoryId)
+    : catByPath.get(product.categoria);
+  const categoryTrail: { nome: string; href: string }[] = [];
+  {
+    const chain: typeof categories = [];
+    const seen = new Set<string>();
+    let cur = leafCategory;
+    while (cur && !seen.has(cur.id)) {
+      seen.add(cur.id);
+      chain.unshift(cur);
+      cur = cur.parentId ? catById.get(cur.parentId) : undefined;
+    }
+    for (let i = 0; i < chain.length; i += 1) {
+      categoryTrail.push({
+        nome: chain[i].nome,
+        href: `/categorias/${chain.slice(0, i + 1).map((c) => c.slug).join("/")}`,
+      });
+    }
+  }
   const showSubtitle = shouldShowProductSubtitle(product.nome, product.subtitulo);
   const productSummary = getProductSummary({
     productName: product.nome,
@@ -185,20 +212,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
             Início
           </Link>
 
-          <span>/</span>
-
-          <Link
-            href="/produtos"
-            className="transition hover:text-[var(--brand-color)]"
-          >
-            Produtos
-          </Link>
-
-          <span>/</span>
-
-          <span className="font-semibold uppercase text-[var(--brand-color)]">
-            {categoryLabel}
-          </span>
+          {categoryTrail.length > 0 ? (
+            categoryTrail.map((crumb, index) => (
+              <span key={crumb.href} className="flex items-center gap-2 sm:gap-3">
+                <span>/</span>
+                <Link
+                  href={crumb.href}
+                  className={
+                    index === categoryTrail.length - 1
+                      ? "font-semibold uppercase text-[var(--brand-color)] transition hover:brightness-110"
+                      : "transition hover:text-[var(--brand-color)]"
+                  }
+                >
+                  {crumb.nome}
+                </Link>
+              </span>
+            ))
+          ) : (
+            <>
+              <span>/</span>
+              <Link href="/produtos" className="transition hover:text-[var(--brand-color)]">
+                Produtos
+              </Link>
+              <span>/</span>
+              <span className="font-semibold uppercase text-[var(--brand-color)]">{categoryLabel}</span>
+            </>
+          )}
         </nav>
 
         <section className="grid items-start gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1.04fr)_minmax(420px,0.96fr)] xl:gap-12">

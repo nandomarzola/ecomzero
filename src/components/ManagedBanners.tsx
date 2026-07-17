@@ -115,5 +115,30 @@ export function ManagedHero({ banners }: { banners: StoreBanner[] }) {
 
 export function ManagedBannerSection({ banners, position }: { banners: StoreBanner[]; position: "home_middle" | "home_bottom" }) {
   if (banners.length === 0) return null;
-  return <section className="mx-auto grid max-w-[1440px] gap-4 px-4 pb-6 sm:px-6 lg:px-10">{banners.map((banner) => <article key={banner.id} className={`relative overflow-hidden rounded-xl border border-white/[0.08] ${position === "home_middle" ? "aspect-[15/4]" : "aspect-[60/13]"}`}><BannerImage banner={banner} sizes="(max-width: 1440px) 100vw, 1440px" /></article>)}</section>;
+  const isBottom = position === "home_bottom";
+  // Faixa intermediária: 1 banner retangular full-width.
+  // Faixa inferior é um PAR de quadrados lado a lado que forma 1 banner único —
+  // usa só os 2 primeiros por ordem (3º+ são ignorados aqui). Com 1 só cadastrado,
+  // mostra em LARGURA TOTAL (não meia largura, que ficaria esquisito). Os avisos
+  // no admin ("cadastre mais 1 para completar o par" / "excedentes não exibidos")
+  // ficam a cargo do admin de Banners (Codex).
+  const items = isBottom ? banners.slice(0, 2) : banners;
+  const bottomPair = isBottom && items.length >= 2;
+  return (
+    <section className={`mx-auto grid max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-10 ${bottomPair ? "grid-cols-2 gap-3" : "gap-4"}`}>
+      {items.map((banner) => (
+        <article
+          key={banner.id}
+          className={`relative overflow-hidden rounded-xl border border-white/[0.08] ${
+            !isBottom ? "aspect-[15/4]" : bottomPair ? "aspect-square" : "aspect-[2/1]"
+          }`}
+        >
+          <BannerImage
+            banner={banner}
+            sizes={bottomPair ? "(max-width: 1440px) 50vw, 720px" : "(max-width: 1440px) 100vw, 1440px"}
+          />
+        </article>
+      ))}
+    </section>
+  );
 }

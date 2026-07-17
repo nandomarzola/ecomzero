@@ -39,7 +39,7 @@ export default function ProductShelf({
 
       <div
         ref={trackRef}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:gap-4 lg:grid lg:grid-cols-5 lg:gap-4 lg:overflow-visible lg:pb-0 lg:[scroll-snap-type:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:none] sm:gap-4 lg:grid lg:grid-cols-4 lg:gap-4 lg:overflow-visible lg:pb-0 lg:[scroll-snap-type:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((product) => (
           <div
