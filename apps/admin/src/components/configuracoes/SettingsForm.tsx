@@ -22,6 +22,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   BadgePercent,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Code2,
   ExternalLink,
@@ -310,6 +311,7 @@ function SortableAnnouncementItem({
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const [expanded, setExpanded] = useState(() => item.texto.trim().length === 0);
   const selectedUfs = item.regioesElegiveis.filter(isBrazilUf);
   const selectedSet = new Set(selectedUfs);
   const selectedCoupon = coupons.find((coupon) => coupon.id === item.couponId) ?? null;
@@ -338,11 +340,34 @@ function SortableAnnouncementItem({
       style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined }}
       className={`rounded-md border bg-[#090909] p-3 transition ${isDragging ? "border-[#A9EC17]/55 shadow-2xl shadow-black" : "border-white/[0.08]"}`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2">
         <button type="button" aria-label="Reordenar mensagem" title="Arraste para reordenar" className="mt-1 flex h-8 w-7 shrink-0 touch-none cursor-grab items-center justify-center rounded text-white/30 transition hover:bg-white/[0.04] hover:text-white active:cursor-grabbing" {...attributes} {...listeners}>
           <GripVertical className="h-4 w-4" />
         </button>
-        <div className="min-w-0 flex-1 space-y-3">
+        <button
+          type="button"
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+          aria-controls={`announcement-message-${item.id}`}
+          className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left transition hover:bg-white/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A9EC17]/45"
+        >
+          <span className="min-w-0 flex-1">
+            <strong className="block truncate text-[10px] font-semibold text-white/75">
+              {item.texto.trim() || "Nova mensagem"}
+            </strong>
+            <span className="mt-1 flex flex-wrap items-center gap-2 text-[8px] text-white/30">
+              <span>{item.couponId ? selectedCoupon?.codigo ?? "Oferta com cupom" : "Informativa"}</span>
+              <span aria-hidden="true">•</span>
+              <span className={item.ativo ? "text-[#A9EC17]" : "text-white/30"}>
+                {item.ativo ? "Ativa" : "Oculta"}
+              </span>
+            </span>
+          </span>
+          <ChevronDown className={`h-4 w-4 shrink-0 text-white/35 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {expanded ? (
+        <div id={`announcement-message-${item.id}`} className="mt-3 space-y-3 pl-9 sm:pl-10">
           <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
             Mensagem
             <input required maxLength={80} value={item.texto} onChange={(event) => onChange({ texto: event.target.value })} placeholder="Ex: Frete grátis acima de R$ 99,00" className={inputClass} />
@@ -480,7 +505,7 @@ function SortableAnnouncementItem({
             <button type="button" onClick={onRemove} className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[9px] font-semibold text-red-300/75 transition hover:bg-red-500/10 hover:text-red-300"><Trash2 className="h-3.5 w-3.5" /> Remover</button>
           </div>
         </div>
-      </div>
+      ) : null}
     </article>
   );
 }
