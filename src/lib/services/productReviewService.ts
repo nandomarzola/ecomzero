@@ -5,7 +5,8 @@ import type { ProductReviewInput } from "@/lib/validation/productReview";
 
 type ProductReviewErrorCode =
   | "ORDER_ITEM_NOT_FOUND"
-  | "ORDER_NOT_DELIVERED";
+  | "ORDER_NOT_DELIVERED"
+  | "REVIEW_REMOVED";
 
 export class ProductReviewServiceError extends Error {
   constructor(
@@ -82,6 +83,16 @@ export async function saveProductReview(
       );
     }
 
+    if (item.review?.status === "rejected") {
+      throw new ProductReviewServiceError(
+        "Esta avaliação foi removida pela moderação e não pode ser reenviada.",
+        "REVIEW_REMOVED",
+        403,
+      );
+    }
+
+    const publishedAt = new Date();
+
     const review = await tx.productReview.upsert({
       where: { orderItemId: item.id },
       create: {
@@ -92,14 +103,17 @@ export async function saveProductReview(
         rating: input.rating,
         comment: input.comment,
         photos: input.photos,
+        status: "approved",
+        moderatedAt: publishedAt,
+        moderatedBy: "automatic",
       },
       update: {
         rating: input.rating,
         comment: input.comment,
         photos: input.photos,
-        status: "pending",
-        moderatedAt: null,
-        moderatedBy: null,
+        status: "approved",
+        moderatedAt: publishedAt,
+        moderatedBy: "automatic",
         rejectionReason: null,
       },
       select: {
@@ -114,9 +128,7 @@ export async function saveProductReview(
       },
     });
 
-    if (item.review?.status === "approved") {
-      await recalculateProductRating(tx, item.variant.productId);
-    }
+    await recalculateProductRating(tx, item.variant.productId);
 
     return review;
   });

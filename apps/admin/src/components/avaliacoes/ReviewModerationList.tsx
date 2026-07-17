@@ -22,13 +22,13 @@ const tabs: { value: "all" | ReviewModerationStatus; label: string }[] = [
   { value: "all", label: "Todas" },
   { value: "pending", label: "Pendentes" },
   { value: "approved", label: "Aprovadas" },
-  { value: "rejected", label: "Rejeitadas" },
+  { value: "rejected", label: "Removidas" },
 ];
 
 const statusLabel: Record<ReviewModerationStatus, string> = {
   pending: "Pendente",
   approved: "Aprovada",
-  rejected: "Rejeitada",
+  rejected: "Removida",
 };
 
 const statusClass: Record<ReviewModerationStatus, string> = {
@@ -43,7 +43,7 @@ export default function ReviewModerationList({
   reviews: ReviewAdminListItem[];
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"all" | ReviewModerationStatus>("pending");
+  const [tab, setTab] = useState<"all" | ReviewModerationStatus>("approved");
   const [rejecting, setRejecting] = useState<ReviewAdminListItem | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -143,12 +143,14 @@ export default function ReviewModerationList({
                   <p className="font-semibold text-white/70">{review.customer.name ?? "Cliente"}</p>
                   <p>{review.customer.email}</p>
                   <Link href={`/pedidos/${review.order.id}`} className="mt-2 inline-flex items-center gap-1 text-[#A9EC17] hover:underline">Pedido #{review.order.id.slice(0, 8)} <ExternalLink className="h-3 w-3" /></Link>
-                  {review.status === "pending" ? (
+                  {review.status !== "rejected" ? (
                     <div className="mt-4 flex gap-2">
-                      <button type="button" disabled={pending} onClick={() => moderate(review, "approved", null)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#A9EC17] px-3 py-2 font-semibold text-black disabled:opacity-50">
-                        {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Aprovar
-                      </button>
-                      <button type="button" disabled={pending} onClick={() => { setRejecting(review); setReason(""); }} className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/20 px-3 py-2 font-semibold text-red-300 disabled:opacity-50"><X className="h-3.5 w-3.5" /> Rejeitar</button>
+                      {review.status === "pending" ? (
+                        <button type="button" disabled={pending} onClick={() => moderate(review, "approved", null)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#A9EC17] px-3 py-2 font-semibold text-black disabled:opacity-50">
+                          {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />} Publicar
+                        </button>
+                      ) : null}
+                      <button type="button" disabled={pending} onClick={() => { setRejecting(review); setReason(""); }} className="inline-flex items-center gap-1.5 rounded-lg border border-red-400/20 px-3 py-2 font-semibold text-red-300 disabled:opacity-50"><X className="h-3.5 w-3.5" /> Remover</button>
                     </div>
                   ) : null}
                 </div>
@@ -161,12 +163,12 @@ export default function ReviewModerationList({
       {rejecting ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
           <div className="w-full max-w-md rounded-xl border border-white/10 bg-[#111] p-5 shadow-2xl">
-            <h2 className="font-display text-lg font-bold text-white">Rejeitar avaliação</h2>
-            <p className="mt-1 text-sm text-white/45">Informe ao cliente o que precisa ser ajustado.</p>
-            <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} rows={4} className="mt-4 w-full resize-none rounded-lg border border-white/10 bg-[#080808] p-3 text-sm text-white outline-none focus:border-red-400/40" placeholder="Motivo da rejeição" />
+            <h2 className="font-display text-lg font-bold text-white">Remover avaliação</h2>
+            <p className="mt-1 text-sm text-white/45">Ela deixará de aparecer na loja e não contará mais na média. Informe o motivo para manter o histórico.</p>
+            <textarea value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} rows={4} className="mt-4 w-full resize-none rounded-lg border border-white/10 bg-[#080808] p-3 text-sm text-white outline-none focus:border-red-400/40" placeholder="Ex.: conteúdo falso, ofensivo ou com dados pessoais" />
             <div className="mt-4 flex justify-end gap-2">
               <button type="button" onClick={() => setRejecting(null)} className="rounded-lg border border-white/10 px-4 py-2 text-sm text-white/55">Voltar</button>
-              <button type="button" disabled={pending || !reason.trim()} onClick={() => moderate(rejecting, "rejected", reason.trim())} className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Confirmar rejeição</button>
+              <button type="button" disabled={pending || !reason.trim()} onClick={() => moderate(rejecting, "rejected", reason.trim())} className="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Remover da loja</button>
             </div>
           </div>
         </div>

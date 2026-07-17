@@ -48,7 +48,7 @@ const statusContent: Record<
     icon: CheckCircle2,
   },
   rejected: {
-    label: "Precisa de ajuste",
+    label: "Avaliação removida",
     className: "border-red-400/20 bg-red-400/10 text-red-300",
     icon: XCircle,
   },
@@ -187,7 +187,7 @@ export default function OrderItemReview({
       }
       setReview(body.review);
       setEditing(false);
-      setSuccess("Avaliação enviada para moderação.");
+      setSuccess("Avaliação publicada com sucesso.");
       router.refresh();
     } catch (saveError) {
       setError(
@@ -231,9 +231,11 @@ export default function OrderItemReview({
               {status.label}
             </span>
           </div>
-          <button type="button" onClick={openEditor} className="inline-flex items-center gap-1.5 text-xs text-white/50 transition hover:text-white">
-            <Pencil className="h-3.5 w-3.5" /> Editar
-          </button>
+          {review.status !== "rejected" ? (
+            <button type="button" onClick={openEditor} className="inline-flex items-center gap-1.5 text-xs text-white/50 transition hover:text-white">
+              <Pencil className="h-3.5 w-3.5" /> Editar
+            </button>
+          ) : null}
         </div>
         {review.comment ? <p className="mt-3 text-xs leading-5 text-white/65">{review.comment}</p> : null}
         {review.photos.length > 0 ? (
@@ -246,7 +248,7 @@ export default function OrderItemReview({
           </div>
         ) : null}
         {review.status === "rejected" && review.rejectionReason ? (
-          <p className="mt-3 rounded-md border border-red-400/15 bg-red-400/[0.06] px-3 py-2 text-[11px] text-red-300">Motivo: {review.rejectionReason}</p>
+          <p className="mt-3 rounded-md border border-red-400/15 bg-red-400/[0.06] px-3 py-2 text-[11px] text-red-300">Removida da loja: {review.rejectionReason}</p>
         ) : null}
         {success ? <p className="mt-3 text-[11px] text-[#D5FF7B]">{success}</p> : null}
       </div>
@@ -308,7 +310,7 @@ export default function OrderItemReview({
         />
       </div>
       <p className="mt-2 text-[10px] text-white/30">Até 3 fotos JPG, PNG ou WebP, com 5 MB cada.</p>
-      {review?.status === "approved" ? <p className="mt-3 text-[11px] text-amber-300">Ao editar uma avaliação publicada, ela volta para moderação.</p> : null}
+      {review?.status === "approved" ? <p className="mt-3 text-[11px] text-white/35">As alterações serão publicadas assim que você salvar.</p> : null}
       {error ? <p className="mt-3 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] text-red-300">{error}</p> : null}
 
       <div className="mt-4 flex flex-wrap gap-2">
