@@ -61,6 +61,7 @@ export type OrderPaymentPageData = {
   orderId: string;
   status: "aguardando_pagamento" | "pago" | "cancelado";
   subtotal: number;
+  discount: number;
   shipping: number;
   total: number;
   customer: {
@@ -139,6 +140,7 @@ const toPaymentResult = (
 const buildPaymentSnapshot = (order: {
   id: string;
   total: { toNumber(): number };
+  descontoCupom: { toNumber(): number };
   nomeCliente: string | null;
   emailCliente: string | null;
   telefoneCliente: string | null;
@@ -185,6 +187,7 @@ const buildPaymentSnapshot = (order: {
   return {
     id: order.id,
     total: order.total.toNumber(),
+    descontoCupom: order.descontoCupom.toNumber(),
     nomeCliente: order.nomeCliente!,
     emailCliente: order.emailCliente!,
     telefoneCliente: order.telefoneCliente!,
@@ -247,6 +250,7 @@ export async function getOrderPaymentPageData(
     orderId: order.id,
     status: order.status,
     subtotal: order.subtotal.toNumber(),
+    discount: order.descontoCupom.toNumber(),
     shipping: order.valorFrete.toNumber(),
     total: order.total.toNumber(),
     customer: {
@@ -440,50 +444,7 @@ export async function getOrCreateOrderPaymentPreference(
     };
   }
 
-  const requiredFields = [
-    order.nomeCliente,
-    order.emailCliente,
-    order.telefoneCliente,
-    order.cpfCnpj,
-    order.cepDestino,
-    order.logradouro,
-    order.numero,
-    order.cidade,
-    order.uf,
-  ];
-  if (requiredFields.some((field) => !field) || order.items.length === 0) {
-    throw new OrderPaymentServiceError(
-      "Pedido incompleto para pagamento",
-      "INVALID_STATUS",
-      409,
-    );
-  }
-
-  const snapshot: PaymentOrderSnapshot = {
-    id: order.id,
-    total: order.total.toNumber(),
-    nomeCliente: order.nomeCliente!,
-    emailCliente: order.emailCliente!,
-    telefoneCliente: order.telefoneCliente!,
-    cpfCnpj: order.cpfCnpj!,
-    cepDestino: order.cepDestino!,
-    logradouro: order.logradouro!,
-    numero: order.numero!,
-    complemento: order.complemento,
-    bairro: order.bairro!,
-    cidade: order.cidade!,
-    uf: order.uf!,
-    valorFrete: order.valorFrete.toNumber(),
-    items: order.items.map((item) => ({
-      id: item.id,
-      variantId: item.variantId,
-      productName: item.variant.product.nome,
-      productImage: item.variant.product.imagem,
-      variantLabel: item.variant.label,
-      quantidade: item.quantidade,
-      precoUnitario: item.precoUnitario.toNumber(),
-    })),
-  };
+  const snapshot = buildPaymentSnapshot(order);
   const preference = await createPaymentPreference(snapshot, siteUrl);
   const updated = await prisma.order.updateMany({
     where: { id: order.id, status: "aguardando_pagamento" },

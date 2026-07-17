@@ -23,6 +23,7 @@ export class MercadoPagoServiceError extends Error {
 export type PaymentOrderSnapshot = {
   id: string;
   total: number;
+  descontoCupom: number;
   nomeCliente: string;
   emailCliente: string;
   telefoneCliente: string;
@@ -152,18 +153,67 @@ const splitCustomerName = (fullName: string) => {
   };
 };
 
-const assertFrozenOrderTotal = (order: PaymentOrderSnapshot) => {
-  const frozenTotal = order.items.reduce(
-    (total, item) => total + item.precoUnitario * item.quantidade,
-    order.valorFrete,
+const roundMoney = (value: number) => Math.round(value * 100) / 100;
+
+const getProductSubtotal = (order: PaymentOrderSnapshot) =>
+  roundMoney(
+    order.items.reduce(
+      (total, item) => total + item.precoUnitario * item.quantidade,
+      0,
+    ),
   );
 
-  if (Math.abs(frozenTotal - order.total) > 0.01) {
+const assertFrozenOrderTotal = (order: PaymentOrderSnapshot) => {
+  const productSubtotal = getProductSubtotal(order);
+  const hasInvalidDiscount =
+    !Number.isFinite(order.descontoCupom) ||
+    order.descontoCupom < 0 ||
+    order.descontoCupom - productSubtotal > 0.01;
+  const frozenTotal = roundMoney(
+    productSubtotal + order.valorFrete - order.descontoCupom,
+  );
+
+  if (hasInvalidDiscount || Math.abs(frozenTotal - order.total) > 0.01) {
     throw new MercadoPagoServiceError(
       "O total do pedido precisa ser revisado antes do pagamento",
       502,
     );
   }
+};
+
+const buildProviderProductItems = (
+  order: PaymentOrderSnapshot,
+  siteUrl: string,
+) => {
+  if (order.descontoCupom <= 0) {
+    return order.items.map((item) => ({
+      id: item.id,
+      title: item.productName.slice(0, 120),
+      description: item.variantLabel.slice(0, 120),
+      picture_url: absoluteUrl(item.productImage, siteUrl),
+      category_id: "others",
+      quantity: item.quantidade,
+      unit_price: item.precoUnitario,
+    }));
+  }
+
+  const discountedProductsTotal = roundMoney(
+    getProductSubtotal(order) - order.descontoCupom,
+  );
+  if (discountedProductsTotal <= 0) return [];
+
+  const firstItem = order.items[0];
+  return [{
+    id: `produtos-${order.id}`,
+    title: order.items.length === 1
+      ? firstItem.productName.slice(0, 120)
+      : `Produtos do pedido ${order.id.slice(0, 8)}`,
+    description: "Desconto do cupom aplicado",
+    picture_url: absoluteUrl(firstItem.productImage, siteUrl),
+    category_id: "others",
+    quantity: 1,
+    unit_price: discountedProductsTotal,
+  }];
 };
 
 const sanitizeProviderText = (value: unknown) => {
@@ -220,15 +270,18 @@ export async function createMercadoPagoPayment(
   const idempotencyKey = createHash("sha256")
     .update(`${order.id}:${input.attemptId}`)
     .digest("hex");
-  const paymentItems = order.items.map((item) => ({
-    id: item.id,
-    title: item.productName.slice(0, 120),
-    description: item.variantLabel.slice(0, 120),
-    picture_url: absoluteUrl(item.productImage, siteUrl),
-    category_id: "others",
-    quantity: item.quantidade,
-    unit_price: item.precoUnitario,
-  }));
+  const paymentItems = buildProviderProductItems(order, siteUrl);
+  if (isPix && order.valorFrete > 0) {
+    paymentItems.push({
+      id: `frete-${order.id}`,
+      title: "Frete",
+      description: "Entrega do pedido EcomZero",
+      picture_url: undefined,
+      category_id: "others",
+      quantity: 1,
+      unit_price: order.valorFrete,
+    });
+  }
 
   try {
     const response = await new Payment(getMercadoPagoClient()).create({
@@ -350,15 +403,9 @@ export async function createPaymentPreference(
   const preference = new Preference(client);
   const phoneDigits = order.telefoneCliente.replace(/\D/g, "");
   const documentDigits = order.cpfCnpj.replace(/\D/g, "");
-  const items = order.items.map((item) => ({
-    id: item.id,
-    title: item.productName.slice(0, 120),
-    description: item.variantLabel.slice(0, 120),
-    picture_url: absoluteUrl(item.productImage, siteUrl),
-    category_id: "others",
-    quantity: item.quantidade,
+  const items = buildProviderProductItems(order, siteUrl).map((item) => ({
+    ...item,
     currency_id: "BRL",
-    unit_price: item.precoUnitario,
   }));
   assertFrozenOrderTotal(order);
 

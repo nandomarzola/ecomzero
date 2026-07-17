@@ -580,6 +580,12 @@ export default function MercadoPagoPayment({
                   <dt>Subtotal</dt>
                   <dd className="font-medium text-white">{formatPrice(order.subtotal)}</dd>
                 </div>
+                {order.discount > 0 ? (
+                  <div className="flex justify-between gap-4 text-white/55">
+                    <dt>Desconto nos produtos</dt>
+                    <dd className="font-semibold text-[var(--brand-color)]">-{formatPrice(order.discount)}</dd>
+                  </div>
+                ) : null}
                 <div className="flex justify-between gap-4 text-white/55">
                   <dt>Frete</dt>
                   <dd className="font-medium text-white">{formatPrice(order.shipping)}</dd>
