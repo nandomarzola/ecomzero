@@ -12,11 +12,11 @@ import {
   type CheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
 import {
+  captureUserCep,
   formatCep,
   getUserCepSnapshot,
   isValidCep,
   sanitizeCep,
-  saveUserCep,
   subscribeUserCep,
 } from "@/lib/client/cepStorage";
 
@@ -156,7 +156,7 @@ export default function CartDrawerShipping({
     setError("");
     setQuoteState(null);
     clearCheckoutShippingSelection();
-    saveUserCep(cep);
+    void captureUserCep(cep);
 
     try {
       const response = await fetch("/api/cart/shipping-quote", {

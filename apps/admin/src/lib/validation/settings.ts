@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BRAZIL_UFS } from "@/lib/brazilStates";
 
 const optionalText = (max: number) => z.preprocess((value) => typeof value === "string" && value.trim() === "" ? undefined : value, z.string().trim().max(max).optional());
 const optionalUrl = z.preprocess((value) => typeof value === "string" && value.trim() === "" ? undefined : value, z.string().url("Informe uma URL válida").optional());
@@ -28,6 +29,11 @@ export const announcementBarItemSchema = z.object({
   link: optionalNavigationUrl,
   ordem: z.number().int().min(0),
   ativo: z.boolean(),
+  regioesElegiveis: z
+    .array(z.enum(BRAZIL_UFS))
+    .max(BRAZIL_UFS.length)
+    .default([])
+    .transform((ufs) => [...new Set(ufs)]),
 });
 
 export const storeSettingsSchema = z.object({

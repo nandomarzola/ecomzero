@@ -3,6 +3,7 @@ import {
   canAdvanceShippingStatus,
   PROVIDER_LABEL_STATUS,
 } from "@/lib/shipping/shippingDomain";
+import { createCustomerNotificationFromShipmentEvent } from "@/lib/services/customerNotificationService";
 
 export type ProviderShipmentUpdate = {
   melhorEnvioId: string;
@@ -71,7 +72,7 @@ export async function applyProviderShipmentUpdate(
         ultimoErroCodigo: null,
       },
     });
-    await transaction.shipmentEvent.create({
+    const event = await transaction.shipmentEvent.create({
       data: {
         shipmentId: shipment.id,
         type: "provider_status",
@@ -84,6 +85,12 @@ export async function applyProviderShipmentUpdate(
           trackingUpdated: Boolean(update.tracking),
         },
       },
+    });
+    await createCustomerNotificationFromShipmentEvent(transaction, {
+      shipmentId: shipment.id,
+      eventType: event.type,
+      status: event.status,
+      createdAt: event.createdAt,
     });
   });
   return { matched: true, changed: true };

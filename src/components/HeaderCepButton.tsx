@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { MapPin } from "lucide-react";
 import {
+  captureUserCep,
   formatCep,
   getUserCepSnapshot,
   isValidCep,
-  saveUserCep,
   subscribeUserCep,
 } from "@/lib/client/cepStorage";
 
@@ -57,7 +57,8 @@ export default function HeaderCepButton({ className = "" }: { className?: string
       setInvalid(true);
       return;
     }
-    saveUserCep(draft);
+    // Salva o CEP e resolve a UF (segmentação regional da barra de anúncio).
+    void captureUserCep(draft);
     setOpen(false);
   };
 

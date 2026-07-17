@@ -8,6 +8,7 @@ import {
 } from "@/lib/services/melhorEnvioService";
 import { FREE_SHIPPING_MINIMUM } from "@/lib/shippingPolicy";
 import { applyProviderShipmentUpdate } from "@/lib/services/shipmentStatusService";
+import { createCustomerNotificationFromShipmentEvent } from "@/lib/services/customerNotificationService";
 import {
   isValidNfeKey,
   shouldAutomaticallyPurchase,
@@ -258,14 +259,22 @@ async function addEvent(
   message?: string,
   metadata?: Prisma.InputJsonValue,
 ) {
-  await prisma.shipmentEvent.create({
-    data: {
+  await prisma.$transaction(async (transaction) => {
+    const event = await transaction.shipmentEvent.create({
+      data: {
+        shipmentId,
+        type,
+        status: status as never,
+        message: message?.slice(0, 500),
+        metadata,
+      },
+    });
+    await createCustomerNotificationFromShipmentEvent(transaction, {
       shipmentId,
-      type,
-      status: status as never,
-      message: message?.slice(0, 500),
-      metadata,
-    },
+      eventType: type,
+      status: event.status,
+      createdAt: event.createdAt,
+    });
   });
 }
 

@@ -104,6 +104,13 @@ enum FiscalDocumentType {
   declaracao_conteudo
 }
 
+enum CustomerNotificationType {
+  payment_confirmed
+  order_preparing
+  order_in_transit
+  order_delivered
+}
+
 // Espelho de ../../prisma/schema.prisma (raiz). Mantido em sincronia manual.
 model Product {
   id               String      @id @default(uuid())
@@ -203,6 +210,8 @@ model User {
   aceitaMarketing Boolean   @default(false)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  notifications Notification[]
 }
 
 model Order {
@@ -246,6 +255,7 @@ model Order {
   selectedShippingQuote CheckoutShippingQuote? @relation("SelectedShippingQuote", fields: [shippingQuoteId], references: [id], onDelete: SetNull)
   cancellation          OrderCancellation?
   events                OrderEvent[]
+  notifications         Notification[]
 
   @@index([userId])
   @@index([status, shippingMode])
@@ -368,13 +378,15 @@ model StoreSettings {
 }
 
 model AnnouncementBarItem {
-  id        String   @id @default(uuid())
-  texto     String
-  link      String?
-  ordem     Int      @default(0)
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(uuid())
+  texto            String
+  link             String?
+  ordem            Int      @default(0)
+  ativo            Boolean  @default(true)
+  // Siglas de UF elegíveis (vazio = sem restrição). Segmentação regional da barra.
+  regioesElegiveis String[] @default([])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([ativo, ordem])
 }
@@ -489,6 +501,24 @@ model ShipmentEvent {
   createdAt  DateTime             @default(now())
 
   @@index([shipmentId, createdAt])
+}
+
+model Notification {
+  id        String                   @id @default(uuid())
+  userId    String
+  user      User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      CustomerNotificationType
+  title     String
+  message   String
+  lida      Boolean                  @default(false)
+  lidaEm    DateTime?
+  createdAt DateTime                 @default(now())
+
+  @@unique([userId, orderId, type])
+  @@index([userId, lida, createdAt])
+  @@index([orderId])
 }
 
 model MelhorEnvioBalanceCache {

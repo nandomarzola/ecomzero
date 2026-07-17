@@ -18,7 +18,14 @@ export async function getStoreSettings() {
 export async function getAnnouncementBarItems() {
   return prisma.announcementBarItem.findMany({
     orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
-    select: { id: true, texto: true, link: true, ordem: true, ativo: true },
+    select: {
+      id: true,
+      texto: true,
+      link: true,
+      ordem: true,
+      ativo: true,
+      regioesElegiveis: true,
+    },
   });
 }
 
@@ -44,7 +51,13 @@ export async function updateStoreSettings(input: StoreSettingsInput) {
     const ids = announcementItems.map((item) => item.id);
     await transaction.announcementBarItem.deleteMany(ids.length ? { where: { id: { notIn: ids } } } : undefined);
     for (const [index, item] of announcementItems.entries()) {
-      const itemData = { texto: item.texto, link: item.link ?? null, ordem: index, ativo: item.ativo };
+      const itemData = {
+        texto: item.texto,
+        link: item.link ?? null,
+        ordem: index,
+        ativo: item.ativo,
+        regioesElegiveis: item.regioesElegiveis,
+      };
       await transaction.announcementBarItem.upsert({ where: { id: item.id }, create: { id: item.id, ...itemData }, update: itemData });
     }
     return settings;

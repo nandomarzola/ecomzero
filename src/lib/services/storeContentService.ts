@@ -34,6 +34,9 @@ export type StoreAnnouncementBarItem = {
   id: string;
   texto: string;
   link: string | null;
+  // Siglas de UF elegíveis. Vazio = sem restrição (aparece pra todos). O filtro
+  // por UF do visitante é aplicado no client (AnnouncementBar).
+  regioesElegiveis: string[];
 };
 
 export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
@@ -110,7 +113,7 @@ export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnoun
   return prisma.announcementBarItem.findMany({
     where: { ativo: true },
     orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
-    select: { id: true, texto: true, link: true },
+    select: { id: true, texto: true, link: true, regioesElegiveis: true },
   });
 });
 

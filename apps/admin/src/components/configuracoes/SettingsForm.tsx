@@ -56,6 +56,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { saveSettingsAction } from "@/lib/actions/settings";
+import {
+  BRAZIL_UFS,
+  REGIONS,
+  UF_LABEL,
+  isBrazilUf,
+  type BrazilUf,
+} from "@/lib/brazilStates";
 
 export type SettingsFormInitial = {
   nomeLoja: string;
@@ -72,6 +79,7 @@ export type SettingsFormInitial = {
     link: string | null;
     ordem: number;
     ativo: boolean;
+    regioesElegiveis: string[];
   }>;
   emailSuporte: string | null;
   telefoneSuporte: string | null;
@@ -223,7 +231,12 @@ function normalize(initial: SettingsFormInitial): FormState {
     barraAnuncioCor: initial.barraAnuncioCor ?? "",
     announcementItems: [...initial.announcementItems]
       .sort((first, second) => first.ordem - second.ordem)
-      .map((item, index) => ({ ...item, link: item.link ?? "", ordem: index })),
+      .map((item, index) => ({
+        ...item,
+        link: item.link ?? "",
+        ordem: index,
+        regioesElegiveis: item.regioesElegiveis.filter(isBrazilUf),
+      })),
     emailSuporte: initial.emailSuporte ?? "",
     telefoneSuporte: initial.telefoneSuporte ?? "",
     whatsapp: initial.whatsapp ?? "",
@@ -275,6 +288,27 @@ function SortableAnnouncementItem({
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const selectedUfs = item.regioesElegiveis.filter(isBrazilUf);
+  const selectedSet = new Set(selectedUfs);
+  const audienceLabel = selectedUfs.length === 0
+    ? "Todo o Brasil"
+    : `${selectedUfs.length} ${selectedUfs.length === 1 ? "estado selecionado" : "estados selecionados"}`;
+
+  const setEligibleRegions = (ufs: readonly BrazilUf[]) => {
+    onChange({ regioesElegiveis: ufs.length === BRAZIL_UFS.length ? [] : [...ufs] });
+  };
+
+  const toggleUf = (uf: BrazilUf) => {
+    const next = selectedSet.has(uf)
+      ? selectedUfs.filter((selected) => selected !== uf)
+      : BRAZIL_UFS.filter((candidate) => selectedSet.has(candidate) || candidate === uf);
+    setEligibleRegions(next);
+  };
+
+  const isExactPreset = (ufs: readonly BrazilUf[]) =>
+    selectedUfs.length === ufs.length &&
+    ufs.every((uf) => selectedSet.has(uf));
+
   return (
     <article
       ref={setNodeRef}
@@ -295,6 +329,81 @@ function SortableAnnouncementItem({
             Link opcional
             <input value={item.link} onChange={(event) => onChange({ link: event.target.value })} placeholder="/ofertas ou https://..." className={inputClass} />
           </label>
+          <div className="rounded-md border border-white/[0.07] bg-black/20 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-semibold text-white/65">Público por região</p>
+                <p className="mt-1 text-[9px] leading-4 text-white/30">
+                  {audienceLabel}. Sem seleção, a mensagem aparece para todos.
+                </p>
+              </div>
+              <Globe2 className="h-4 w-4 text-[#A9EC17]/70" strokeWidth={1.6} />
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setEligibleRegions([])}
+                aria-pressed={selectedUfs.length === 0}
+                className={`rounded-md border px-2.5 py-1.5 text-[8px] font-semibold transition ${
+                  selectedUfs.length === 0
+                    ? "border-[#A9EC17]/50 bg-[#A9EC17]/10 text-[#A9EC17]"
+                    : "border-white/[0.08] bg-[#090909] text-white/40 hover:border-white/15 hover:text-white/65"
+                }`}
+              >
+                Todo o Brasil
+              </button>
+              {REGIONS.map((region) => (
+                <button
+                  key={region.nome}
+                  type="button"
+                  onClick={() => setEligibleRegions(region.ufs)}
+                  aria-pressed={isExactPreset(region.ufs)}
+                  className={`rounded-md border px-2.5 py-1.5 text-[8px] font-semibold transition ${
+                    isExactPreset(region.ufs)
+                      ? "border-[#A9EC17]/50 bg-[#A9EC17]/10 text-[#A9EC17]"
+                      : "border-white/[0.08] bg-[#090909] text-white/40 hover:border-white/15 hover:text-white/65"
+                  }`}
+                >
+                  {region.nome}
+                </button>
+              ))}
+            </div>
+
+            <details className="group/ufs mt-3 border-t border-white/[0.06] pt-3">
+              <summary className="flex cursor-pointer list-none items-center justify-between text-[9px] font-semibold text-white/45 transition hover:text-white/70 [&::-webkit-details-marker]:hidden">
+                Personalizar por estado
+                <span className="text-[8px] text-white/25 transition group-open/ufs:rotate-180">⌄</span>
+              </summary>
+              <div className="mt-3 space-y-3">
+                {REGIONS.map((region) => (
+                  <div key={region.nome}>
+                    <p className="mb-1.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white/25">
+                      {region.nome}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {region.ufs.map((uf) => (
+                        <button
+                          key={uf}
+                          type="button"
+                          onClick={() => toggleUf(uf)}
+                          aria-pressed={selectedSet.has(uf)}
+                          title={UF_LABEL[uf]}
+                          className={`min-w-9 rounded border px-2 py-1.5 text-[8px] font-bold transition ${
+                            selectedSet.has(uf)
+                              ? "border-[#A9EC17]/45 bg-[#A9EC17]/10 text-[#A9EC17]"
+                              : "border-white/[0.08] bg-[#080808] text-white/35 hover:border-white/15 hover:text-white/60"
+                          }`}
+                        >
+                          {uf}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          </div>
           <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
             <div className="flex items-center gap-2">
               <button type="button" role="switch" aria-checked={item.ativo} onClick={() => onChange({ ativo: !item.ativo })} className={`relative h-5 w-9 shrink-0 rounded-full transition ${item.ativo ? "bg-[#A9EC17]" : "bg-white/15"}`}><span className={`absolute top-0.5 h-4 w-4 rounded-full bg-black transition ${item.ativo ? "left-[18px]" : "left-0.5"}`} /></button>
@@ -379,7 +488,7 @@ export default function SettingsForm({
       ...current,
       announcementItems: [
         ...current.announcementItems,
-        { id: crypto.randomUUID(), texto: "", link: "", ordem: current.announcementItems.length, ativo: true },
+        { id: crypto.randomUUID(), texto: "", link: "", ordem: current.announcementItems.length, ativo: true, regioesElegiveis: [] },
       ],
     }));
     setError(null);
@@ -390,7 +499,7 @@ export default function SettingsForm({
       ...current,
       barraAnuncioAtiva: !current.barraAnuncioAtiva,
       announcementItems: !current.barraAnuncioAtiva && current.announcementItems.length === 0
-        ? [{ id: crypto.randomUUID(), texto: "", link: "", ordem: 0, ativo: true }]
+        ? [{ id: crypto.randomUUID(), texto: "", link: "", ordem: 0, ativo: true, regioesElegiveis: [] }]
         : current.announcementItems,
     }));
     setError(null);

@@ -17,6 +17,7 @@ import {
 import CartBadgeCount from "@/components/CartBadgeCount";
 import { useCart } from "@/components/CartProvider";
 import HeaderCepButton from "@/components/HeaderCepButton";
+import NotificationBell from "@/components/NotificationBell";
 
 type HeaderAccount = {
   name: string;
@@ -255,6 +256,12 @@ export default function HeaderActions({
           </div>
         </div>
       </details>
+
+      <NotificationBell
+        enabled={isAuthenticated}
+        compact={compact}
+        onOpen={closeAccountMenu}
+      />
 
       <button
         type="button"

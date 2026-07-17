@@ -4,11 +4,11 @@ import { useState, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
 import { MapPin, X } from "lucide-react";
 import {
+  captureUserCep,
   dismissCepModal,
   getCepModalDismissedSnapshot,
   getUserCepSnapshot,
   isValidCep,
-  saveUserCep,
   subscribeUserCep,
 } from "@/lib/client/cepStorage";
 
@@ -39,7 +39,8 @@ export default function CepCaptureModal() {
       setInvalid(true);
       return;
     }
-    saveUserCep(draft);
+    // Salva o CEP e resolve a UF (para a segmentação regional da barra de anúncio).
+    void captureUserCep(draft);
   };
 
   return (

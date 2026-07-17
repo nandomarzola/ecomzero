@@ -5,6 +5,7 @@ import { savePurchasedAddressForUser } from "@/lib/services/accountService";
 import { recordCouponUsage } from "@/lib/services/couponService";
 import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentService";
 import { refundLatePaymentForCanceledOrder } from "@/lib/services/orderCancellationService";
+import { createCustomerNotificationFromShipmentEvent } from "@/lib/services/customerNotificationService";
 import {
   createMercadoPagoPayment,
   createPaymentPreference,
@@ -647,13 +648,19 @@ async function reconcilePayment(
         },
         update: {},
       });
-      await tx.shipmentEvent.create({
+      const event = await tx.shipmentEvent.create({
         data: {
           shipmentId: shipment.id,
           type: "payment_confirmed",
           status: shipment.labelStatus,
           message: "Pagamento confirmado. Preparação logística agendada.",
         },
+      });
+      await createCustomerNotificationFromShipmentEvent(tx, {
+        shipmentId: shipment.id,
+        eventType: event.type,
+        status: event.status,
+        createdAt: event.createdAt,
       });
     }
 

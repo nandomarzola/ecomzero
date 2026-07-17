@@ -6,6 +6,9 @@
 
 const CEP_KEY = "ecomzero:cep-usuario";
 const MODAL_DISMISSED_KEY = "ecomzero:cep-modal-dispensado";
+// UF resolvida a partir do CEP (ex.: "SP"). Usada pela Barra de Anúncio para
+// segmentar mensagens por região sem reconsultar o CEP a cada página.
+const UF_KEY = "ecomzero:uf-usuario";
 
 const listeners = new Set<() => void>();
 
@@ -15,7 +18,7 @@ function emitChange(): void {
 
 export function subscribeUserCep(listener: () => void): () => void {
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === CEP_KEY || event.key === MODAL_DISMISSED_KEY) listener();
+    if (event.key === CEP_KEY || event.key === MODAL_DISMISSED_KEY || event.key === UF_KEY) listener();
   };
   listeners.add(listener);
   window.addEventListener("storage", handleStorage);
@@ -31,6 +34,10 @@ export function getUserCepSnapshot(): string | null {
 
 export function getCepModalDismissedSnapshot(): string | null {
   return window.localStorage.getItem(MODAL_DISMISSED_KEY);
+}
+
+export function getUserUfSnapshot(): string | null {
+  return window.localStorage.getItem(UF_KEY);
 }
 
 export function sanitizeCep(value: string): string {
@@ -55,4 +62,35 @@ export function saveUserCep(value: string): void {
 export function dismissCepModal(): void {
   window.localStorage.setItem(MODAL_DISMISSED_KEY, "1");
   emitChange();
+}
+
+export function saveUserUf(uf: string): void {
+  window.localStorage.setItem(UF_KEY, uf.trim().toUpperCase());
+  emitChange();
+}
+
+function clearUserUf(): void {
+  window.localStorage.removeItem(UF_KEY);
+  emitChange();
+}
+
+// Ponto único de captura de CEP "solto" (modal/header): salva o CEP, descarta a
+// UF anterior (evita região obsoleta) e resolve a nova UF reaproveitando a rota
+// de CEP já existente (/api/address/cep). Se a consulta falhar, a UF fica ausente
+// — de propósito: mensagens restritas por região não aparecem sem UF confiável.
+export async function captureUserCep(value: string): Promise<void> {
+  saveUserCep(value);
+  clearUserUf();
+  const cep = sanitizeCep(value);
+  if (!isValidCep(cep)) return;
+  try {
+    const response = await fetch(`/api/address/cep/${cep}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!response.ok) return;
+    const data = (await response.json().catch(() => null)) as { uf?: string } | null;
+    if (data?.uf) saveUserUf(data.uf);
+  } catch {
+    // Rede indisponível: mantém sem UF (fail-safe).
+  }
 }
