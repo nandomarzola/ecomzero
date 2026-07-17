@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { CheckCircle2, Gift, LoaderCircle, Tag, Truck } from "lucide-react";
+import { CheckCircle2, Gift, LoaderCircle, Truck } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { isAnnouncementEligibleForUf } from "@/lib/client/announcementRegion";
 import { getUserUfSnapshot, subscribeUserCep } from "@/lib/client/cepStorage";
@@ -75,10 +75,7 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
             <p className="text-[11px] font-bold uppercase leading-4 text-white">Você liberou <span className="text-[var(--brand-color)]">{benefitLabel(coupon)}</span></p>
           )}
           <p className="mt-1 line-clamp-1 text-[9px] text-white/45">{campaign.texto}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-[9px]">
-            <span className="inline-flex items-center gap-1 rounded bg-black/30 px-2 py-1 font-mono font-bold text-[var(--brand-color)]"><Tag className="h-3 w-3" /> {coupon.code}</span>
-            <span className="text-white/40">{coupon.scopeLabel}</span>
-          </div>
+          <p className="mt-2 text-[9px] text-white/40">{coupon.scopeLabel}</p>
         </div>
       </div>
 

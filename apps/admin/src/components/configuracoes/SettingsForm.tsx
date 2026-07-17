@@ -525,9 +525,6 @@ export default function SettingsForm({
   const currentPreviewAnnouncement = previewAnnouncements.length
     ? previewAnnouncements[previewAnnouncementIndex % previewAnnouncements.length]
     : null;
-  const currentPreviewCoupon = currentPreviewAnnouncement?.couponId
-    ? coupons.find((coupon) => coupon.id === currentPreviewAnnouncement.couponId) ?? null
-    : null;
   const validAnnouncementColor = /^#[0-9a-fA-F]{6}$/.test(form.barraAnuncioCor);
   const announcementPreviewColor = validAnnouncementColor ? form.barraAnuncioCor : previewColor;
   const activeItem = navigation.flatMap((group) => group.items).find((item) => item.id === activeSection);
@@ -940,10 +937,7 @@ export default function SettingsForm({
             <div className="mt-4 overflow-hidden rounded-md border border-white/[0.1] bg-black" style={{ fontFamily: appearancePreviewFont }}>
               {form.barraAnuncioAtiva && currentPreviewAnnouncement ? (
                 <div className="relative min-h-8 px-12 py-2 text-center text-[9px] font-bold" style={{ backgroundColor: announcementPreviewColor, color: contrastText(announcementPreviewColor) }}>
-                  <span className="inline-flex max-w-full items-center justify-center gap-1.5">
-                    {currentPreviewCoupon ? <span className="shrink-0 rounded bg-black/15 px-1.5 py-0.5 font-mono text-[7px]">CUPOM {currentPreviewCoupon.codigo}</span> : null}
-                    <span className="line-clamp-1">{currentPreviewAnnouncement.texto}</span>
-                  </span>
+                  <span className="line-clamp-1">{currentPreviewAnnouncement.texto}</span>
                   {previewAnnouncements.length > 1 ? (
                     <span className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1">
                       {previewAnnouncements.map((item, index) => <button key={item.id} type="button" onClick={() => setPreviewAnnouncementIndex(index)} aria-label={`Visualizar mensagem ${index + 1}`} className={`h-1.5 rounded-full bg-current transition-all ${index === previewAnnouncementIndex % previewAnnouncements.length ? "w-3 opacity-90" : "w-1.5 opacity-35"}`} />)}
