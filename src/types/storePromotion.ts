@@ -6,6 +6,7 @@ export type StorePromotionCoupon = {
   value: number | null;
   minimumOrderValue: number | null;
   maximumDiscount: number | null;
+  firstPurchase: boolean;
   appliesTo: "toda_loja" | "categoria" | "produto";
   categoryId: string | null;
   productId: string | null;

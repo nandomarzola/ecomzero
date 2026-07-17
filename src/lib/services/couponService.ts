@@ -194,6 +194,60 @@ export async function revalidateAppliedCoupon(
   }
 }
 
+async function assertCustomerEligibility(
+  db: PrismaClientLike,
+  coupon: CouponRow,
+  params: { orderId: string; userId: string | null; email: string | null },
+): Promise<void> {
+  const customerKey = customerKeyFrom(params.userId, params.email);
+  const orConditions: Prisma.CouponRedemptionWhereInput[] = [];
+  if (params.userId) orConditions.push({ userId: params.userId });
+  if (customerKey) orConditions.push({ customerKey });
+  if (orConditions.length > 0) {
+    const used = await db.couponRedemption.count({
+      where: { couponId: coupon.id, orderId: { not: params.orderId }, OR: orConditions },
+    });
+    if (used >= coupon.limiteUsoPorCliente) {
+      throw new CouponError("Você já atingiu o limite de uso deste cupom.", "CUSTOMER_LIMIT");
+    }
+  }
+
+  if (coupon.primeiraCompra) {
+    const priorPaidWhere: Prisma.OrderWhereInput[] = [];
+    if (params.userId) priorPaidWhere.push({ userId: params.userId });
+    if (params.email) priorPaidWhere.push({ emailCliente: params.email.trim().toLowerCase() });
+    if (priorPaidWhere.length > 0) {
+      const priorPaid = await db.order.count({
+        where: { status: "pago", id: { not: params.orderId }, OR: priorPaidWhere },
+      });
+      if (priorPaid > 0) {
+        throw new CouponError("Oferta exclusiva para a primeira compra.", "FIRST_PURCHASE_ONLY");
+      }
+    }
+  }
+}
+
+export async function validateForAutomaticFirstPurchase(
+  code: string,
+  params: {
+    orderId: string;
+    lines: CouponCartLine[];
+    userId: string | null;
+    email: string | null;
+  },
+): Promise<AppliedCoupon | null> {
+  const coupon = await findCoupon(prisma, code);
+  if (!coupon || !coupon.primeiraCompra) return null;
+
+  const subtotal = subtotalFromLines(params.lines);
+  assertUsableNow(coupon, subtotal);
+  const eligibleSubtotal = await eligibleSubtotalForCoupon(prisma, coupon, params.lines);
+  assertApplicable(coupon, eligibleSubtotal);
+  await assertCustomerEligibility(prisma, coupon, params);
+  const { productDiscount, freeShipping } = computeDiscount(coupon, eligibleSubtotal, 0);
+  return { couponId: coupon.id, code: coupon.codigo, tipo: coupon.tipo, productDiscount, freeShipping };
+}
+
 // ── Checkout (autoritativo, com identidade) ─────────────────────────────────
 // Roda dentro da transação de criação do pedido (recebe o `tx`).
 export async function validateForCheckout(
@@ -215,34 +269,7 @@ export async function validateForCheckout(
   const eligibleSubtotal = await eligibleSubtotalForCoupon(db, coupon, params.lines);
   assertApplicable(coupon, eligibleSubtotal);
 
-  // (e) limite por cliente — conta redemptions anteriores deste cliente.
-  const customerKey = customerKeyFrom(params.userId, params.email);
-  const orConditions: Prisma.CouponRedemptionWhereInput[] = [];
-  if (params.userId) orConditions.push({ userId: params.userId });
-  if (customerKey) orConditions.push({ customerKey });
-  if (orConditions.length > 0) {
-    const used = await db.couponRedemption.count({
-      where: { couponId: coupon.id, orderId: { not: params.orderId }, OR: orConditions },
-    });
-    if (used >= coupon.limiteUsoPorCliente) {
-      throw new CouponError("Você já atingiu o limite de uso deste cupom.", "CUSTOMER_LIMIT");
-    }
-  }
-
-  // (g) primeira compra — nenhum pedido pago anterior do cliente.
-  if (coupon.primeiraCompra) {
-    const priorPaidWhere: Prisma.OrderWhereInput[] = [];
-    if (params.userId) priorPaidWhere.push({ userId: params.userId });
-    if (params.email) priorPaidWhere.push({ emailCliente: params.email.trim().toLowerCase() });
-    if (priorPaidWhere.length > 0) {
-      const priorPaid = await db.order.count({
-        where: { status: "pago", id: { not: params.orderId }, OR: priorPaidWhere },
-      });
-      if (priorPaid > 0) {
-        throw new CouponError("Este cupom é válido apenas para a primeira compra.", "FIRST_PURCHASE_ONLY");
-      }
-    }
-  }
+  await assertCustomerEligibility(db, coupon, params);
 
   const { productDiscount, shippingDiscount, freeShipping } = computeDiscount(
     coupon,

@@ -12,6 +12,7 @@ import {
 import {
   addToCartAction,
   applyCouponAction,
+  autoApplyFirstPurchaseCouponAction,
   clearCartItemsAction,
   getCartAction,
   removeCartItemAction,
@@ -59,6 +60,7 @@ type CartContextValue = {
   ) => Promise<CartActionResult>;
   removeItem: (itemId: string) => Promise<CartActionResult>;
   applyCoupon: (code: string) => Promise<CartActionResult>;
+  autoApplyFirstPurchaseCoupon: (code: string) => Promise<CartActionResult>;
   removeCoupon: () => Promise<CartActionResult>;
 };
 
@@ -166,6 +168,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [runMutation],
   );
 
+  const autoApplyFirstPurchaseCoupon = useCallback(
+    (code: string) => runMutation(() => autoApplyFirstPurchaseCouponAction(code)),
+    [runMutation],
+  );
+
   const removeCoupon = useCallback(
     () => runMutation(() => removeCouponAction()),
     [runMutation],
@@ -207,6 +214,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         removeItem,
         applyCoupon,
+        autoApplyFirstPurchaseCoupon,
         removeCoupon,
       }}
     >

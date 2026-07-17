@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { OrderGetPayload } from "@/generated/prisma/models";
 import type { Cart, CartItem } from "@/types/cart";
-import { revalidateAppliedCoupon, validateForCart, type CouponCartLine } from "@/lib/services/couponService";
+import { revalidateAppliedCoupon, validateForAutomaticFirstPurchase, validateForCart, type CouponCartLine } from "@/lib/services/couponService";
 
 // Única camada que toca o Prisma para o carrinho. O carrinho é um Order com
 // status "draft" vinculado a uma sessão anônima (sessionId, cookie).
@@ -131,6 +131,45 @@ export async function applyCoupon(sessionId: string, code: string): Promise<Cart
     order.items.reduce((sum, item) => sum + Number(item.precoUnitario) * item.quantidade, 0),
   );
   const applied = await validateForCart(code, toCouponLines(order.items));
+  await prisma.order.update({
+    where: { id: order.id },
+    data: {
+      couponId: applied.couponId,
+      descontoCupom: applied.productDiscount,
+      subtotal,
+      total: round2(subtotal - applied.productDiscount),
+    },
+  });
+  return getCart(sessionId);
+}
+
+export async function autoApplyFirstPurchaseCoupon(
+  sessionId: string,
+  code: string,
+  identity: { userId: string | null; email: string | null },
+): Promise<Cart> {
+  const order = await prisma.order.findUnique({
+    where: { sessionId },
+    include: {
+      items: { include: { variant: { select: { product: { select: { id: true, categoryId: true } } } } } },
+      coupon: { select: { id: true } },
+    },
+  });
+  if (!order || order.status !== "draft" || order.items.length === 0 || order.coupon) {
+    return getCart(sessionId);
+  }
+
+  const applied = await validateForAutomaticFirstPurchase(code, {
+    orderId: order.id,
+    lines: toCouponLines(order.items),
+    userId: identity.userId,
+    email: identity.email,
+  });
+  if (!applied) return getCart(sessionId);
+
+  const subtotal = round2(
+    order.items.reduce((sum, item) => sum + Number(item.precoUnitario) * item.quantidade, 0),
+  );
   await prisma.order.update({
     where: { id: order.id },
     data: {

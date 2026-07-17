@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
 import { getCartSessionId, getOrCreateCartSessionId } from "@/lib/session";
 import * as cartService from "@/lib/services/cartService";
 import { CouponError, normalizeCode } from "@/lib/services/couponService";
@@ -101,6 +102,27 @@ export async function applyCouponAction(code: unknown): Promise<CartActionResult
   } catch (error) {
     if (error instanceof CouponError) return { success: false, error: error.message };
     return { success: false, error: "Não foi possível aplicar o cupom." };
+  }
+}
+
+export async function autoApplyFirstPurchaseCouponAction(code: unknown): Promise<CartActionResult> {
+  if (typeof code !== "string" || normalizeCode(code).length < 3) {
+    return { success: false, error: "Campanha inválida." };
+  }
+  const sessionId = await getCartSessionId();
+  if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
+  const session = await auth();
+
+  try {
+    const cart = await cartService.autoApplyFirstPurchaseCoupon(sessionId, code, {
+      userId: session?.user?.id ?? null,
+      email: session?.user?.email ?? null,
+    });
+    revalidateCart();
+    return { success: true, cart };
+  } catch (error) {
+    if (error instanceof CouponError) return { success: false, error: error.message };
+    return { success: false, error: "Não foi possível aplicar o benefício automaticamente." };
   }
 }
 
