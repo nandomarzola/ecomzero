@@ -150,6 +150,9 @@ function CategoryRow({
   });
   const blockedReason = deletionBlockReason(category);
   const isChild = category.depth > 0;
+  // Nome do PAI DIRETO (penúltimo segmento do path "A / B / C") — para o label
+  // refletir a profundidade real em vez de "Subcategoria" genérico.
+  const parentName = isChild ? category.path.split(" / ").at(-2) : undefined;
 
   return (
     <div
@@ -169,11 +172,16 @@ function CategoryRow({
         <GripVertical className="h-[17px] w-[17px]" />
       </button>
 
-      <div className={`flex min-w-0 items-center gap-3 ${isChild ? "pl-4 sm:pl-10" : ""}`}>
+      <div
+        className="flex min-w-0 items-center gap-2 sm:gap-3"
+        style={{ paddingLeft: category.depth > 0 ? category.depth * 22 : 0 }}
+      >
         {isChild ? (
-          <span className="absolute left-[42px] hidden items-center text-white/20 sm:flex" aria-hidden="true">
-            <CornerDownRight className="h-8 w-8" strokeWidth={1.2} />
-          </span>
+          <CornerDownRight
+            className="h-4 w-4 shrink-0 text-white/25 sm:h-5 sm:w-5"
+            strokeWidth={1.4}
+            aria-hidden="true"
+          />
         ) : null}
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md ${isChild ? "bg-sky-400/10 text-sky-300" : "bg-[#A9EC17]/10 text-[#A9EC17]"}`}>
           {category.imagemUrl ? (
@@ -188,7 +196,13 @@ function CategoryRow({
             <strong className={`truncate text-[12px] text-white ${isChild ? "font-semibold" : "font-bold"}`}>{category.nome}</strong>
             {category.destaque ? <Star className="h-3.5 w-3.5 shrink-0 fill-[#A9EC17] text-[#A9EC17]" aria-label="Categoria em destaque" /> : null}
           </span>
-          <span className="mt-0.5 block text-[10px] text-white/38">{isChild ? "Subcategoria" : "Categoria principal"}</span>
+          <span className="mt-0.5 block truncate text-[10px] text-white/38">
+            {category.depth === 0
+              ? "Categoria principal"
+              : parentName
+                ? `Subcategoria de ${parentName}`
+                : `Subcategoria (nível ${category.depth + 1})`}
+          </span>
         </span>
       </div>
 
