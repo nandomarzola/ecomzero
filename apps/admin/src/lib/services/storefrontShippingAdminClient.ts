@@ -26,6 +26,20 @@ export type ShippingPreparationResult = {
   autoPurchaseEnabled: boolean;
 };
 
+export type OrderCancellationResult = {
+  orderId: string;
+  status: "cancelado";
+  alreadyCanceled: boolean;
+  shipmentCanceled: boolean;
+  refund: {
+    id: string | null;
+    paymentId: string;
+    amount: number | null;
+    status: string;
+  } | null;
+  completedAt: string;
+};
+
 function apiBaseUrl() {
   if (config.storefrontUrl) return config.storefrontUrl.replace(/\/$/, "");
   return config.nodeEnv === "production"
@@ -198,5 +212,19 @@ export function cancelShipmentInStorefront(orderId: string) {
   return internalRequest<{ ok: true }>(
     `/api/admin/shipping/orders/${orderId}/cancel`,
     {},
+  );
+}
+
+export function cancelOrderInStorefront(
+  orderId: string,
+  input: {
+    reason: "customer_request" | "out_of_stock" | "suspected_fraud" | "other";
+    note?: string;
+    requestedBy: string;
+  },
+) {
+  return internalRequest<OrderCancellationResult>(
+    `/api/admin/orders/${orderId}/cancel`,
+    input,
   );
 }

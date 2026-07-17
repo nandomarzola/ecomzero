@@ -11,6 +11,7 @@ import {
   shippingModeLabel,
 } from "@/lib/orders/status";
 import StatusBadge from "@/components/pedidos/StatusBadge";
+import CancelOrderButton from "@/components/pedidos/CancelOrderButton";
 
 const money = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -110,7 +111,7 @@ export default function OrdersTable({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
                       <Link
                         href={order.labelStatus === "generated" || order.labelStatus === "printed"
                           ? `/pedidos/${order.id}/etiqueta?autoprint=1`
@@ -132,6 +133,13 @@ export default function OrdersTable({
                                   ? "Rastrear"
                                   : "Ver detalhes"}
                       </Link>
+                      <CancelOrderButton
+                        orderId={order.id}
+                        orderStatus={order.status}
+                        total={order.total}
+                        hasMelhorEnvioLabel={order.hasMelhorEnvioLabel}
+                        compact
+                      />
                     </div>
                   </td>
                 </tr>

@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { savePurchasedAddressForUser } from "@/lib/services/accountService";
 import { recordCouponUsage } from "@/lib/services/couponService";
 import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentService";
+import { refundLatePaymentForCanceledOrder } from "@/lib/services/orderCancellationService";
 import {
   createMercadoPagoPayment,
   createPaymentPreference,
@@ -598,10 +599,14 @@ async function reconcilePayment(
   }
 
   if (order.status === "cancelado") {
-    throw new PaymentReconciliationError(
-      "Pedido cancelado recebeu um pagamento",
-      "PAYMENT_MISMATCH",
-    );
+    const changed = await refundLatePaymentForCanceledOrder(order.id, payment);
+    return {
+      orderId: order.id,
+      orderStatus: "cancelado",
+      paymentStatus: "refunded",
+      changed,
+      payment,
+    };
   }
 
   // Transição para "pago" + registro de uso do cupom na MESMA transação, para

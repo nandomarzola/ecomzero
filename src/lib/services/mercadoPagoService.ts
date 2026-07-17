@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
+import {
+  MercadoPagoConfig,
+  Payment,
+  PaymentRefund,
+  Preference,
+} from "mercadopago";
 import { config } from "@/lib/config";
 import type { BrickPaymentInput } from "@/lib/validation/payment";
 
@@ -64,6 +69,13 @@ export type MercadoPagoPaymentSnapshot = {
   expiresAt: Date | null;
   threeDsExternalResourceUrl: string | null;
   threeDsCreq: string | null;
+};
+
+export type MercadoPagoRefundSnapshot = {
+  id: string | null;
+  paymentId: string;
+  amount: number | null;
+  status: string;
 };
 
 const absoluteUrl = (value: string, siteUrl: string) => {
@@ -454,5 +466,102 @@ export async function getMercadoPagoPayment(
       "Não foi possível confirmar o pagamento",
       502,
     );
+  }
+}
+
+function mercadoPagoManagementError(
+  operation: "cancelamento" | "estorno",
+  error: unknown,
+) {
+  const failure = getMercadoPagoFailure(error);
+  console.error(`Mercado Pago ${operation} failed`, {
+    providerStatus: failure.status,
+    providerError: failure.error,
+    providerMessage: failure.message,
+    providerCauses: failure.causes,
+  });
+
+  const providerText = [failure.error, failure.message, ...failure.causes.map((cause) => cause.description)]
+    .filter(Boolean)
+    .join(" ");
+
+  if (failure.status === 401 || failure.status === 403) {
+    return new MercadoPagoServiceError(
+      "O Mercado Pago recusou a operação. Confira o Access Token de produção.",
+      503,
+    );
+  }
+  if (failure.status === 404) {
+    return new MercadoPagoServiceError(
+      "O pagamento não foi encontrado no Mercado Pago.",
+      502,
+    );
+  }
+  if (
+    failure.status === 428 ||
+    /insufficient|saldo insuficiente|sem saldo/i.test(providerText)
+  ) {
+    return new MercadoPagoServiceError(
+      "Saldo insuficiente no Mercado Pago para estornar este pedido.",
+      502,
+    );
+  }
+
+  return new MercadoPagoServiceError(
+    operation === "estorno"
+      ? "O Mercado Pago não concluiu o estorno. Verifique o pagamento e tente novamente."
+      : "O Mercado Pago não concluiu o cancelamento do pagamento pendente.",
+    502,
+  );
+}
+
+export async function cancelMercadoPagoPayment(
+  paymentId: string,
+  orderId: string,
+): Promise<MercadoPagoPaymentSnapshot> {
+  const idempotencyKey = createHash("sha256")
+    .update(`cancel-payment:${orderId}:${paymentId}`)
+    .digest("hex");
+
+  try {
+    const response = await new Payment(getMercadoPagoClient()).cancel({
+      id: paymentId,
+      requestOptions: { idempotencyKey },
+    });
+    return normalizePaymentResponse(response);
+  } catch (error) {
+    if (error instanceof MercadoPagoServiceError) throw error;
+    throw mercadoPagoManagementError("cancelamento", error);
+  }
+}
+
+export async function refundMercadoPagoPayment(
+  paymentId: string,
+  orderId: string,
+): Promise<MercadoPagoRefundSnapshot> {
+  const idempotencyKey = createHash("sha256")
+    .update(`refund-payment:${orderId}:${paymentId}`)
+    .digest("hex");
+
+  try {
+    const response = await new PaymentRefund(getMercadoPagoClient()).total({
+      payment_id: paymentId,
+      requestOptions: { idempotencyKey },
+    });
+    return {
+      id: response.id === undefined ? null : String(response.id),
+      paymentId:
+        response.payment_id === undefined
+          ? paymentId
+          : String(response.payment_id),
+      amount:
+        typeof response.amount === "number" && Number.isFinite(response.amount)
+          ? response.amount
+          : null,
+      status: response.status ?? "approved",
+    };
+  } catch (error) {
+    if (error instanceof MercadoPagoServiceError) throw error;
+    throw mercadoPagoManagementError("estorno", error);
   }
 }

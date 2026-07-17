@@ -25,6 +25,7 @@ export type OrderRow = {
   labelStatus: string;
   shipmentStatus: string | null;
   shipmentError: string | null;
+  hasMelhorEnvioLabel: boolean;
 };
 
 export type OrdersSummary = {
@@ -212,6 +213,7 @@ export async function listOrdersPaged(params: {
           status: true,
           labelStatus: true,
           ultimoErro: true,
+          melhorEnvioId: true,
         },
       },
     },
@@ -236,9 +238,12 @@ export async function listOrdersPaged(params: {
           ? "awaiting_payment"
           : order.status === "pago"
             ? "awaiting_shipping_data"
-            : "not_applicable"),
+            : order.status === "cancelado"
+              ? "canceled"
+              : "not_applicable"),
       shipmentStatus: order.shipment?.status ?? null,
       shipmentError: order.shipment?.ultimoErro ?? null,
+      hasMelhorEnvioLabel: Boolean(order.shipment?.melhorEnvioId),
     })),
     total,
     page,

@@ -104,6 +104,8 @@ export async function getAdminOrderDetails(orderId: string) {
           events: { orderBy: { createdAt: "desc" }, take: 20 },
         },
       },
+      cancellation: true,
+      events: { orderBy: { createdAt: "desc" }, take: 20 },
       items: {
         include: {
           variant: { include: { product: true } },
