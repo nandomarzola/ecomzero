@@ -49,7 +49,10 @@ export default function Header({ logoUrl, storeName }: { logoUrl?: string; store
       {usesStorefrontHeader && (
         <div className="flex flex-col gap-2 px-4 pb-3 md:hidden">
           <SearchBar />
-          <HeaderCepButton />
+          {/* CEP secundário: barra full-width discreta com alvo de toque >=44px.
+              O estilo é escopado a ESTE uso mobile via [&>button] — o botão de CEP
+              do desktop (dentro de HeaderActions) recebe outra className e não muda. */}
+          <HeaderCepButton className="[&>button]:min-h-11 [&>button]:w-full [&>button]:justify-start [&>button]:rounded-lg [&>button]:border [&>button]:border-white/10 [&>button]:bg-white/[0.03] [&>button]:px-3" />
         </div>
       )}
 
