@@ -1,8 +1,9 @@
-import { Box, ExternalLink, KeyRound, MapPin, TriangleAlert } from "lucide-react";
+import { Box, ExternalLink, KeyRound, MapPin, TriangleAlert, WalletCards } from "lucide-react";
 import { headers } from "next/headers";
 import ShippingSettingsForm from "@/components/fretes/ShippingSettingsForm";
 import { getShippingIntegrationStatus } from "@/lib/services/shippingAdminService";
 import { getShippingSettings } from "@/lib/services/shippingFulfillmentAdminService";
+import { getStorefrontMelhorEnvioBalance } from "@/lib/services/storefrontShippingAdminClient";
 
 export const dynamic = "force-dynamic";
 
@@ -30,12 +31,28 @@ export default async function FretesPage({
 }: {
   searchParams: Promise<{ oauth?: string }>;
 }) {
-  const [integration, settings, params, requestHeaders] = await Promise.all([
+  const [integration, settings, params, requestHeaders, balanceResult] = await Promise.all([
     getShippingIntegrationStatus(),
     getShippingSettings(),
     searchParams,
     headers(),
+    getStorefrontMelhorEnvioBalance()
+      .then((balance) => ({ balance, requestError: null }))
+      .catch((error: unknown) => ({
+        balance: null,
+        requestError:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível consultar o saldo da Melhor Carteira.",
+      })),
   ]);
+  const balance = balanceResult.balance;
+  const balanceError = balanceResult.requestError ?? balance?.error ?? null;
+  const balanceValue = balance?.available === true ? balance.value : null;
+  const hasBalance = balanceValue !== null;
+  const authorizationError = balanceError
+    ? /unauthor|autoriz|permiss/i.test(balanceError)
+    : false;
   const oauthMessage = params.oauth ? oauthMessages[params.oauth] : null;
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
@@ -99,11 +116,39 @@ export default async function FretesPage({
               {callbackUrl}
             </code>
           </div>
-          <div className="rounded-lg border border-amber-400/15 bg-amber-400/[0.04] p-4">
-            <TriangleAlert className="h-4 w-4 text-amber-300" />
-            <p className="mt-2 text-xs leading-5 text-white/50">
-              A compra da etiqueta usa o saldo da Melhor Carteira. Com saldo R$ 0,00, o pedido pode ir ao carrinho, mas a compra será recusada.
-            </p>
+          <div className={`rounded-lg border p-4 ${hasBalance ? "border-[#A9EC17]/15 bg-[#A9EC17]/[0.04]" : "border-amber-400/15 bg-amber-400/[0.04]"}`}>
+            {hasBalance ? (
+              <WalletCards className="h-4 w-4 text-[#A9EC17]" />
+            ) : (
+              <TriangleAlert className="h-4 w-4 text-amber-300" />
+            )}
+            <p className="mt-2 text-xs font-semibold text-white/70">Melhor Carteira</p>
+            {hasBalance ? (
+              <>
+                <p className="mt-1 text-xl font-bold text-[#A9EC17]">
+                  {balanceValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-white/40">
+                  Saldo disponível para compra de etiquetas.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-sm font-semibold text-amber-200">
+                  Não foi possível consultar o saldo
+                </p>
+                <p className="mt-1 text-xs leading-5 text-white/45" title={balanceError ?? undefined}>
+                  {authorizationError
+                    ? "Reautorize a conta Melhor Envio para liberar a consulta da carteira."
+                    : "Confira a integração com a loja e tente novamente."}
+                </p>
+              </>
+            )}
+            {balance?.checkedAt ? (
+              <p className="mt-2 text-[11px] text-white/30">
+                Última consulta: {new Date(balance.checkedAt).toLocaleString("pt-BR")}
+              </p>
+            ) : null}
           </div>
         </div>
       </section>

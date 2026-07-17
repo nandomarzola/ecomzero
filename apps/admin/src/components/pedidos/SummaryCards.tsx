@@ -1,8 +1,5 @@
 import { AlertTriangle, FileCheck2, FileClock, Gift } from "lucide-react";
-import {
-  getCachedMelhorEnvioBalance,
-  getOrdersSummary,
-} from "@/lib/services/orderAdminService";
+import { getOrdersSummary } from "@/lib/services/orderAdminService";
 import { getStorefrontMelhorEnvioBalance } from "@/lib/services/storefrontShippingAdminClient";
 import type { OrderFilter, OrderPeriodId } from "@/lib/orders/filters";
 import OrderSummaryCard, { type SummaryTone } from "@/components/pedidos/OrderSummaryCard";
@@ -16,10 +13,25 @@ export default async function SummaryCards({
   period: OrderPeriodId;
   activeMetric: OrderFilter["metric"];
 }) {
-  const [summary, balance] = await Promise.all([
+  const [summary, balanceResult] = await Promise.all([
     getOrdersSummary(period),
-    getStorefrontMelhorEnvioBalance().catch(() => getCachedMelhorEnvioBalance()),
+    getStorefrontMelhorEnvioBalance()
+      .then((balance) => ({ balance, requestError: null }))
+      .catch((error: unknown) => ({
+        balance: null,
+        requestError:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível consultar o saldo da Melhor Carteira.",
+      })),
   ]);
+  const balance = balanceResult.balance;
+  const balanceError = balanceResult.requestError ?? balance?.error ?? null;
+  const balanceValue = balance?.available === true ? balance.value : null;
+  const hasBalance = balanceValue !== null;
+  const authorizationError = balanceError
+    ? /unauthor|autoriz|permiss/i.test(balanceError)
+    : false;
 
   const cards: {
     metric: OrderFilter["metric"];
@@ -50,11 +62,16 @@ export default async function SummaryCards({
           />
         ))}
       </section>
-      <p className="text-right text-[11px] text-white/35">
-        Melhor Carteira: {balance.available && balance.value !== null
-          ? balance.value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-          : "Saldo indisponível"}
-        {balance.checkedAt
+      <p
+        className={`text-right text-[11px] ${hasBalance ? "text-white/35" : "text-amber-300/80"}`}
+        title={balanceError ?? undefined}
+      >
+        Melhor Carteira: {hasBalance
+          ? balanceValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+          : authorizationError
+            ? "Reautorize a conta Melhor Envio"
+            : "Não foi possível consultar o saldo"}
+        {balance?.checkedAt
           ? ` · atualizado ${new Date(balance.checkedAt).toLocaleString("pt-BR")}`
           : ""}
       </p>
