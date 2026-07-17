@@ -34,7 +34,7 @@ const accountItems = [
   { label: "Endereços", icon: MapPin, href: "/conta/enderecos", comingSoon: false },
   // Comentados por enquanto (recursos ainda não lançados):
   // { label: "Formas de pagamento", icon: CreditCard, href: null, comingSoon: true },
-  { label: "Favoritos", icon: Heart, href: null, comingSoon: true },
+  { label: "Favoritos", icon: Heart, href: "/conta/favoritos", comingSoon: false },
   { label: "Cupons e benefícios", icon: Tag, href: null, comingSoon: true },
   // { label: "Notificações", icon: Bell, href: null, comingSoon: true },
 ];

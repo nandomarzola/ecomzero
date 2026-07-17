@@ -54,6 +54,16 @@ function toProduct(
   };
 }
 
+// Produtos favoritados por um cliente (mais recentes primeiro), só ativos.
+export async function getFavoriteProducts(userId: string): Promise<Product[]> {
+  const favorites = await prisma.productFavorite.findMany({
+    where: { userId, product: { ativo: true } },
+    orderBy: { createdAt: "desc" },
+    include: { product: { include: { variantes: { orderBy: { id: "asc" } } } } },
+  });
+  return favorites.map((favorite) => toProduct(favorite.product));
+}
+
 export async function getAllProducts(): Promise<Product[]> {
   const records = await prisma.product.findMany({
     where: { ativo: true },

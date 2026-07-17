@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, MapPin, UserRound } from "lucide-react";
+import { ClipboardList, Heart, MapPin, UserRound } from "lucide-react";
 
 const items = [
   { label: "Meus pedidos", href: "/conta/pedidos", icon: ClipboardList },
   { label: "Meus dados", href: "/conta/dados", icon: UserRound },
   { label: "Endereços", href: "/conta/enderecos", icon: MapPin },
+  { label: "Favoritos", href: "/conta/favoritos", icon: Heart },
 ];
 
 export default function AccountNavigation() {

@@ -6,6 +6,7 @@ import AuthSessionProvider from "@/components/AuthSessionProvider";
 import BottomNav from "@/components/BottomNav";
 import CartDrawer from "@/components/cart/CartDrawer";
 import { CartProvider } from "@/components/CartProvider";
+import { FavoritesProvider } from "@/components/FavoritesProvider";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
@@ -110,6 +111,7 @@ export default async function RootLayout({
         <AuthSessionProvider>
           <CartProvider>
             <CartDrawer />
+            <FavoritesProvider>
             <ProductFiltersProvider>
               {settings.barraAnuncioAtiva && announcementItems.length ? (
                 <AnnouncementBar
@@ -126,6 +128,7 @@ export default async function RootLayout({
 
               <BottomNav />
             </ProductFiltersProvider>
+            </FavoritesProvider>
           </CartProvider>
         </AuthSessionProvider>
 

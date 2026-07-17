@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/components/CartProvider";
+import { useFavorites } from "@/components/FavoritesProvider";
 import type { Product } from "@/types/product";
 
 type ProductCardProps = {
@@ -28,6 +29,8 @@ const formatPrice = (price: number) =>
 export default function ProductCard({ product }: ProductCardProps) {
   const [feedback, setFeedback] = useState<"idle" | "added">("idle");
   const [pendingAction, setPendingAction] = useState<"buy" | "cart" | null>(null);
+  const { isAuthenticated: canFavorite, isFavorite, toggle: toggleFavorite } = useFavorites();
+  const favorited = isFavorite(product.id);
   const isPending = pendingAction !== null;
   const { addItem } = useCart();
 
@@ -107,15 +110,26 @@ export default function ProductCard({ product }: ProductCardProps) {
           </span>
         )}
 
-        <button
-          type="button"
-          disabled
-          aria-label="Favoritos em breve"
-          title="Favoritos em breve"
-          className="absolute right-4 top-4 z-[2] inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-white/25 bg-black/25 text-white/75 backdrop-blur-sm sm:right-5 sm:top-5"
-        >
-          <Heart className="h-5 w-5" strokeWidth={1.7} />
-        </button>
+        {canFavorite && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              toggleFavorite(product.id);
+            }}
+            aria-pressed={favorited}
+            aria-label={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            title={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            className={`absolute right-4 top-4 z-[2] inline-flex h-11 w-11 items-center justify-center rounded-full border backdrop-blur-sm transition sm:right-5 sm:top-5 ${
+              favorited
+                ? "border-[var(--brand-color)]/70 bg-[var(--brand-color)]/15 text-[var(--brand-color)]"
+                : "border-white/25 bg-black/25 text-white/75 hover:border-white/50 hover:text-white"
+            }`}
+          >
+            <Heart className={`h-5 w-5 ${favorited ? "fill-current" : ""}`} strokeWidth={1.7} />
+          </button>
+        )}
       </div>
 
       <div className="store-product-card-content flex flex-1 flex-col border-t border-white/[0.06] p-4 sm:p-5">

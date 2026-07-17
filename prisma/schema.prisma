@@ -105,6 +105,7 @@ model User {
   orders            Order[]
   addresses         Address[]
   couponRedemptions CouponRedemption[]
+  favorites         ProductFavorite[]
 }
 
 model Account {
@@ -198,11 +199,25 @@ model Product {
   updatedAt DateTime @updatedAt
 
   variantes ProductVariant[]
+  favorites ProductFavorite[]
 
   @@index([categoria])
   @@index([categoryId])
   @@index([ativo, isNovidade])
   @@index([ativo, isPromocao])
+}
+
+// Favorito do cliente (User NextAuth ↔ Product). @@unique evita duplicar.
+model ProductFavorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([userId])
 }
 
 model Category {
