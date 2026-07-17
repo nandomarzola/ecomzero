@@ -144,6 +144,36 @@ function findBalance(value: unknown): number | null {
   return null;
 }
 
+function findCancellationEligibility(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const eligibility = findCancellationEligibility(item);
+      if (eligibility !== null) return eligibility;
+    }
+    return null;
+  }
+  const object = asObject(value);
+  if (!object) return null;
+  for (const key of [
+    "cancellable",
+    "cancelable",
+    "is_cancellable",
+    "can_cancel",
+    "canCancel",
+  ]) {
+    const candidate = object[key];
+    if (typeof candidate === "boolean") return candidate;
+    if (candidate === "true" || candidate === "1") return true;
+    if (candidate === "false" || candidate === "0") return false;
+  }
+  for (const nested of Object.values(object)) {
+    const eligibility = findCancellationEligibility(nested);
+    if (eligibility !== null) return eligibility;
+  }
+  return null;
+}
+
 export async function getMelhorEnvioBalance(options?: {
   force?: boolean;
 }): Promise<MelhorEnvioBalance> {
@@ -1362,20 +1392,51 @@ export async function cancelShipment(orderId: string) {
       "LABEL_NOT_CANCELLABLE",
     );
   }
-  await melhorEnvioRequest("/api/v2/me/shipment/cancellable", {
-    method: "POST",
-    body: { orders: [shipment.melhorEnvioId] },
-  });
-  await melhorEnvioRequest("/api/v2/me/shipment/cancel", {
-    method: "POST",
-    body: {
-      order: {
-        id: shipment.melhorEnvioId,
-        reason_id: 2,
-        description: "Cancelamento solicitado pelo administrador da EcomZero.",
+  try {
+    const eligibilityResponse = await melhorEnvioRequest(
+      "/api/v2/me/shipment/cancellable",
+      {
+        method: "POST",
+        body: { orders: [shipment.melhorEnvioId] },
       },
-    },
-  });
+    );
+    if (findCancellationEligibility(eligibilityResponse) === false) {
+      throw new ShippingFulfillmentError(
+        "O Melhor Envio informou que esta etiqueta não pode mais ser cancelada.",
+        "LABEL_NOT_CANCELLABLE",
+      );
+    }
+
+    await melhorEnvioRequest("/api/v2/me/shipment/cancel", {
+      method: "POST",
+      body: {
+        order: {
+          id: shipment.melhorEnvioId,
+          reason_id: 2,
+          description: "Cancelamento solicitado pelo administrador da EcomZero.",
+        },
+      },
+    });
+  } catch (error) {
+    if (error instanceof ShippingFulfillmentError) throw error;
+
+    const providerMessage = safeError(error);
+    await addEvent(
+      shipment.id,
+      "cancel_error",
+      shipment.labelStatus,
+      `Cancelamento não concluído: ${providerMessage}`,
+    ).catch(() => undefined);
+
+    if (error instanceof MelhorEnvioServiceError) {
+      throw new ShippingFulfillmentError(
+        `O Melhor Envio recusou o cancelamento: ${providerMessage}`,
+        "LABEL_NOT_CANCELLABLE",
+      );
+    }
+    throw error;
+  }
+
   await applyProviderShipmentUpdate({
     melhorEnvioId: shipment.melhorEnvioId,
     orderId,

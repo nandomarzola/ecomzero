@@ -285,7 +285,7 @@ export default function ShipmentActions({
     run(
       "cancel",
       () => cancelShipmentAction(orderId),
-      "Cancelamento solicitado ao Melhor Envio.",
+      "Etiqueta cancelada no Melhor Envio.",
     );
   }
 
