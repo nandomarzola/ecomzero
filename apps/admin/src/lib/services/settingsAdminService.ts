@@ -24,6 +24,7 @@ export async function getAnnouncementBarItems() {
       link: true,
       ordem: true,
       ativo: true,
+      couponId: true,
       regioesElegiveis: true,
     },
   });
@@ -56,6 +57,7 @@ export async function updateStoreSettings(input: StoreSettingsInput) {
         link: item.link ?? null,
         ordem: index,
         ativo: item.ativo,
+        couponId: item.couponId ?? null,
         regioesElegiveis: item.regioesElegiveis,
       };
       await transaction.announcementBarItem.upsert({ where: { id: item.id }, create: { id: item.id, ...itemData }, update: itemData });

@@ -1,11 +1,16 @@
 import SettingsForm, { type SettingsFormInitial } from "@/components/configuracoes/SettingsForm";
 import { config } from "@/lib/config";
 import { getAnnouncementBarItems, getStoreSettings } from "@/lib/services/settingsAdminService";
+import { listCoupons } from "@/lib/services/couponAdminService";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfiguracoesPage() {
-  const [settings, announcementItems] = await Promise.all([getStoreSettings(), getAnnouncementBarItems()]);
+  const [settings, announcementItems, coupons] = await Promise.all([
+    getStoreSettings(),
+    getAnnouncementBarItems(),
+    listCoupons(),
+  ]);
   const initial: SettingsFormInitial = {
     ...settings,
     fontFamily: settings.fontFamily as SettingsFormInitial["fontFamily"],
@@ -15,5 +20,5 @@ export default async function ConfiguracoesPage() {
     announcementItems,
     updatedAt: settings.updatedAt.toISOString(),
   };
-  return <SettingsForm initial={initial} storefrontUrl={config.storefrontUrl ?? "https://www.ecomzero.com.br"} />;
+  return <SettingsForm initial={initial} coupons={coupons} storefrontUrl={config.storefrontUrl ?? "https://www.ecomzero.com.br"} />;
 }

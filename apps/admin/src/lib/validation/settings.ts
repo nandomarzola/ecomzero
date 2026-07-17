@@ -29,6 +29,10 @@ export const announcementBarItemSchema = z.object({
   link: optionalNavigationUrl,
   ordem: z.number().int().min(0),
   ativo: z.boolean(),
+  couponId: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().uuid("Selecione um cupom válido").optional(),
+  ),
   regioesElegiveis: z
     .array(z.enum(BRAZIL_UFS))
     .max(BRAZIL_UFS.length)

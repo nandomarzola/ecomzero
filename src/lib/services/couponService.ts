@@ -15,6 +15,7 @@ export type CouponErrorCode =
   | "NOT_STARTED"
   | "EXPIRED"
   | "MIN_ORDER"
+  | "NOT_APPLICABLE"
   | "TOTAL_LIMIT"
   | "CUSTOMER_LIMIT"
   | "FIRST_PURCHASE_ONLY";
@@ -31,6 +32,13 @@ export class CouponError extends Error {
 
 type CouponRow = Prisma.CouponGetPayload<object>;
 type PrismaClientLike = Prisma.TransactionClient | typeof prisma;
+
+export type CouponCartLine = {
+  productId: string;
+  categoryId: string | null;
+  quantity: number;
+  unitPrice: number;
+};
 
 const money = (value: number) =>
   value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -92,7 +100,7 @@ function assertUsableNow(coupon: CouponRow, subtotal: number): void {
 // Cálculo do desconto. `shippingCost` só importa para frete_gratis.
 export function computeDiscount(
   coupon: CouponRow,
-  subtotal: number,
+  eligibleSubtotal: number,
   shippingCost: number,
 ): { productDiscount: number; shippingDiscount: number; freeShipping: boolean } {
   if (coupon.tipo === "frete_gratis") {
@@ -101,23 +109,67 @@ export function computeDiscount(
 
   const valor = Number(coupon.valor ?? 0);
   let discount =
-    coupon.tipo === "percentual" ? (subtotal * valor) / 100 : valor;
+    coupon.tipo === "percentual" ? (eligibleSubtotal * valor) / 100 : valor;
 
   // Teto de desconto (só percentual, mas aplicamos defensivamente se existir).
   if (coupon.descontoMaximo !== null) {
     discount = Math.min(discount, Number(coupon.descontoMaximo));
   }
   // Nunca descontar mais que o valor dos produtos.
-  discount = Math.min(discount, subtotal);
+  discount = Math.min(discount, eligibleSubtotal);
   return { productDiscount: round2(Math.max(0, discount)), shippingDiscount: 0, freeShipping: false };
 }
 
+const subtotalFromLines = (lines: CouponCartLine[]) => round2(
+  lines.reduce((total, line) => total + line.unitPrice * line.quantity, 0),
+);
+
+async function eligibleSubtotalForCoupon(
+  db: PrismaClientLike,
+  coupon: CouponRow,
+  lines: CouponCartLine[],
+): Promise<number> {
+  if (coupon.aplicaEm === "toda_loja") return subtotalFromLines(lines);
+
+  if (coupon.aplicaEm === "produto") {
+    return round2(lines
+      .filter((line) => line.productId === coupon.produtoId)
+      .reduce((total, line) => total + line.unitPrice * line.quantity, 0));
+  }
+
+  if (!coupon.categoriaId) return 0;
+  const categories = await db.category.findMany({ select: { id: true, parentId: true } });
+  const eligibleIds = new Set([coupon.categoriaId]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const category of categories) {
+      if (category.parentId && eligibleIds.has(category.parentId) && !eligibleIds.has(category.id)) {
+        eligibleIds.add(category.id);
+        changed = true;
+      }
+    }
+  }
+  return round2(lines
+    .filter((line) => line.categoryId && eligibleIds.has(line.categoryId))
+    .reduce((total, line) => total + line.unitPrice * line.quantity, 0));
+}
+
+function assertApplicable(coupon: CouponRow, eligibleSubtotal: number): void {
+  if (coupon.aplicaEm !== "toda_loja" && eligibleSubtotal <= 0) {
+    throw new CouponError("Este cupom não se aplica aos produtos do carrinho.", "NOT_APPLICABLE");
+  }
+}
+
 // ── Carrinho (preview, sem identidade) ──────────────────────────────────────
-export async function validateForCart(code: string, subtotal: number): Promise<AppliedCoupon> {
+export async function validateForCart(code: string, lines: CouponCartLine[]): Promise<AppliedCoupon> {
   const coupon = await findCoupon(prisma, code);
   if (!coupon) throw new CouponError("Cupom não encontrado.", "NOT_FOUND");
+  const subtotal = subtotalFromLines(lines);
   assertUsableNow(coupon, subtotal);
-  const { productDiscount, freeShipping } = computeDiscount(coupon, subtotal, 0);
+  const eligibleSubtotal = await eligibleSubtotalForCoupon(prisma, coupon, lines);
+  assertApplicable(coupon, eligibleSubtotal);
+  const { productDiscount, freeShipping } = computeDiscount(coupon, eligibleSubtotal, 0);
   return { couponId: coupon.id, code: coupon.codigo, tipo: coupon.tipo, productDiscount, freeShipping };
 }
 
@@ -126,17 +178,20 @@ export async function validateForCart(code: string, subtotal: number): Promise<A
 // remove o cupom silenciosamente.
 export async function revalidateAppliedCoupon(
   couponId: string,
-  subtotal: number,
+  lines: CouponCartLine[],
 ): Promise<AppliedCoupon | null> {
   const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
   if (!coupon) return null;
   try {
+    const subtotal = subtotalFromLines(lines);
     assertUsableNow(coupon, subtotal);
+    const eligibleSubtotal = await eligibleSubtotalForCoupon(prisma, coupon, lines);
+    assertApplicable(coupon, eligibleSubtotal);
+    const { productDiscount, freeShipping } = computeDiscount(coupon, eligibleSubtotal, 0);
+    return { couponId: coupon.id, code: coupon.codigo, tipo: coupon.tipo, productDiscount, freeShipping };
   } catch {
     return null;
   }
-  const { productDiscount, freeShipping } = computeDiscount(coupon, subtotal, 0);
-  return { couponId: coupon.id, code: coupon.codigo, tipo: coupon.tipo, productDiscount, freeShipping };
 }
 
 // ── Checkout (autoritativo, com identidade) ─────────────────────────────────
@@ -147,6 +202,7 @@ export async function validateForCheckout(
     couponId: string;
     orderId: string;
     subtotal: number;
+    lines: CouponCartLine[];
     shippingCost: number;
     userId: string | null;
     email: string | null;
@@ -156,6 +212,8 @@ export async function validateForCheckout(
   if (!coupon) throw new CouponError("Cupom não encontrado.", "NOT_FOUND");
 
   assertUsableNow(coupon, params.subtotal);
+  const eligibleSubtotal = await eligibleSubtotalForCoupon(db, coupon, params.lines);
+  assertApplicable(coupon, eligibleSubtotal);
 
   // (e) limite por cliente — conta redemptions anteriores deste cliente.
   const customerKey = customerKeyFrom(params.userId, params.email);
@@ -188,7 +246,7 @@ export async function validateForCheckout(
 
   const { productDiscount, shippingDiscount, freeShipping } = computeDiscount(
     coupon,
-    params.subtotal,
+    eligibleSubtotal,
     params.shippingCost,
   );
   return {

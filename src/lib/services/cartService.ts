@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { OrderGetPayload } from "@/generated/prisma/models";
 import type { Cart, CartItem } from "@/types/cart";
-import { revalidateAppliedCoupon, validateForCart } from "@/lib/services/couponService";
+import { revalidateAppliedCoupon, validateForCart, type CouponCartLine } from "@/lib/services/couponService";
 
 // Única camada que toca o Prisma para o carrinho. O carrinho é um Order com
 // status "draft" vinculado a uma sessão anônima (sessionId, cookie).
@@ -43,6 +43,8 @@ function toCart(order: OrderWithItems): Cart {
   const items: CartItem[] = order.items.map((item) => ({
     id: item.id,
     variantId: item.variantId,
+    productId: item.variant.product.id,
+    categoryId: item.variant.product.categoryId,
     productSlug: item.variant.product.slug,
     productName: item.variant.product.nome,
     productImage: item.variant.product.imagem,
@@ -70,12 +72,28 @@ function toCart(order: OrderWithItems): Cart {
   };
 }
 
+function toCouponLines(items: Array<{
+  quantidade: number;
+  precoUnitario: { toString(): string };
+  variant: { product: { id: string; categoryId: string | null } };
+}>): CouponCartLine[] {
+  return items.map((item) => ({
+    productId: item.variant.product.id,
+    categoryId: item.variant.product.categoryId,
+    quantity: item.quantidade,
+    unitPrice: Number(item.precoUnitario),
+  }));
+}
+
 // Recalcula subtotal/desconto/total do carrinho após qualquer mudança de item.
 // Se há cupom aplicado, revalida (pode ter caído abaixo do mínimo → é removido
 // silenciosamente). Também invalida a cotação de frete guardada.
 async function recalculateTotal(orderId: string): Promise<void> {
   const [items, order] = await Promise.all([
-    prisma.orderItem.findMany({ where: { orderId } }),
+    prisma.orderItem.findMany({
+      where: { orderId },
+      include: { variant: { select: { product: { select: { id: true, categoryId: true } } } } },
+    }),
     prisma.order.findUnique({ where: { id: orderId }, select: { couponId: true } }),
   ]);
   const subtotal = round2(
@@ -85,7 +103,7 @@ async function recalculateTotal(orderId: string): Promise<void> {
   let discount = 0;
   let couponId: string | null = order?.couponId ?? null;
   if (couponId) {
-    const applied = await revalidateAppliedCoupon(couponId, subtotal);
+    const applied = await revalidateAppliedCoupon(couponId, toCouponLines(items));
     if (applied) discount = applied.productDiscount;
     else couponId = null;
   }
@@ -104,7 +122,7 @@ async function recalculateTotal(orderId: string): Promise<void> {
 export async function applyCoupon(sessionId: string, code: string): Promise<Cart> {
   const order = await prisma.order.findUnique({
     where: { sessionId },
-    include: { items: true },
+    include: { items: { include: { variant: { select: { product: { select: { id: true, categoryId: true } } } } } } },
   });
   if (!order || order.status !== "draft" || order.items.length === 0) {
     throw new Error("Carrinho vazio.");
@@ -112,7 +130,7 @@ export async function applyCoupon(sessionId: string, code: string): Promise<Cart
   const subtotal = round2(
     order.items.reduce((sum, item) => sum + Number(item.precoUnitario) * item.quantidade, 0),
   );
-  const applied = await validateForCart(code, subtotal);
+  const applied = await validateForCart(code, toCouponLines(order.items));
   await prisma.order.update({
     where: { id: order.id },
     data: {

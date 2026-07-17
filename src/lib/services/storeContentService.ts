@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { prisma } from "@/lib/db";
+import type { StoreAnnouncementItem } from "@/types/storePromotion";
 
 export type StoreCategory = {
   id: string;
@@ -30,14 +31,7 @@ export type StoreBanner = {
   posicao: "hero_slide" | "home_middle" | "home_bottom";
 };
 
-export type StoreAnnouncementBarItem = {
-  id: string;
-  texto: string;
-  link: string | null;
-  // Siglas de UF elegíveis. Vazio = sem restrição (aparece pra todos). O filtro
-  // por UF do visitante é aplicado no client (AnnouncementBar).
-  regioesElegiveis: string[];
-};
+export type StoreAnnouncementBarItem = StoreAnnouncementItem;
 
 export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
   const rows = await prisma.category.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
@@ -110,10 +104,102 @@ export const getActiveBanners = cache(async (): Promise<StoreBanner[]> => {
 });
 
 export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnouncementBarItem[]> => {
-  return prisma.announcementBarItem.findMany({
+  const now = new Date();
+  const rows = await prisma.announcementBarItem.findMany({
     where: { ativo: true },
     orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
-    select: { id: true, texto: true, link: true, regioesElegiveis: true },
+    select: {
+      id: true,
+      texto: true,
+      link: true,
+      regioesElegiveis: true,
+      coupon: {
+        select: {
+          id: true,
+          codigo: true,
+          descricao: true,
+          tipo: true,
+          valor: true,
+          valorMinimoPedido: true,
+          descontoMaximo: true,
+          aplicaEm: true,
+          categoriaId: true,
+          produtoId: true,
+          inicioEm: true,
+          expiraEm: true,
+          ativo: true,
+          usos: true,
+          limiteUsoTotal: true,
+        },
+      },
+    },
+  });
+
+  const categoryCouponIds = [...new Set(rows.map((row) => row.coupon?.categoriaId).filter((id): id is string => Boolean(id)))];
+  const productCouponIds = [...new Set(rows.map((row) => row.coupon?.produtoId).filter((id): id is string => Boolean(id)))];
+  const [categories, products] = await Promise.all([
+    categoryCouponIds.length
+      ? prisma.category.findMany({ select: { id: true, nome: true, parentId: true } })
+      : [],
+    productCouponIds.length
+      ? prisma.product.findMany({ where: { id: { in: productCouponIds } }, select: { id: true, nome: true } })
+      : [],
+  ]);
+  const categoryNames = new Map(categories.map((category) => [category.id, category.nome]));
+  const productNames = new Map(products.map((product) => [product.id, product.nome]));
+
+  const descendantsOf = (categoryId: string) => {
+    const ids = new Set([categoryId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const category of categories) {
+        if (category.parentId && ids.has(category.parentId) && !ids.has(category.id)) {
+          ids.add(category.id);
+          changed = true;
+        }
+      }
+    }
+    return [...ids];
+  };
+
+  return rows.map((row) => {
+    const coupon = row.coupon;
+    let scopeLabel = "Toda a loja";
+    if (coupon?.aplicaEm === "categoria") {
+      scopeLabel = coupon.categoriaId ? categoryNames.get(coupon.categoriaId) ?? "Categoria selecionada" : "Categoria selecionada";
+    } else if (coupon?.aplicaEm === "produto") {
+      scopeLabel = coupon.produtoId ? productNames.get(coupon.produtoId) ?? "Produto selecionado" : "Produto selecionado";
+    }
+
+    return {
+      id: row.id,
+      texto: row.texto,
+      link: row.link,
+      regioesElegiveis: row.regioesElegiveis,
+      coupon: coupon ? {
+        id: coupon.id,
+        code: coupon.codigo,
+        description: coupon.descricao,
+        type: coupon.tipo,
+        value: coupon.valor === null ? null : Number(coupon.valor),
+        minimumOrderValue: coupon.valorMinimoPedido === null ? null : Number(coupon.valorMinimoPedido),
+        maximumDiscount: coupon.descontoMaximo === null ? null : Number(coupon.descontoMaximo),
+        appliesTo: coupon.aplicaEm,
+        categoryId: coupon.categoriaId,
+        productId: coupon.produtoId,
+        eligibleCategoryIds: coupon.categoriaId ? descendantsOf(coupon.categoriaId) : [],
+        scopeLabel,
+        startsAt: coupon.inicioEm?.toISOString() ?? null,
+        expiresAt: coupon.expiraEm?.toISOString() ?? null,
+        active: coupon.ativo,
+        exhausted: coupon.limiteUsoTotal !== null && coupon.usos >= coupon.limiteUsoTotal,
+        available: coupon.ativo &&
+          (coupon.limiteUsoTotal === null || coupon.usos < coupon.limiteUsoTotal) &&
+          (!coupon.inicioEm || coupon.inicioEm <= now) &&
+          (!coupon.expiraEm || coupon.expiraEm > now),
+      } : null,
+    };
   });
 });
 

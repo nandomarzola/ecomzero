@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import CartDrawerCoupon from "@/components/cart/CartDrawerCoupon";
+import CartPromotionProgress from "@/components/cart/CartPromotionProgress";
 import CartDrawerItem from "@/components/cart/CartDrawerItem";
 import CartDrawerShipping from "@/components/cart/CartDrawerShipping";
 import CartDrawerSummary from "@/components/cart/CartDrawerSummary";
@@ -20,6 +21,7 @@ import {
   subscribeCheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
+import type { StoreAnnouncementItem } from "@/types/storePromotion";
 
 const focusableSelector = [
   "a[href]",
@@ -30,7 +32,7 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-export default function CartDrawer() {
+export default function CartDrawer({ promotionItems }: { promotionItems: StoreAnnouncementItem[] }) {
   const router = useRouter();
   const {
     cart,
@@ -207,6 +209,7 @@ export default function CartDrawer() {
                   <CartDrawerItem key={item.id} item={item} />
                 ))}
               </section>
+              <CartPromotionProgress items={promotionItems} />
               <CartDrawerCoupon />
               {!freeShipping ? (
                 <CartDrawerShipping subtotal={cart.subtotal} active={isOpen} />

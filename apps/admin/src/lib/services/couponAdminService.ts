@@ -14,7 +14,9 @@ export type CouponListItem = {
   usos: number;
   aplicaEm: "toda_loja" | "categoria" | "produto";
   categoriaId: string | null;
+  categoriaNome?: string | null;
   produtoId: string | null;
+  produtoNome?: string | null;
   combinavel: boolean;
   exibirNoSite: boolean;
   primeiraCompra: boolean;
@@ -27,6 +29,14 @@ export class CouponAdminError extends Error {}
 
 export async function listCoupons(): Promise<CouponListItem[]> {
   const coupons = await prisma.coupon.findMany({ orderBy: [{ ativo: "desc" }, { createdAt: "desc" }] });
+  const categoryIds = [...new Set(coupons.map((coupon) => coupon.categoriaId).filter((id): id is string => Boolean(id)))];
+  const productIds = [...new Set(coupons.map((coupon) => coupon.produtoId).filter((id): id is string => Boolean(id)))];
+  const [categories, products] = await Promise.all([
+    categoryIds.length ? prisma.category.findMany({ where: { id: { in: categoryIds } }, select: { id: true, nome: true } }) : [],
+    productIds.length ? prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, nome: true } }) : [],
+  ]);
+  const categoryNames = new Map(categories.map((category) => [category.id, category.nome]));
+  const productNames = new Map(products.map((product) => [product.id, product.nome]));
   return coupons.map((coupon) => ({
     id: coupon.id,
     codigo: coupon.codigo,
@@ -40,7 +50,9 @@ export async function listCoupons(): Promise<CouponListItem[]> {
     usos: coupon.usos,
     aplicaEm: coupon.aplicaEm,
     categoriaId: coupon.categoriaId,
+    categoriaNome: coupon.categoriaId ? categoryNames.get(coupon.categoriaId) ?? null : null,
     produtoId: coupon.produtoId,
+    produtoNome: coupon.produtoId ? productNames.get(coupon.produtoId) ?? null : null,
     combinavel: coupon.combinavel,
     exibirNoSite: coupon.exibirNoSite,
     primeiraCompra: coupon.primeiraCompra,

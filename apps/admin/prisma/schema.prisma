@@ -330,6 +330,8 @@ model Coupon {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
+  announcementItems AnnouncementBarItem[]
+
   @@index([ativo, inicioEm, expiraEm])
 }
 
@@ -392,12 +394,15 @@ model AnnouncementBarItem {
   link             String?
   ordem            Int      @default(0)
   ativo            Boolean  @default(true)
+  couponId         String?
+  coupon           Coupon?  @relation(fields: [couponId], references: [id], onDelete: SetNull)
   // Siglas de UF elegíveis (vazio = sem restrição). Segmentação regional da barra.
   regioesElegiveis String[] @default([])
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([ativo, ordem])
+  @@index([couponId])
 }
 
 model MelhorEnvioCredential {

@@ -409,8 +409,9 @@ model Coupon {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 
-  redemptions CouponRedemption[]
-  orders      Order[]
+  redemptions       CouponRedemption[]
+  orders            Order[]
+  announcementItems AnnouncementBarItem[]
 
   @@index([ativo, inicioEm, expiraEm])
 }
@@ -490,6 +491,8 @@ model AnnouncementBarItem {
   link             String?
   ordem            Int      @default(0)
   ativo            Boolean  @default(true)
+  couponId         String?
+  coupon           Coupon?  @relation(fields: [couponId], references: [id], onDelete: SetNull)
   // Siglas de UF elegíveis (ex.: ["SP","RJ"]). Vazio = sem restrição (todos).
   // Filtro aplicado no client conforme a UF resolvida do CEP do visitante.
   regioesElegiveis String[] @default([])
@@ -497,6 +500,7 @@ model AnnouncementBarItem {
   updatedAt        DateTime @updatedAt
 
   @@index([ativo, ordem])
+  @@index([couponId])
 }
 
 model OrderItem {

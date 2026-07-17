@@ -1,6 +1,8 @@
 export type CartItem = {
   id: string;
   variantId: string;
+  productId: string;
+  categoryId: string | null;
   productSlug: string;
   productName: string;
   productImage: string;

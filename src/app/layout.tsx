@@ -110,7 +110,7 @@ export default async function RootLayout({
 
         <AuthSessionProvider>
           <CartProvider>
-            <CartDrawer />
+            <CartDrawer promotionItems={settings.barraAnuncioAtiva ? announcementItems : []} />
             <FavoritesProvider>
             <ProductFiltersProvider>
               {settings.barraAnuncioAtiva && announcementItems.length ? (

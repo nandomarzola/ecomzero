@@ -4,14 +4,9 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { useSession } from "next-auth/react";
 import { getUserUfSnapshot, saveUserUf, subscribeUserCep } from "@/lib/client/cepStorage";
 import { isAnnouncementEligibleForUf } from "@/lib/client/announcementRegion";
+import type { StoreAnnouncementItem } from "@/types/storePromotion";
 
-type AnnouncementItem = {
-  id: string;
-  texto: string;
-  link: string | null;
-  // Siglas de UF elegíveis. Vazio = sem restrição (aparece pra todos).
-  regioesElegiveis: string[];
-};
+type AnnouncementItem = StoreAnnouncementItem;
 
 function contrastText(hexColor: string) {
   const hex = hexColor.replace("#", "");
@@ -74,7 +69,13 @@ export default function AnnouncementBar({
   if (visibleItems.length === 0) return null;
   const currentItem = visibleItems[activeIndex % visibleItems.length];
   const textColor = contrastText(backgroundColor);
-  const content = <span className="line-clamp-1">{currentItem.texto}</span>;
+  const couponAvailable = currentItem.coupon?.available;
+  const content = (
+    <span className="inline-flex max-w-full items-center justify-center gap-1.5">
+      {couponAvailable ? <span className="shrink-0 rounded bg-black/15 px-1.5 py-0.5 font-mono text-[8px]">CUPOM {currentItem.coupon?.code}</span> : null}
+      <span className="line-clamp-1">{currentItem.texto}</span>
+    </span>
+  );
 
   return (
     <aside

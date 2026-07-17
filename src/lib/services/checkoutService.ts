@@ -86,6 +86,12 @@ export async function createOrderFromCart(
               couponId: cart.couponId,
               orderId: cart.id,
               subtotal: subtotal.toNumber(),
+              lines: cart.items.map((item) => ({
+                productId: item.variant.product.id,
+                categoryId: item.variant.product.categoryId,
+                quantity: item.quantidade,
+                unitPrice: item.variant.precoPor.toNumber(),
+              })),
               shippingCost: 0,
               userId,
               email: checkout.email,

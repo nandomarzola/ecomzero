@@ -56,6 +56,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { saveSettingsAction } from "@/lib/actions/settings";
+import type { CouponListItem } from "@/lib/services/couponAdminService";
 import {
   BRAZIL_UFS,
   REGIONS,
@@ -79,6 +80,7 @@ export type SettingsFormInitial = {
     link: string | null;
     ordem: number;
     ativo: boolean;
+    couponId: string | null;
     regioesElegiveis: string[];
   }>;
   emailSuporte: string | null;
@@ -105,7 +107,10 @@ export type SettingsFormInitial = {
   updatedAt: string;
 };
 
-type AnnouncementFormItem = Omit<SettingsFormInitial["announcementItems"][number], "link"> & { link: string };
+type AnnouncementFormItem = Omit<SettingsFormInitial["announcementItems"][number], "link" | "couponId"> & {
+  link: string;
+  couponId: string;
+};
 
 type FormState = Omit<SettingsFormInitial, "updatedAt" | "barraAnuncioTexto" | "barraAnuncioLink" | "barraAnuncioCor" | "announcementItems" | "emailSuporte" | "telefoneSuporte" | "whatsapp" | "linkShopee" | "linkInstagram" | "linkFacebook" | "linkTiktok" | "faviconUrl"> & {
   barraAnuncioTexto: string;
@@ -234,6 +239,7 @@ function normalize(initial: SettingsFormInitial): FormState {
       .map((item, index) => ({
         ...item,
         link: item.link ?? "",
+        couponId: item.couponId ?? "",
         ordem: index,
         regioesElegiveis: item.regioesElegiveis.filter(isBrazilUf),
       })),
@@ -278,18 +284,35 @@ function HighlightedDescription({ text, color }: { text: string; color: string }
   );
 }
 
+const money = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+function couponBenefitLabel(coupon: CouponListItem) {
+  if (coupon.tipo === "frete_gratis") return "Frete grátis";
+  if (coupon.valor === null) return "Benefício não definido";
+  return coupon.tipo === "percentual" ? `${coupon.valor}% de desconto` : `${money(coupon.valor)} de desconto`;
+}
+
+function couponScopeLabel(coupon: CouponListItem) {
+  if (coupon.aplicaEm === "categoria") return coupon.categoriaNome ? `Categoria: ${coupon.categoriaNome}` : "Categoria selecionada";
+  if (coupon.aplicaEm === "produto") return coupon.produtoNome ? `Produto: ${coupon.produtoNome}` : "Produto selecionado";
+  return "Toda a loja";
+}
+
 function SortableAnnouncementItem({
   item,
+  coupons,
   onChange,
   onRemove,
 }: {
   item: AnnouncementFormItem;
+  coupons: CouponListItem[];
   onChange: (patch: Partial<AnnouncementFormItem>) => void;
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const selectedUfs = item.regioesElegiveis.filter(isBrazilUf);
   const selectedSet = new Set(selectedUfs);
+  const selectedCoupon = coupons.find((coupon) => coupon.id === item.couponId) ?? null;
   const audienceLabel = selectedUfs.length === 0
     ? "Todo o Brasil"
     : `${selectedUfs.length} ${selectedUfs.length === 1 ? "estado selecionado" : "estados selecionados"}`;
@@ -329,6 +352,50 @@ function SortableAnnouncementItem({
             Link opcional
             <input value={item.link} onChange={(event) => onChange({ link: event.target.value })} placeholder="/ofertas ou https://..." className={inputClass} />
           </label>
+          <div className="rounded-md border border-white/[0.07] bg-black/20 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold text-white/65">Tipo de mensagem</p>
+                <p className="mt-1 text-[9px] leading-4 text-white/30">Vincule uma oferta ao cupom real usado pelo carrinho e checkout.</p>
+              </div>
+              <div className="grid grid-cols-2 overflow-hidden rounded-md border border-white/[0.09] bg-[#080808] p-1">
+                <button type="button" onClick={() => onChange({ couponId: "" })} className={`rounded px-3 py-1.5 text-[8px] font-semibold transition ${!item.couponId ? "bg-white/[0.08] text-white" : "text-white/35 hover:text-white/65"}`}>Informativa</button>
+                <button type="button" onClick={() => onChange({ couponId: selectedCoupon?.id ?? coupons.find((coupon) => coupon.ativo)?.id ?? "" })} disabled={!coupons.length} className={`rounded px-3 py-1.5 text-[8px] font-semibold transition ${item.couponId ? "bg-[#A9EC17]/15 text-[#A9EC17]" : "text-white/35 hover:text-white/65"} disabled:cursor-not-allowed disabled:opacity-35`}>Oferta com cupom</button>
+              </div>
+            </div>
+
+            {item.couponId ? (
+              <div className="mt-3 space-y-2.5">
+                <label className="flex flex-col gap-1.5 text-[9px] text-white/45">
+                  Cupom da campanha
+                  <select required value={item.couponId} onChange={(event) => onChange({ couponId: event.target.value })} className={inputClass}>
+                    <option value="">Selecione um cupom</option>
+                    {coupons.map((coupon) => <option key={coupon.id} value={coupon.id}>{coupon.codigo} — {couponBenefitLabel(coupon)}{coupon.ativo ? "" : " (inativo)"}</option>)}
+                  </select>
+                </label>
+                {selectedCoupon ? (
+                  <div className={`rounded-md border p-3 ${selectedCoupon.ativo ? "border-[#A9EC17]/20 bg-[#A9EC17]/[0.04]" : "border-amber-400/20 bg-amber-400/[0.04]"}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold text-[#A9EC17]"><Ticket className="h-3.5 w-3.5" />{selectedCoupon.codigo}</span>
+                      <span className={`rounded-full px-2 py-1 text-[8px] font-semibold ${selectedCoupon.ativo ? "bg-[#A9EC17]/10 text-[#A9EC17]" : "bg-amber-400/10 text-amber-300"}`}>{selectedCoupon.ativo ? "Ativo" : "Inativo"}</span>
+                    </div>
+                    <div className="mt-2 grid gap-1 text-[9px] text-white/45 sm:grid-cols-2">
+                      <span><strong className="text-white/65">Benefício:</strong> {couponBenefitLabel(selectedCoupon)}</span>
+                      <span><strong className="text-white/65">Meta:</strong> {selectedCoupon.valorMinimoPedido ? money(selectedCoupon.valorMinimoPedido) : "Sem valor mínimo"}</span>
+                      <span className="sm:col-span-2"><strong className="text-white/65">Aplicação:</strong> {couponScopeLabel(selectedCoupon)}</span>
+                    </div>
+                    {!selectedCoupon.ativo ? <p className="mt-2 text-[8px] leading-4 text-amber-300/80">Ative este cupom antes de publicar a campanha. A loja não exibirá progresso para cupons inativos.</p> : null}
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap items-center gap-3">
+                  {selectedCoupon ? <a href={`/cupons/${selectedCoupon.id}/editar`} className="inline-flex items-center gap-1.5 text-[9px] font-semibold text-[#A9EC17] transition hover:underline"><ExternalLink className="h-3 w-3" /> Editar regras do cupom</a> : null}
+                  <a href="/cupons/novo" className="inline-flex items-center gap-1.5 text-[9px] font-semibold text-white/45 transition hover:text-white"><Plus className="h-3 w-3" /> Criar outro cupom</a>
+                </div>
+              </div>
+            ) : coupons.length === 0 ? (
+              <p className="mt-3 text-[9px] text-amber-300/75">Nenhum cupom cadastrado. Crie um cupom antes de transformar esta mensagem em oferta.</p>
+            ) : null}
+          </div>
           <div className="rounded-md border border-white/[0.07] bg-black/20 p-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
@@ -419,9 +486,11 @@ function SortableAnnouncementItem({
 
 export default function SettingsForm({
   initial,
+  coupons,
   storefrontUrl,
 }: {
   initial: SettingsFormInitial;
+  coupons: CouponListItem[];
   storefrontUrl: string;
 }) {
   const initialState = useMemo(() => normalize(initial), [initial]);
@@ -456,6 +525,9 @@ export default function SettingsForm({
   const currentPreviewAnnouncement = previewAnnouncements.length
     ? previewAnnouncements[previewAnnouncementIndex % previewAnnouncements.length]
     : null;
+  const currentPreviewCoupon = currentPreviewAnnouncement?.couponId
+    ? coupons.find((coupon) => coupon.id === currentPreviewAnnouncement.couponId) ?? null
+    : null;
   const validAnnouncementColor = /^#[0-9a-fA-F]{6}$/.test(form.barraAnuncioCor);
   const announcementPreviewColor = validAnnouncementColor ? form.barraAnuncioCor : previewColor;
   const activeItem = navigation.flatMap((group) => group.items).find((item) => item.id === activeSection);
@@ -488,7 +560,7 @@ export default function SettingsForm({
       ...current,
       announcementItems: [
         ...current.announcementItems,
-        { id: crypto.randomUUID(), texto: "", link: "", ordem: current.announcementItems.length, ativo: true, regioesElegiveis: [] },
+        { id: crypto.randomUUID(), texto: "", link: "", ordem: current.announcementItems.length, ativo: true, couponId: "", regioesElegiveis: [] },
       ],
     }));
     setError(null);
@@ -499,7 +571,7 @@ export default function SettingsForm({
       ...current,
       barraAnuncioAtiva: !current.barraAnuncioAtiva,
       announcementItems: !current.barraAnuncioAtiva && current.announcementItems.length === 0
-        ? [{ id: crypto.randomUUID(), texto: "", link: "", ordem: 0, ativo: true, regioesElegiveis: [] }]
+        ? [{ id: crypto.randomUUID(), texto: "", link: "", ordem: 0, ativo: true, couponId: "", regioesElegiveis: [] }]
         : current.announcementItems,
     }));
     setError(null);
@@ -814,7 +886,7 @@ export default function SettingsForm({
                     <SortableContext items={form.announcementItems.map((item) => item.id)} strategy={verticalListSortingStrategy}>
                       <div className="space-y-2">
                         {form.announcementItems.map((item) => (
-                          <SortableAnnouncementItem key={item.id} item={item} onChange={(patch) => updateAnnouncementItem(item.id, patch)} onRemove={() => removeAnnouncementItem(item.id)} />
+                          <SortableAnnouncementItem key={item.id} item={item} coupons={coupons} onChange={(patch) => updateAnnouncementItem(item.id, patch)} onRemove={() => removeAnnouncementItem(item.id)} />
                         ))}
                       </div>
                     </SortableContext>
@@ -868,7 +940,10 @@ export default function SettingsForm({
             <div className="mt-4 overflow-hidden rounded-md border border-white/[0.1] bg-black" style={{ fontFamily: appearancePreviewFont }}>
               {form.barraAnuncioAtiva && currentPreviewAnnouncement ? (
                 <div className="relative min-h-8 px-12 py-2 text-center text-[9px] font-bold" style={{ backgroundColor: announcementPreviewColor, color: contrastText(announcementPreviewColor) }}>
-                  <span className="line-clamp-1">{currentPreviewAnnouncement.texto}</span>
+                  <span className="inline-flex max-w-full items-center justify-center gap-1.5">
+                    {currentPreviewCoupon ? <span className="shrink-0 rounded bg-black/15 px-1.5 py-0.5 font-mono text-[7px]">CUPOM {currentPreviewCoupon.codigo}</span> : null}
+                    <span className="line-clamp-1">{currentPreviewAnnouncement.texto}</span>
+                  </span>
                   {previewAnnouncements.length > 1 ? (
                     <span className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1">
                       {previewAnnouncements.map((item, index) => <button key={item.id} type="button" onClick={() => setPreviewAnnouncementIndex(index)} aria-label={`Visualizar mensagem ${index + 1}`} className={`h-1.5 rounded-full bg-current transition-all ${index === previewAnnouncementIndex % previewAnnouncements.length ? "w-3 opacity-90" : "w-1.5 opacity-35"}`} />)}
