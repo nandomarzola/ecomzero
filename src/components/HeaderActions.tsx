@@ -4,10 +4,8 @@ import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import {
-  Bell,
   ChevronDown,
   ClipboardList,
-  CreditCard,
   Heart,
   LogIn,
   LogOut,
@@ -34,15 +32,15 @@ const accountItems = [
   { label: "Meus pedidos", icon: ClipboardList, href: "/conta/pedidos", comingSoon: false },
   { label: "Meus dados", icon: UserRound, href: "/conta/dados", comingSoon: false },
   { label: "Endereços", icon: MapPin, href: "/conta/enderecos", comingSoon: false },
-  { label: "Formas de pagamento", icon: CreditCard, href: null, comingSoon: true },
+  // Comentados por enquanto (recursos ainda não lançados):
+  // { label: "Formas de pagamento", icon: CreditCard, href: null, comingSoon: true },
   { label: "Favoritos", icon: Heart, href: null, comingSoon: true },
   { label: "Cupons e benefícios", icon: Tag, href: null, comingSoon: true },
-  { label: "Notificações", icon: Bell, href: null, comingSoon: true },
+  // { label: "Notificações", icon: Bell, href: null, comingSoon: true },
 ];
 
-const guestItems = accountItems.slice(0, 5).filter(
-  (item) => item.label !== "Formas de pagamento",
-);
+// Visitante vê só as 4 primeiras (Meus pedidos, Meus dados, Endereços, Favoritos).
+const guestItems = accountItems.slice(0, 4);
 
 const getInitials = (name: string) =>
   name
