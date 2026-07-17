@@ -55,6 +55,7 @@ export const LABEL_STATUS_LABEL: Record<string, string> = {
   not_applicable: "Não aplicável",
   awaiting_payment: "Aguardando pagamento",
   awaiting_shipping_data: "Aguardando dados de envio",
+  awaiting_fiscal_document: "Aguardando decisão fiscal",
   awaiting_invoice: "Aguardando NF-e",
   ready_to_purchase: "Pronto para compra",
   insufficient_balance: "Saldo insuficiente",
@@ -78,7 +79,7 @@ export function labelStatusTone(status: string): StatusTone {
   if (["generated", "printed", "delivered"].includes(status)) return "success";
   if (["posted", "in_transit", "purchased", "processing"].includes(status)) return "info";
   if (["error", "canceled", "insufficient_balance"].includes(status)) return "danger";
-  if (["awaiting_payment", "awaiting_shipping_data", "awaiting_invoice", "ready_to_purchase"].includes(status)) return "warning";
+  if (["awaiting_payment", "awaiting_shipping_data", "awaiting_fiscal_document", "awaiting_invoice", "ready_to_purchase"].includes(status)) return "warning";
   return "neutral";
 }
 

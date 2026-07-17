@@ -38,6 +38,7 @@ enum ShippingLabelStatus {
   not_applicable
   awaiting_payment
   awaiting_shipping_data
+  awaiting_fiscal_document
   awaiting_invoice
   ready_to_purchase
   insufficient_balance
@@ -57,6 +58,11 @@ enum ShippingLabelSource {
   automatic
   manual
   external
+}
+
+enum FiscalDocumentType {
+  nota_fiscal
+  declaracao_conteudo
 }
 
 enum ProductKind {
@@ -470,59 +476,61 @@ model MelhorEnvioCredential {
 }
 
 model ShippingSettings {
-  id                 String   @id @default("singleton")
-  nomeRemetente      String
-  emailRemetente     String
-  telefoneRemetente  String
-  cpfCnpjRemetente   String
-  inscricaoEstadual  String?
-  atividadeEconomica String?
-  cepOrigem          String
-  logradouroOrigem   String
-  numeroOrigem       String
-  complementoOrigem  String?
-  bairroOrigem       String
-  cidadeOrigem       String
-  ufOrigem           String
-  updatedAt          DateTime @updatedAt
+  id                    String             @id @default("singleton")
+  nomeRemetente         String
+  emailRemetente        String
+  telefoneRemetente     String
+  cpfCnpjRemetente      String
+  inscricaoEstadual     String?
+  atividadeEconomica    String?
+  cepOrigem             String
+  logradouroOrigem      String
+  numeroOrigem          String
+  complementoOrigem     String?
+  bairroOrigem          String
+  cidadeOrigem          String
+  ufOrigem              String
+  documentoFiscalPadrao FiscalDocumentType @default(declaracao_conteudo)
+  updatedAt             DateTime           @updatedAt
 }
 
 model Shipment {
-  id                  String               @id @default(uuid())
-  orderId             String               @unique
-  order               Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  melhorEnvioId       String?              @unique
-  melhorEnvioProtocol String?
-  status              String               @default("creating")
-  labelStatus         ShippingLabelStatus  @default(awaiting_shipping_data)
-  labelSource         ShippingLabelSource?
-  serviceId           String?
-  transportadora      String?
-  servico             String?
-  prazoDias           Int?
-  custoEstimado       Decimal?             @db.Decimal(10, 2)
-  custoEtiqueta       Decimal?             @db.Decimal(10, 2)
-  codigoRastreio      String?
-  urlRastreio         String?
-  urlEtiqueta         String?
-  referenciaEtiqueta  String?
-  tipoDocumentoFiscal String?
-  chaveNotaFiscal     String?
-  ultimoErro          String?
-  ultimoErroCodigo    String?
-  tentativas          Int                  @default(0)
-  processandoEm       DateTime?
-  processamentoToken  String?
-  ultimaTentativaEm   DateTime?
-  saldoConsultadoEm   DateTime?
-  compradoEm          DateTime?
-  geradoEm            DateTime?
-  impressoEm          DateTime?
-  postadoEm           DateTime?
-  entregueEm          DateTime?
-  canceladoEm         DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  id                              String               @id @default(uuid())
+  orderId                         String               @unique
+  order                           Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  melhorEnvioId                   String?              @unique
+  melhorEnvioProtocol             String?
+  status                          String               @default("creating")
+  labelStatus                     ShippingLabelStatus  @default(awaiting_shipping_data)
+  labelSource                     ShippingLabelSource?
+  serviceId                       String?
+  transportadora                  String?
+  servico                         String?
+  prazoDias                       Int?
+  custoEstimado                   Decimal?             @db.Decimal(10, 2)
+  custoEtiqueta                   Decimal?             @db.Decimal(10, 2)
+  codigoRastreio                  String?
+  urlRastreio                     String?
+  urlEtiqueta                     String?
+  referenciaEtiqueta              String?
+  tipoDocumentoFiscal             FiscalDocumentType?
+  tipoDocumentoFiscalConfirmadoEm DateTime?
+  chaveNotaFiscal                 String?
+  ultimoErro                      String?
+  ultimoErroCodigo                String?
+  tentativas                      Int                  @default(0)
+  processandoEm                   DateTime?
+  processamentoToken              String?
+  ultimaTentativaEm               DateTime?
+  saldoConsultadoEm               DateTime?
+  compradoEm                      DateTime?
+  geradoEm                        DateTime?
+  impressoEm                      DateTime?
+  postadoEm                       DateTime?
+  entregueEm                      DateTime?
+  canceladoEm                     DateTime?
+  createdAt                       DateTime             @default(now())
+  updatedAt                       DateTime             @updatedAt
 
   events ShipmentEvent[]
 

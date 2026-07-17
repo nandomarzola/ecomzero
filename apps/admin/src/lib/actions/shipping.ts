@@ -13,6 +13,7 @@ import {
 import {
   attachInvoiceInStorefront,
   cancelShipmentInStorefront,
+  confirmFiscalDocumentInStorefront,
   markExternalShipmentInStorefront,
   prepareShipmentInStorefront,
   purchaseShipmentInStorefront,
@@ -22,6 +23,7 @@ import { z } from "zod";
 import {
   adminShippingSelectionSchema,
   createShipmentSchema,
+  fiscalDocumentSelectionSchema,
   shippingSettingsSchema,
 } from "@/lib/validation/shipping";
 
@@ -120,6 +122,24 @@ export async function attachInvoiceAction(orderId: string, input: unknown) {
   }
   try {
     await attachInvoiceInStorefront(orderId, parsed.data.invoiceKey);
+    revalidatePath(`/pedidos/${orderId}`);
+    revalidatePath("/pedidos");
+    return { ok: true as const, data: undefined };
+  } catch (error) {
+    return { ok: false as const, error: errorMessage(error) };
+  }
+}
+
+export async function confirmFiscalDocumentAction(orderId: string, input: unknown) {
+  if (!(await isAuthenticated())) {
+    return { ok: false as const, error: "Sessão expirada. Faça login novamente." };
+  }
+  const parsed = fiscalDocumentSelectionSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Documento fiscal inválido." };
+  }
+  try {
+    await confirmFiscalDocumentInStorefront(orderId, parsed.data);
     revalidatePath(`/pedidos/${orderId}`);
     revalidatePath("/pedidos");
     return { ok: true as const, data: undefined };

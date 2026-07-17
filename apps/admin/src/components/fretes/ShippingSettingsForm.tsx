@@ -18,6 +18,7 @@ type InitialSettings = {
   bairroOrigem: string;
   cidadeOrigem: string;
   ufOrigem: string;
+  documentoFiscalPadrao: "nota_fiscal" | "declaracao_conteudo";
 } | null;
 
 const inputClass =
@@ -38,6 +39,7 @@ export default function ShippingSettingsForm({ initial }: { initial: InitialSett
     bairroOrigem: initial?.bairroOrigem ?? "",
     cidadeOrigem: initial?.cidadeOrigem ?? "",
     ufOrigem: initial?.ufOrigem ?? "",
+    documentoFiscalPadrao: initial?.documentoFiscalPadrao ?? "declaracao_conteudo",
   });
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -79,6 +81,23 @@ export default function ShippingSettingsForm({ initial }: { initial: InitialSett
         <label className="flex flex-col gap-1 text-xs text-white/60">Bairro<input required value={form.bairroOrigem} onChange={(event) => set("bairroOrigem", event.target.value)} className={inputClass} /></label>
         <label className="flex flex-col gap-1 text-xs text-white/60">Cidade<input required value={form.cidadeOrigem} onChange={(event) => set("cidadeOrigem", event.target.value)} className={inputClass} /></label>
         <label className="flex flex-col gap-1 text-xs text-white/60">UF<input required maxLength={2} value={form.ufOrigem} onChange={(event) => set("ufOrigem", event.target.value.toUpperCase())} className={inputClass} /></label>
+      </div>
+
+      <div className="mt-5 rounded-xl border border-white/[0.08] bg-[#090909] p-4">
+        <label className="flex max-w-xl flex-col gap-2 text-xs text-white/60">
+          Pré-seleção fiscal dos pedidos
+          <select
+            value={form.documentoFiscalPadrao}
+            onChange={(event) => set("documentoFiscalPadrao", event.target.value)}
+            className={inputClass}
+          >
+            <option value="declaracao_conteudo">Declaração de conteúdo</option>
+            <option value="nota_fiscal">NF-e</option>
+          </select>
+        </label>
+        <p className="mt-2 max-w-2xl text-xs leading-5 text-white/40">
+          Esta opção apenas vem marcada ao abrir um pedido. Nenhum documento é definido automaticamente: é obrigatório confirmar a escolha em cada pedido antes de comprar a etiqueta.
+        </p>
       </div>
 
       {error ? <p className="mt-4 rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p> : null}

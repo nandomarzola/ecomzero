@@ -27,6 +27,8 @@ test("valida chave de NF-e com 44 dígitos e dígito verificador", () => {
 });
 
 test("não permite regressão logística nem cancelamento após entrega", () => {
+  assert.equal(canAdvanceShippingStatus("awaiting_shipping_data", "awaiting_fiscal_document"), true);
+  assert.equal(canAdvanceShippingStatus("awaiting_fiscal_document", "awaiting_shipping_data"), false);
   assert.equal(canAdvanceShippingStatus("generated", "in_transit"), true);
   assert.equal(canAdvanceShippingStatus("in_transit", "generated"), false);
   assert.equal(canAdvanceShippingStatus("delivered", "canceled"), false);

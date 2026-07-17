@@ -38,6 +38,7 @@ const labelStatusLabel: Record<string, string> = {
   not_applicable: "Não aplicável",
   awaiting_payment: "Aguardando pagamento",
   awaiting_shipping_data: "Aguardando dados de envio",
+  awaiting_fiscal_document: "Aguardando decisão fiscal",
   awaiting_invoice: "Aguardando NF-e",
   ready_to_purchase: "Pronto para compra",
   insufficient_balance: "Saldo insuficiente",
@@ -59,7 +60,7 @@ const money = (value: number) =>
 function orderTone(order: DashboardOrder) {
   if (order.tone) return order.tone;
   if (["error", "canceled", "insufficient_balance"].includes(order.labelStatus ?? "")) return "danger";
-  if (["awaiting_payment", "awaiting_shipping_data", "awaiting_invoice", "ready_to_purchase"].includes(order.labelStatus ?? "")) return "warning";
+  if (["awaiting_payment", "awaiting_shipping_data", "awaiting_fiscal_document", "awaiting_invoice", "ready_to_purchase"].includes(order.labelStatus ?? "")) return "warning";
   if (["purchased", "generated", "printed", "posted", "in_transit", "delivered"].includes(order.labelStatus ?? "")) return "success";
   if (order.status === "cancelado" || ["cancelled", "canceled", "undelivered"].includes(order.shipmentStatus ?? "")) return "danger";
   if (order.status === "pago" || ["released", "generated", "posted", "delivered"].includes(order.shipmentStatus ?? "")) return "success";

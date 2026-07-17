@@ -6,6 +6,13 @@ const REFRESH_MARGIN_MS = 24 * 60 * 60 * 1000;
 
 type ApiObject = Record<string, unknown>;
 
+export type MelhorEnvioBalance = {
+  status: "live" | "stale" | "unavailable";
+  value: number | null;
+  checkedAt: string | null;
+  error: string | null;
+};
+
 export class MelhorEnvioAdminError extends Error {
   constructor(
     message: string,
@@ -31,6 +38,38 @@ function responseMessage(data: unknown, fallback: string): string {
     if (typeof first === "string") return first;
   }
   return fallback;
+}
+
+function findBalance(value: unknown): number | null {
+  if (!value || typeof value !== "object") return null;
+  const object = value as ApiObject;
+  for (const key of ["balance", "saldo", "available_balance", "current_balance"]) {
+    const candidate = object[key];
+    const parsed =
+      typeof candidate === "number"
+        ? candidate
+        : typeof candidate === "string"
+          ? Number(candidate.replace(",", "."))
+          : Number.NaN;
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+  }
+  for (const nested of Object.values(object)) {
+    const found = findBalance(nested);
+    if (found !== null) return found;
+  }
+  return null;
+}
+
+function errorMessage(error: unknown) {
+  if (
+    error instanceof MelhorEnvioAdminError &&
+    (error.status === 401 || error.status === 403)
+  ) {
+    return "A integração não possui permissão para consultar o saldo. Reautorize a conta Melhor Envio.";
+  }
+  return error instanceof Error
+    ? error.message
+    : "Não foi possível consultar o saldo da Melhor Carteira.";
 }
 
 async function refreshToken(refreshToken: string): Promise<string> {
@@ -161,6 +200,69 @@ export async function melhorEnvioFileRequest(path: string): Promise<Response> {
     );
   }
   return response;
+}
+
+export async function getMelhorEnvioBalance(): Promise<MelhorEnvioBalance> {
+  try {
+    const response = await melhorEnvioRequest("/api/v2/me/balance");
+    const value = findBalance(response);
+    if (value === null) {
+      throw new MelhorEnvioAdminError(
+        "O Melhor Envio não retornou um saldo reconhecível.",
+      );
+    }
+
+    const checkedAt = new Date();
+    await prisma.melhorEnvioBalanceCache
+      .upsert({
+        where: { id: "singleton" },
+        create: {
+          id: "singleton",
+          saldo: value,
+          disponivel: true,
+          consultadoEm: checkedAt,
+          ultimoErro: null,
+        },
+        update: {
+          saldo: value,
+          disponivel: true,
+          consultadoEm: checkedAt,
+          ultimoErro: null,
+        },
+      })
+      .catch((error: unknown) => {
+        console.error("[melhor-envio-balance] Falha ao atualizar cache", error);
+      });
+
+    return {
+      status: "live",
+      value,
+      checkedAt: checkedAt.toISOString(),
+      error: null,
+    };
+  } catch (error) {
+    const message = errorMessage(error);
+    const cached = await prisma.melhorEnvioBalanceCache
+      .findUnique({ where: { id: "singleton" } })
+      .catch((cacheError: unknown) => {
+        console.error("[melhor-envio-balance] Falha ao consultar cache", cacheError);
+        return null;
+      });
+    if (cached?.saldo !== null && cached?.saldo !== undefined) {
+      return {
+        status: "stale",
+        value: Number(cached.saldo),
+        checkedAt: cached.consultadoEm?.toISOString() ?? null,
+        error: message,
+      };
+    }
+    return {
+      status: "unavailable",
+      value: null,
+      checkedAt: null,
+      error: message,
+    };
+  }
 }
 
 export function getMelhorEnvioOAuthConfig() {

@@ -28,6 +28,8 @@ type ShippingOption = {
   prazoDias: number;
 };
 
+export type FiscalDocumentType = "nota_fiscal" | "declaracao_conteudo";
+
 export type MelhorEnvioBalance = {
   available: boolean;
   value: number | null;
@@ -49,6 +51,8 @@ export type ShipmentPreparation = {
   service: string | null;
   estimatedDays: number | null;
   estimatedCost: number | null;
+  fiscalDocumentType: FiscalDocumentType | null;
+  fiscalDocumentConfirmedAt: string | null;
   invoiceKey: string | null;
   balance: MelhorEnvioBalance;
   autoPurchaseEnabled: boolean;
@@ -418,6 +422,9 @@ function preparationFromShipment(
       shipment?.custoEstimado === null || shipment?.custoEstimado === undefined
         ? null
         : Number(shipment.custoEstimado),
+    fiscalDocumentType: shipment?.tipoDocumentoFiscal ?? null,
+    fiscalDocumentConfirmedAt:
+      shipment?.tipoDocumentoFiscalConfirmadoEm?.toISOString() ?? null,
     invoiceKey: shipment?.chaveNotaFiscal ?? null,
     balance,
     autoPurchaseEnabled: config.melhorEnvio.autoPurchaseEnabled,
@@ -521,18 +528,6 @@ export async function prepareOrderShipment(
         "MISSING_SENDER_DATA",
       );
     }
-    if (normalizeDigits(settings.cpfCnpjRemetente).length !== 14) {
-      throw new ShippingFulfillmentError(
-        "Envios comerciais exigem CNPJ válido do remetente.",
-        "INVALID_SENDER_DOCUMENT",
-      );
-    }
-    if (!settings.inscricaoEstadual?.trim()) {
-      throw new ShippingFulfillmentError(
-        "Informe a inscrição estadual do remetente para gerar NF-e.",
-        "MISSING_STATE_REGISTER",
-      );
-    }
 
     const options = await calculateOrderOptions(order, settings.cepOrigem);
     const selectedServiceId =
@@ -582,8 +577,34 @@ export async function prepareOrderShipment(
     });
 
     const balance = await getMelhorEnvioBalance();
+    const fiscalType = order.shipment?.tipoDocumentoFiscalConfirmadoEm
+      ? order.shipment.tipoDocumentoFiscal
+      : null;
+    const senderDocument = normalizeDigits(settings.cpfCnpjRemetente);
+    if (fiscalType === "nota_fiscal") {
+      if (senderDocument.length !== 14) {
+        throw new ShippingFulfillmentError(
+          "Envio com NF-e exige CNPJ válido do remetente.",
+          "INVALID_SENDER_DOCUMENT",
+        );
+      }
+      if (!settings.inscricaoEstadual?.trim()) {
+        throw new ShippingFulfillmentError(
+          "Informe a inscrição estadual do remetente para usar NF-e.",
+          "MISSING_STATE_REGISTER",
+        );
+      }
+    } else if (
+      fiscalType === "declaracao_conteudo" &&
+      ![11, 14].includes(senderDocument.length)
+    ) {
+      throw new ShippingFulfillmentError(
+        "A declaração de conteúdo exige CPF ou CNPJ válido do remetente.",
+        "INVALID_SENDER_DOCUMENT",
+      );
+    }
     const invoiceKey = order.shipment?.chaveNotaFiscal ?? null;
-    const invoiceValid = invoiceKey
+    const invoiceValid = fiscalType === "nota_fiscal" && invoiceKey
       ? (() => {
           try {
             validateNfeKey(invoiceKey);
@@ -593,27 +614,30 @@ export async function prepareOrderShipment(
           }
         })()
       : false;
+    const fiscalDocumentReady =
+      fiscalType === "declaracao_conteudo" || invoiceValid;
 
     let labelStatus:
+      | "awaiting_fiscal_document"
       | "awaiting_invoice"
       | "ready_to_purchase"
       | "insufficient_balance"
-      | "error" = "awaiting_invoice";
+      | "error" = fiscalType ? "awaiting_invoice" : "awaiting_fiscal_document";
     let errorCode: string | null = null;
     let errorMessage: string | null = null;
-    if (invoiceValid && !balance.available) {
+    if (fiscalDocumentReady && !balance.available) {
       labelStatus = "error";
       errorCode = "BALANCE_UNAVAILABLE";
       errorMessage = "Não foi possível consultar o saldo da Melhor Carteira.";
     } else if (
-      invoiceValid &&
+      fiscalDocumentReady &&
       balance.value !== null &&
       balance.value < selected.preco
     ) {
       labelStatus = "insufficient_balance";
       errorCode = "INSUFFICIENT_BALANCE";
       errorMessage = "Saldo insuficiente na Melhor Carteira.";
-    } else if (invoiceValid) {
+    } else if (fiscalDocumentReady) {
       labelStatus = "ready_to_purchase";
     }
 
@@ -628,7 +652,6 @@ export async function prepareOrderShipment(
         servico: selected.servico,
         prazoDias: selected.prazoDias,
         custoEstimado: selected.preco,
-        tipoDocumentoFiscal: "nota_fiscal",
         ultimoErro: errorMessage,
         ultimoErroCodigo: errorCode,
         saldoConsultadoEm: balance.checkedAt
@@ -643,7 +666,6 @@ export async function prepareOrderShipment(
         servico: selected.servico,
         prazoDias: selected.prazoDias,
         custoEstimado: selected.preco,
-        tipoDocumentoFiscal: "nota_fiscal",
         ultimoErro: errorMessage,
         ultimoErroCodigo: errorCode,
         saldoConsultadoEm: balance.checkedAt
@@ -657,9 +679,11 @@ export async function prepareOrderShipment(
       shipment.id,
       "prepared",
       labelStatus,
-      labelStatus === "awaiting_invoice"
-        ? "Preparação concluída. Aguardando chave da NF-e."
-        : errorMessage ?? "Pedido pronto para compra da etiqueta.",
+      labelStatus === "awaiting_fiscal_document"
+        ? "Preparação concluída. Aguardando confirmação do documento fiscal."
+        : labelStatus === "awaiting_invoice"
+          ? "Preparação concluída. Aguardando chave da NF-e."
+          : errorMessage ?? "Pedido pronto para compra da etiqueta.",
       {
         serviceId: selected.id,
         estimatedCost: selected.preco,
@@ -731,17 +755,33 @@ async function buildCartPayload(
   >,
 ) {
   const shipment = order.shipment;
-  if (!shipment?.serviceId || !shipment.chaveNotaFiscal) {
+  if (
+    !shipment?.serviceId ||
+    !shipment.tipoDocumentoFiscal ||
+    !shipment.tipoDocumentoFiscalConfirmadoEm
+  ) {
     throw new ShippingFulfillmentError(
-      "A preparação logística ou a chave da NF-e está ausente.",
+      "A preparação logística ou a confirmação do documento fiscal está ausente.",
       "NOT_READY",
     );
   }
-  const invoiceKey = validateNfeKey(shipment.chaveNotaFiscal);
   const senderDocument = normalizeDigits(settings.cpfCnpjRemetente);
-  if (senderDocument.length !== 14 || !settings.inscricaoEstadual?.trim()) {
+  if (![11, 14].includes(senderDocument.length)) {
     throw new ShippingFulfillmentError(
-      "Os dados fiscais do remetente estão incompletos.",
+      "O CPF ou CNPJ do remetente é inválido.",
+      "MISSING_SENDER_DATA",
+    );
+  }
+  const invoiceKey =
+    shipment.tipoDocumentoFiscal === "nota_fiscal"
+      ? validateNfeKey(shipment.chaveNotaFiscal ?? "")
+      : null;
+  if (
+    shipment.tipoDocumentoFiscal === "nota_fiscal" &&
+    (senderDocument.length !== 14 || !settings.inscricaoEstadual?.trim())
+  ) {
+    throw new ShippingFulfillmentError(
+      "Os dados fiscais do remetente estão incompletos para a NF-e.",
       "MISSING_SENDER_DATA",
     );
   }
@@ -757,11 +797,18 @@ async function buildCartPayload(
       name: settings.nomeRemetente,
       email: settings.emailRemetente,
       phone: normalizeDigits(settings.telefoneRemetente),
-      company_document: senderDocument,
-      state_register: settings.inscricaoEstadual.trim(),
-      ...(settings.atividadeEconomica
-        ? { economic_activity_code: settings.atividadeEconomica }
-        : {}),
+      ...(senderDocument.length === 14
+        ? {
+            company_document: senderDocument,
+            state_register:
+              shipment.tipoDocumentoFiscal === "nota_fiscal"
+                ? settings.inscricaoEstadual?.trim()
+                : "ISENTO",
+            ...(settings.atividadeEconomica
+              ? { economic_activity_code: settings.atividadeEconomica }
+              : {}),
+          }
+        : { document: senderDocument, state_register: "ISENTO" }),
       address: settings.logradouroOrigem,
       complement: settings.complementoOrigem ?? "",
       number: settings.numeroOrigem,
@@ -811,7 +858,7 @@ async function buildCartPayload(
       receipt: false,
       own_hand: false,
       reverse: false,
-      invoice: { key: invoiceKey },
+      ...(invoiceKey ? { invoice: { key: invoiceKey } } : {}),
       tags: [
         {
           tag: order.id,
@@ -919,13 +966,19 @@ export async function executeShipmentPurchase(
       );
     }
     validateOrderData(order);
-    if (!order.shipment?.custoEstimado || !order.shipment.chaveNotaFiscal) {
+    if (
+      !order.shipment?.custoEstimado ||
+      !order.shipment.tipoDocumentoFiscal ||
+      !order.shipment.tipoDocumentoFiscalConfirmadoEm
+    ) {
       throw new ShippingFulfillmentError(
         "A preparação logística está incompleta.",
         "NOT_READY",
       );
     }
-    validateNfeKey(order.shipment.chaveNotaFiscal);
+    if (order.shipment.tipoDocumentoFiscal === "nota_fiscal") {
+      validateNfeKey(order.shipment.chaveNotaFiscal ?? "");
+    }
     const cost = Number(order.shipment.custoEstimado);
     if (!balance.available || balance.value === null) {
       throw new ShippingFulfillmentError(
@@ -1070,6 +1123,15 @@ export async function attachInvoiceToOrder(
     );
   }
   if (
+    order.shipment?.melhorEnvioId &&
+    order.shipment.tipoDocumentoFiscal !== "nota_fiscal"
+  ) {
+    throw new ShippingFulfillmentError(
+      "A etiqueta já foi criada com outro tipo de documento fiscal.",
+      "FISCAL_DOCUMENT_ALREADY_USED",
+    );
+  }
+  if (
     order.shipment?.chaveNotaFiscal &&
     order.shipment.chaveNotaFiscal !== invoiceKey &&
     order.shipment.melhorEnvioId
@@ -1087,10 +1149,12 @@ export async function attachInvoiceToOrder(
       status: "invoice_attached",
       labelStatus: "awaiting_shipping_data",
       tipoDocumentoFiscal: "nota_fiscal",
+      tipoDocumentoFiscalConfirmadoEm: new Date(),
       chaveNotaFiscal: invoiceKey,
     },
     update: {
       tipoDocumentoFiscal: "nota_fiscal",
+      tipoDocumentoFiscalConfirmadoEm: new Date(),
       chaveNotaFiscal: invoiceKey,
       ultimoErro: null,
       ultimoErroCodigo: null,
@@ -1101,6 +1165,79 @@ export async function attachInvoiceToOrder(
     "invoice_attached",
     shipment.labelStatus,
     "Chave da NF-e validada e vinculada ao pedido.",
+  );
+
+  const preparation = await prepareOrderShipment(orderId);
+  if (shouldAutomaticallyPurchase({
+    enabled: config.melhorEnvio.autoPurchaseEnabled,
+    shippingMode: preparation.shippingMode,
+    labelStatus: preparation.labelStatus,
+  })) {
+    return executeShipmentPurchase(orderId, "automatic");
+  }
+  return preparation;
+}
+
+export async function confirmFiscalDocumentForOrder(
+  orderId: string,
+  fiscalDocumentType: FiscalDocumentType,
+): Promise<ShipmentPreparation> {
+  const order = await loadOrder(orderId);
+  if (!order || order.status !== "pago") {
+    throw new ShippingFulfillmentError(
+      "O documento fiscal só pode ser confirmado em um pedido pago.",
+      "ORDER_NOT_PAID",
+    );
+  }
+  if (
+    order.shipment?.melhorEnvioId &&
+    order.shipment.tipoDocumentoFiscal !== fiscalDocumentType
+  ) {
+    throw new ShippingFulfillmentError(
+      "A etiqueta já foi criada com outro tipo de documento fiscal.",
+      "FISCAL_DOCUMENT_ALREADY_USED",
+    );
+  }
+  if (
+    order.shipment?.tipoDocumentoFiscal === fiscalDocumentType &&
+    order.shipment.tipoDocumentoFiscalConfirmadoEm
+  ) {
+    return prepareOrderShipment(orderId);
+  }
+
+  const confirmedAt = new Date();
+  const shipment = await prisma.shipment.upsert({
+    where: { orderId },
+    create: {
+      orderId,
+      status: "fiscal_document_confirmed",
+      labelStatus: "awaiting_shipping_data",
+      tipoDocumentoFiscal: fiscalDocumentType,
+      tipoDocumentoFiscalConfirmadoEm: confirmedAt,
+      chaveNotaFiscal: null,
+    },
+    update: {
+      status: "fiscal_document_confirmed",
+      labelStatus: "awaiting_shipping_data",
+      tipoDocumentoFiscal: fiscalDocumentType,
+      tipoDocumentoFiscalConfirmadoEm: confirmedAt,
+      ...(fiscalDocumentType === "declaracao_conteudo"
+        ? { chaveNotaFiscal: null }
+        : {}),
+      ultimoErro: null,
+      ultimoErroCodigo: null,
+      processandoEm: null,
+      processamentoToken: null,
+    },
+  });
+  await addEvent(
+    shipment.id,
+    "fiscal_document_confirmed",
+    shipment.labelStatus,
+    fiscalDocumentType === "nota_fiscal"
+      ? "NF-e confirmada como documento fiscal deste pedido."
+      : "Declaração de conteúdo confirmada para este pedido.",
+    { fiscalDocumentType },
   );
 
   const preparation = await prepareOrderShipment(orderId);

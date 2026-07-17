@@ -27,6 +27,7 @@ export const shippingSettingsSchema = z
     bairroOrigem: z.string().trim().min(2, "Informe o bairro").max(100),
     cidadeOrigem: z.string().trim().min(2, "Informe a cidade").max(100),
     ufOrigem: z.string().trim().toUpperCase().length(2, "UF inválida"),
+    documentoFiscalPadrao: z.enum(["nota_fiscal", "declaracao_conteudo"]),
   })
   .superRefine((input, context) => {
     if (input.cpfCnpjRemetente.length === 14 && !input.inscricaoEstadual) {
@@ -52,6 +53,19 @@ export const createShipmentSchema = z.discriminatedUnion("tipoDocumentoFiscal", 
   }),
 ]);
 
+export const fiscalDocumentSelectionSchema = z.discriminatedUnion(
+  "tipoDocumentoFiscal",
+  [
+    z.object({ tipoDocumentoFiscal: z.literal("nota_fiscal") }),
+    z.object({
+      tipoDocumentoFiscal: z.literal("declaracao_conteudo"),
+      declaracaoConfirmada: z.literal(true, {
+        error: "Confirme que a declaração de conteúdo é permitida para este envio",
+      }),
+    }),
+  ],
+);
+
 export const adminShippingSelectionSchema = z.object({
   quoteId: z.string().uuid("Cotação de frete inválida"),
   optionId: z.string().trim().min(1, "Selecione uma transportadora").max(100),
@@ -59,3 +73,4 @@ export const adminShippingSelectionSchema = z.object({
 
 export type ShippingSettingsInput = z.infer<typeof shippingSettingsSchema>;
 export type CreateShipmentInput = z.infer<typeof createShipmentSchema>;
+export type FiscalDocumentSelectionInput = z.infer<typeof fiscalDocumentSelectionSchema>;

@@ -4,6 +4,7 @@ import { config } from "@/lib/config";
 import {
   attachInvoiceToOrder,
   cancelShipment,
+  confirmFiscalDocumentForOrder,
   executeShipmentPurchase,
   markOrderAsExternalShipment,
   prepareOrderShipment,
@@ -18,6 +19,13 @@ const invoiceSchema = z.object({
 });
 
 const preparationSchema = z.object({ serviceId: z.string().min(1).optional() });
+const fiscalDocumentSchema = z.discriminatedUnion("tipoDocumentoFiscal", [
+  z.object({ tipoDocumentoFiscal: z.literal("nota_fiscal") }),
+  z.object({
+    tipoDocumentoFiscal: z.literal("declaracao_conteudo"),
+    declaracaoConfirmada: z.literal(true),
+  }),
+]);
 const orderIdSchema = z.string().uuid();
 
 function authorized(request: NextRequest) {
@@ -68,6 +76,23 @@ export async function POST(
       }
       return NextResponse.json(
         await attachInvoiceToOrder(id, parsed.data.invoiceKey),
+      );
+    }
+    if (action === "fiscal-document") {
+      const parsed = fiscalDocumentSchema.safeParse(
+        await request.json().catch(() => null),
+      );
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: parsed.error.issues[0]?.message ?? "Documento fiscal inválido." },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json(
+        await confirmFiscalDocumentForOrder(
+          id,
+          parsed.data.tipoDocumentoFiscal,
+        ),
       );
     }
     if (action === "purchase") {

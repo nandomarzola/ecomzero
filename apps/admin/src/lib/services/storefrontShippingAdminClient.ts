@@ -11,6 +11,8 @@ export type ShippingPreparationResult = {
   service: string | null;
   estimatedDays: number | null;
   estimatedCost: number | null;
+  fiscalDocumentType: "nota_fiscal" | "declaracao_conteudo" | null;
+  fiscalDocumentConfirmedAt: string | null;
   invoiceKey: string | null;
   balance: {
     available: boolean;
@@ -73,6 +75,21 @@ export function attachInvoiceInStorefront(orderId: string, invoiceKey: string) {
   );
 }
 
+export function confirmFiscalDocumentInStorefront(
+  orderId: string,
+  input:
+    | { tipoDocumentoFiscal: "nota_fiscal" }
+    | {
+        tipoDocumentoFiscal: "declaracao_conteudo";
+        declaracaoConfirmada: true;
+      },
+) {
+  return internalRequest<ShippingPreparationResult>(
+    `/api/admin/shipping/orders/${orderId}/fiscal-document`,
+    input,
+  );
+}
+
 export function purchaseShipmentInStorefront(orderId: string) {
   return internalRequest<ShippingPreparationResult>(
     `/api/admin/shipping/orders/${orderId}/purchase`,
@@ -98,11 +115,5 @@ export function cancelShipmentInStorefront(orderId: string) {
   return internalRequest<{ ok: true }>(
     `/api/admin/shipping/orders/${orderId}/cancel`,
     {},
-  );
-}
-
-export function getStorefrontMelhorEnvioBalance() {
-  return internalRequest<ShippingPreparationResult["balance"]>(
-    "/api/admin/shipping/balance",
   );
 }

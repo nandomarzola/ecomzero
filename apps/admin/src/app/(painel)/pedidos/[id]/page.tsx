@@ -8,8 +8,7 @@ import {
   getAdminOrderDetails,
   getShippingSettings,
 } from "@/lib/services/shippingFulfillmentAdminService";
-import { getCachedMelhorEnvioBalance } from "@/lib/services/orderAdminService";
-import { getStorefrontMelhorEnvioBalance } from "@/lib/services/storefrontShippingAdminClient";
+import { getMelhorEnvioBalance } from "@/lib/services/melhorEnvioAdminService";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +37,7 @@ export default async function AdminOrderDetailsPage({
   const [order, shippingSettings, balance] = await Promise.all([
     getAdminOrderDetails(id),
     getShippingSettings(),
-    getStorefrontMelhorEnvioBalance().catch(() => getCachedMelhorEnvioBalance()),
+    getMelhorEnvioBalance(),
   ]);
   if (!order || order.status === "draft") notFound();
 
@@ -114,6 +113,7 @@ export default async function AdminOrderDetailsPage({
           shippingMode={order.shippingMode}
           shippingAmountCharged={Number(order.shippingAmountCharged)}
           senderStateRegister={shippingSettings?.inscricaoEstadual ?? null}
+          defaultFiscalDocumentType={shippingSettings?.documentoFiscalPadrao ?? "declaracao_conteudo"}
           autoPurchaseEnabled={config.melhorEnvioAutoPurchaseEnabled}
           balance={balance}
           shipment={order.shipment
@@ -133,6 +133,9 @@ export default async function AdminOrderDetailsPage({
                 custoEtiqueta: order.shipment.custoEtiqueta === null
                   ? null
                   : Number(order.shipment.custoEtiqueta),
+                tipoDocumentoFiscal: order.shipment.tipoDocumentoFiscal,
+                tipoDocumentoFiscalConfirmadoEm:
+                  order.shipment.tipoDocumentoFiscalConfirmadoEm?.toISOString() ?? null,
                 chaveNotaFiscal: order.shipment.chaveNotaFiscal,
                 codigoRastreio: order.shipment.codigoRastreio,
                 urlRastreio: order.shipment.urlRastreio,

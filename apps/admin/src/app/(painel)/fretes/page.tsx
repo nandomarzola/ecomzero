@@ -1,9 +1,9 @@
 import { Box, ExternalLink, KeyRound, MapPin, TriangleAlert, WalletCards } from "lucide-react";
 import { headers } from "next/headers";
 import ShippingSettingsForm from "@/components/fretes/ShippingSettingsForm";
+import { getMelhorEnvioBalance } from "@/lib/services/melhorEnvioAdminService";
 import { getShippingIntegrationStatus } from "@/lib/services/shippingAdminService";
 import { getShippingSettings } from "@/lib/services/shippingFulfillmentAdminService";
-import { getStorefrontMelhorEnvioBalance } from "@/lib/services/storefrontShippingAdminClient";
 
 export const dynamic = "force-dynamic";
 
@@ -31,25 +31,18 @@ export default async function FretesPage({
 }: {
   searchParams: Promise<{ oauth?: string }>;
 }) {
-  const [integration, settings, params, requestHeaders, balanceResult] = await Promise.all([
+  const [integration, settings, params, requestHeaders, balance] = await Promise.all([
     getShippingIntegrationStatus(),
     getShippingSettings(),
     searchParams,
     headers(),
-    getStorefrontMelhorEnvioBalance()
-      .then((balance) => ({ balance, requestError: null }))
-      .catch((error: unknown) => ({
-        balance: null,
-        requestError:
-          error instanceof Error
-            ? error.message
-            : "Não foi possível consultar o saldo da Melhor Carteira.",
-      })),
+    getMelhorEnvioBalance(),
   ]);
-  const balance = balanceResult.balance;
-  const balanceError = balanceResult.requestError ?? balance?.error ?? null;
-  const balanceValue = balance?.available === true ? balance.value : null;
+  const balanceError = balance.error;
+  const balanceValue = balance.value;
   const hasBalance = balanceValue !== null;
+  const isLiveBalance = balance.status === "live";
+  const isStaleBalance = balance.status === "stale";
   const authorizationError = balanceError
     ? /unauthor|autoriz|permiss/i.test(balanceError)
     : false;
@@ -116,21 +109,28 @@ export default async function FretesPage({
               {callbackUrl}
             </code>
           </div>
-          <div className={`rounded-lg border p-4 ${hasBalance ? "border-[#A9EC17]/15 bg-[#A9EC17]/[0.04]" : "border-amber-400/15 bg-amber-400/[0.04]"}`}>
+          <div className={`rounded-lg border p-4 ${isLiveBalance ? "border-[#A9EC17]/15 bg-[#A9EC17]/[0.04]" : "border-amber-400/15 bg-amber-400/[0.04]"}`}>
             {hasBalance ? (
-              <WalletCards className="h-4 w-4 text-[#A9EC17]" />
+              <WalletCards className={`h-4 w-4 ${isLiveBalance ? "text-[#A9EC17]" : "text-amber-300"}`} />
             ) : (
               <TriangleAlert className="h-4 w-4 text-amber-300" />
             )}
             <p className="mt-2 text-xs font-semibold text-white/70">Melhor Carteira</p>
             {hasBalance ? (
               <>
-                <p className="mt-1 text-xl font-bold text-[#A9EC17]">
+                <p className={`mt-1 text-xl font-bold ${isLiveBalance ? "text-[#A9EC17]" : "text-amber-200"}`}>
                   {balanceValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-white/40">
-                  Saldo disponível para compra de etiquetas.
+                  {isStaleBalance
+                    ? "Última consulta conhecida (desatualizada). Não foi possível atualizar agora."
+                    : "Saldo disponível para compra de etiquetas."}
                 </p>
+                {isStaleBalance && balanceError ? (
+                  <p className="mt-1 text-xs leading-5 text-amber-200/75">
+                    {balanceError}
+                  </p>
+                ) : null}
               </>
             ) : (
               <>
@@ -140,13 +140,13 @@ export default async function FretesPage({
                 <p className="mt-1 text-xs leading-5 text-white/45" title={balanceError ?? undefined}>
                   {authorizationError
                     ? "Reautorize a conta Melhor Envio para liberar a consulta da carteira."
-                    : "Confira a integração com a loja e tente novamente."}
+                    : balanceError ?? "Confira a integração com a loja e tente novamente."}
                 </p>
               </>
             )}
-            {balance?.checkedAt ? (
+            {balance.checkedAt ? (
               <p className="mt-2 text-[11px] text-white/30">
-                Última consulta: {new Date(balance.checkedAt).toLocaleString("pt-BR")}
+                {isStaleBalance ? "Consulta conhecida" : "Última consulta"}: {new Date(balance.checkedAt).toLocaleString("pt-BR")}
               </p>
             ) : null}
           </div>

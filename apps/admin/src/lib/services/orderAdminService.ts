@@ -42,19 +42,6 @@ export type OrdersPage = {
   totalPages: number;
 };
 
-export async function getCachedMelhorEnvioBalance() {
-  const balance = await prisma.melhorEnvioBalanceCache.findUnique({
-    where: { id: "singleton" },
-  });
-  return {
-    available: balance?.disponivel ?? false,
-    value: balance?.saldo === null || balance?.saldo === undefined
-      ? null
-      : Number(balance.saldo),
-    checkedAt: balance?.consultadoEm?.toISOString() ?? null,
-  };
-}
-
 // Mapeamento acordado com o dono do produto:
 //   pagos     → status "pago"
 //   nao-pagos → status "aguardando_pagamento"
@@ -76,6 +63,7 @@ function statusWhere(filter: OrderFilterId): Prisma.OrderWhereInput {
                 labelStatus: {
                   in: [
                     "awaiting_shipping_data",
+                    "awaiting_fiscal_document",
                     "awaiting_invoice",
                     "ready_to_purchase",
                     "processing",

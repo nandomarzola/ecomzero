@@ -20,6 +20,7 @@ import {
   attachInvoiceAction,
   calculateOrderShippingAction,
   cancelShipmentAction,
+  confirmFiscalDocumentAction,
   generateLabelAction,
   markExternalShipmentAction,
   prepareShipmentAction,
@@ -57,6 +58,8 @@ type Shipment = {
   prazoDias: number | null;
   custoEstimado: number | null;
   custoEtiqueta: number | null;
+  tipoDocumentoFiscal: "nota_fiscal" | "declaracao_conteudo" | null;
+  tipoDocumentoFiscalConfirmadoEm: string | null;
   chaveNotaFiscal: string | null;
   codigoRastreio: string | null;
   urlRastreio: string | null;
@@ -89,6 +92,7 @@ export default function ShipmentActions({
   shippingMode,
   shippingAmountCharged,
   senderStateRegister,
+  defaultFiscalDocumentType,
   autoPurchaseEnabled,
   balance,
   shipment,
@@ -97,12 +101,26 @@ export default function ShipmentActions({
   shippingMode: string;
   shippingAmountCharged: number;
   senderStateRegister: string | null;
+  defaultFiscalDocumentType: "nota_fiscal" | "declaracao_conteudo";
   autoPurchaseEnabled: boolean;
-  balance: { available: boolean; value: number | null; checkedAt: string | null };
+  balance: {
+    status: "live" | "stale" | "unavailable";
+    value: number | null;
+    checkedAt: string | null;
+    error: string | null;
+  };
   shipment: Shipment;
 }) {
   const router = useRouter();
   const [invoiceKey, setInvoiceKey] = useState(shipment?.chaveNotaFiscal ?? "");
+  const [selectedFiscalType, setSelectedFiscalType] = useState<
+    "nota_fiscal" | "declaracao_conteudo"
+  >(
+    shipment?.tipoDocumentoFiscalConfirmadoEm && shipment.tipoDocumentoFiscal
+      ? shipment.tipoDocumentoFiscal
+      : defaultFiscalDocumentType,
+  );
+  const [declarationConfirmed, setDeclarationConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [operation, setOperation] = useState<string | null>(null);
@@ -114,6 +132,11 @@ export default function ShipmentActions({
   );
 
   const isFreeShipping = freeShippingModes.has(shippingMode);
+  const fiscalDocumentConfirmed = Boolean(
+    shipment?.tipoDocumentoFiscalConfirmadoEm &&
+      shipment.tipoDocumentoFiscal === selectedFiscalType,
+  );
+  const fiscalDocumentLocked = Boolean(shipment?.melhorEnvioId);
   const invoiceSaved = Boolean(
     shipment?.chaveNotaFiscal && shipment.chaveNotaFiscal === invoiceKey,
   );
@@ -188,6 +211,25 @@ export default function ShipmentActions({
     );
   }
 
+  function confirmFiscalDocument() {
+    run(
+      "fiscal-document",
+      () =>
+        confirmFiscalDocumentAction(
+          orderId,
+          selectedFiscalType === "nota_fiscal"
+            ? { tipoDocumentoFiscal: "nota_fiscal" }
+            : {
+                tipoDocumentoFiscal: "declaracao_conteudo",
+                declaracaoConfirmada: declarationConfirmed,
+              },
+        ),
+      selectedFiscalType === "nota_fiscal"
+        ? "NF-e confirmada como documento fiscal deste pedido."
+        : "Declaração de conteúdo confirmada para este pedido.",
+    );
+  }
+
   function prepare(serviceId?: string) {
     run(
       "prepare",
@@ -238,7 +280,13 @@ export default function ShipmentActions({
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#A9EC17]">Expedição</p>
           <h2 className="font-display mt-1 text-lg font-bold">Fiscal e logística</h2>
-          <p className="mt-1 text-xs text-white/40">Venda comercial com NF-e obrigatória.</p>
+          <p className="mt-1 text-xs text-white/40">
+            {!fiscalDocumentConfirmed
+              ? "Confirme o documento de cada pedido antes de gerar a etiqueta."
+              : selectedFiscalType === "nota_fiscal"
+                ? "Pedido confirmado para envio com NF-e."
+                : "Pedido confirmado para envio com declaração de conteúdo."}
+          </p>
         </div>
         <span className="rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/5 px-3 py-1 text-xs text-[#D9FF87]">
           {labelStatusLabel(labelStatus)}
@@ -249,7 +297,15 @@ export default function ShipmentActions({
         <InfoCard label="Tipo de frete" value={shippingModeLabel(shippingMode)} detail={isFreeShipping ? "Grátis para o cliente; custo da loja" : "Contratado pelo cliente"} />
         <InfoCard label="Serviço selecionado" value={shipment?.transportadora && shipment.servico ? `${shipment.transportadora} · ${shipment.servico}` : "Aguardando cotação"} detail={shipment?.prazoDias ? `Até ${shipment.prazoDias} dias úteis` : null} />
         <InfoCard label="Custo da etiqueta" value={shipment?.custoEtiqueta !== null && shipment?.custoEtiqueta !== undefined ? money(shipment.custoEtiqueta) : shipment?.custoEstimado !== null && shipment?.custoEstimado !== undefined ? `${money(shipment.custoEstimado)} estimado` : "—"} detail={`Cobrado do cliente: ${money(shippingAmountCharged)}`} />
-        <InfoCard label="Melhor Carteira" value={balance.available && balance.value !== null ? money(balance.value) : "Saldo indisponível"} detail={balance.checkedAt ? `Consulta: ${new Date(balance.checkedAt).toLocaleString("pt-BR")}` : null} />
+        <InfoCard
+          label="Melhor Carteira"
+          value={balance.value !== null ? money(balance.value) : "Saldo indisponível"}
+          detail={balance.status === "stale"
+            ? `Última consulta conhecida (desatualizada)${balance.checkedAt ? `: ${new Date(balance.checkedAt).toLocaleString("pt-BR")}` : ""}${balance.error ? ` · Falha ao atualizar: ${balance.error}` : ""}`
+            : balance.status === "live" && balance.checkedAt
+              ? `Consulta: ${new Date(balance.checkedAt).toLocaleString("pt-BR")}`
+              : balance.error ?? null}
+        />
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
@@ -257,38 +313,114 @@ export default function ShipmentActions({
           <div className="rounded-xl border border-white/[0.08] bg-[#090909] p-4">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-[#A9EC17]" />
-              <h3 className="text-sm font-semibold">Dados fiscais</h3>
+              <h3 className="text-sm font-semibold">Documento do envio</h3>
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-              <label className="flex flex-col gap-1.5 text-xs text-white/55">
-                Chave da NF-e
+            <p className="mt-1 text-xs leading-5 text-white/40">
+              A opção da loja é apenas uma pré-seleção. Este pedido só avança depois da confirmação abaixo.
+            </p>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 ${selectedFiscalType === "declaracao_conteudo" ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.06]" : "border-white/[0.08]"} ${fiscalDocumentLocked ? "cursor-not-allowed opacity-65" : ""}`}>
                 <input
-                  value={invoiceKey}
-                  onChange={(event) => setInvoiceKey(event.target.value.replace(/\D/g, "").slice(0, 44))}
-                  inputMode="numeric"
-                  maxLength={44}
-                  placeholder="44 dígitos"
-                  className="h-10 rounded-lg border border-white/10 bg-[#050505] px-3 font-mono text-sm text-white outline-none focus:border-[#A9EC17]/50"
+                  type="radio"
+                  name="fiscal-document"
+                  checked={selectedFiscalType === "declaracao_conteudo"}
+                  disabled={fiscalDocumentLocked}
+                  onChange={() => {
+                    setSelectedFiscalType("declaracao_conteudo");
+                    setDeclarationConfirmed(false);
+                  }}
+                  className="mt-1 accent-[#A9EC17]"
                 />
+                <span className="text-xs leading-5 text-white/55">
+                  <strong className="block text-sm text-white/85">Declaração de conteúdo</strong>
+                  Somente para envio não comercial permitido. Usa produtos, quantidades e valores do pedido.
+                </span>
               </label>
+              <label className={`flex cursor-pointer gap-3 rounded-lg border p-3 ${selectedFiscalType === "nota_fiscal" ? "border-[#A9EC17]/50 bg-[#A9EC17]/[0.06]" : "border-white/[0.08]"} ${fiscalDocumentLocked ? "cursor-not-allowed opacity-65" : ""}`}>
+                <input
+                  type="radio"
+                  name="fiscal-document"
+                  checked={selectedFiscalType === "nota_fiscal"}
+                  disabled={fiscalDocumentLocked}
+                  onChange={() => setSelectedFiscalType("nota_fiscal")}
+                  className="mt-1 accent-[#A9EC17]"
+                />
+                <span className="text-xs leading-5 text-white/55">
+                  <strong className="block text-sm text-white/85">NF-e</strong>
+                  Para venda comercial. Exige CNPJ, inscrição estadual e chave válida com 44 dígitos.
+                </span>
+              </label>
+            </div>
+
+            {!fiscalDocumentConfirmed && selectedFiscalType === "declaracao_conteudo" ? (
+              <label className="mt-4 flex gap-2 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-100/75">
+                <input
+                  type="checkbox"
+                  checked={declarationConfirmed}
+                  onChange={(event) => setDeclarationConfirmed(event.target.checked)}
+                  className="mt-1 accent-[#A9EC17]"
+                />
+                Confirmo que este envio é não comercial e pode usar declaração de conteúdo conforme as regras aplicáveis.
+              </label>
+            ) : null}
+
+            {!fiscalDocumentConfirmed ? (
               <button
                 type="button"
-                disabled={pending || !invoiceFormatValid}
-                onClick={saveInvoice}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#A9EC17] px-4 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45"
+                disabled={pending || fiscalDocumentLocked || (selectedFiscalType === "declaracao_conteudo" && !declarationConfirmed)}
+                onClick={confirmFiscalDocument}
+                className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#A9EC17] px-4 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45"
               >
-                {operation === "invoice" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
-                Validar e salvar NF-e
+                {operation === "fiscal-document" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                Confirmar para este pedido
               </button>
-            </div>
-            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-              <p className={invoiceSaved ? "text-[#A9EC17]" : "text-amber-300"}>
-                {invoiceSaved ? "Chave validada no backend" : `${invoiceKey.length}/44 dígitos`}
+            ) : (
+              <p className="mt-4 flex items-center gap-2 text-xs text-[#A9EC17]">
+                <CheckCircle2 className="h-4 w-4" /> Escolha confirmada para este pedido.
               </p>
-              <p className={senderStateRegister ? "text-white/55" : "text-red-300"}>
-                Inscrição estadual: {senderStateRegister ?? "não cadastrada"}
+            )}
+
+            {fiscalDocumentConfirmed && selectedFiscalType === "nota_fiscal" ? (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <label className="flex flex-col gap-1.5 text-xs text-white/55">
+                    Chave da NF-e
+                    <input
+                      value={invoiceKey}
+                      onChange={(event) => setInvoiceKey(event.target.value.replace(/\D/g, "").slice(0, 44))}
+                      inputMode="numeric"
+                      maxLength={44}
+                      placeholder="44 dígitos"
+                      className="h-10 rounded-lg border border-white/10 bg-[#050505] px-3 font-mono text-sm text-white outline-none focus:border-[#A9EC17]/50"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={pending || !invoiceFormatValid}
+                    onClick={saveInvoice}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#A9EC17] px-4 text-sm font-semibold text-black disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    {operation === "invoice" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck2 className="h-4 w-4" />}
+                    Validar e salvar NF-e
+                  </button>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                  <p className={invoiceSaved ? "text-[#A9EC17]" : "text-amber-300"}>
+                    {invoiceSaved ? "Chave validada no backend" : `${invoiceKey.length}/44 dígitos`}
+                  </p>
+                  <p className={senderStateRegister ? "text-white/55" : "text-red-300"}>
+                    Inscrição estadual: {senderStateRegister ?? "não cadastrada"}
+                  </p>
+                </div>
+              </>
+            ) : null}
+
+            {fiscalDocumentConfirmed && selectedFiscalType === "declaracao_conteudo" ? (
+              <p className="mt-4 rounded-lg border border-white/[0.08] bg-white/[0.02] p-3 text-xs leading-5 text-white/50">
+                Nenhuma chave de NF-e será enviada. O Melhor Envio receberá os itens, quantidades e valores deste pedido para a declaração.
               </p>
-            </div>
+            ) : null}
           </div>
 
           {isFreeShipping && !shipment?.melhorEnvioId ? (
@@ -333,7 +465,7 @@ export default function ShipmentActions({
           ) : null}
 
           <div className="flex flex-wrap gap-2">
-            {["awaiting_shipping_data", "error", "insufficient_balance", "awaiting_invoice"].includes(labelStatus) ? (
+            {["awaiting_shipping_data", "awaiting_fiscal_document", "error", "insufficient_balance", "awaiting_invoice"].includes(labelStatus) ? (
               <button type="button" disabled={pending || quotePending} onClick={() => prepare()} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70 disabled:opacity-50">
                 <RefreshCw className={`h-4 w-4 ${operation === "prepare" ? "animate-spin" : ""}`} /> Revalidar preparação
               </button>

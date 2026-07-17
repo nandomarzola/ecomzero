@@ -299,6 +299,7 @@ export async function createMelhorEnvioShipment(
       transportadora: selectedOption.transportadora,
       servico: selectedOption.servico,
       tipoDocumentoFiscal: input.tipoDocumentoFiscal,
+      tipoDocumentoFiscalConfirmadoEm: new Date(),
       chaveNotaFiscal:
         input.tipoDocumentoFiscal === "nota_fiscal" ? input.chaveNotaFiscal : null,
     },
@@ -308,6 +309,7 @@ export async function createMelhorEnvioShipment(
       transportadora: selectedOption.transportadora,
       servico: selectedOption.servico,
       tipoDocumentoFiscal: input.tipoDocumentoFiscal,
+      tipoDocumentoFiscalConfirmadoEm: new Date(),
       chaveNotaFiscal:
         input.tipoDocumentoFiscal === "nota_fiscal" ? input.chaveNotaFiscal : null,
     },
@@ -547,6 +549,7 @@ export async function syncMelhorEnvioTracking(orderId: string) {
     const incomingLabelStatus = status ? statusMap[status] : undefined;
     const ranks: Record<string, number> = {
       awaiting_shipping_data: 1,
+      awaiting_fiscal_document: 2,
       awaiting_invoice: 2,
       ready_to_purchase: 3,
       processing: 4,

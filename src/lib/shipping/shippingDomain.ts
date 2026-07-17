@@ -1,6 +1,7 @@
 export const SHIPPING_LABEL_STATUS_RANK: Record<string, number> = {
   awaiting_payment: 0,
   awaiting_shipping_data: 1,
+  awaiting_fiscal_document: 2,
   awaiting_invoice: 2,
   ready_to_purchase: 3,
   insufficient_balance: 3,

@@ -118,7 +118,9 @@ export default function OrdersTable({
                         aria-label={`Abrir ação do pedido #${order.id.slice(0, 8)}`}
                         className="inline-flex h-8 items-center justify-center rounded-md border border-white/[0.08] bg-[#1A1A1A] px-3 text-[11px] font-semibold text-white/65 transition hover:border-[#A9EC17]/30 hover:text-[#A9EC17]"
                       >
-                        {order.labelStatus === "awaiting_invoice"
+                        {order.labelStatus === "awaiting_fiscal_document"
+                          ? "Definir documento"
+                          : order.labelStatus === "awaiting_invoice"
                           ? "Informar NF-e"
                           : order.labelStatus === "ready_to_purchase"
                             ? "Comprar etiqueta"
