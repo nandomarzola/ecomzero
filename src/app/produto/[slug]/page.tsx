@@ -19,6 +19,7 @@ import ProductDescription, {
 import ProductGallery from "@/components/ProductGallery";
 import ProductMarketplaces from "@/components/ProductMarketplaces";
 import ProductPurchase from "@/components/ProductPurchase";
+import ProductReviews from "@/components/ProductReviews";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import TrustBadges from "@/components/TrustBadges";
 import {
@@ -29,6 +30,7 @@ import {
 } from "@/lib/services/productService";
 import type { Product } from "@/types/product";
 import { getActiveCategories } from "@/lib/services/storeContentService";
+import { getApprovedProductReviews } from "@/lib/services/productReviewService";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -122,6 +124,15 @@ const buildProductJsonLd = (product: Product) => {
       url: product.linkShopee ?? `${siteUrl}/produto/${product.slug}`,
       seller: { "@type": "Organization", name: "EcomZero" },
     },
+    ...(product.avaliacaoMedia && product.totalAvaliacoes > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.avaliacaoMedia.toFixed(1),
+            reviewCount: product.totalAvaliacoes,
+          },
+        }
+      : {}),
   };
 };
 
@@ -148,7 +159,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
+  const [allProducts, categories, reviews] = await Promise.all([
+    getAllProducts(),
+    getActiveCategories(),
+    getApprovedProductReviews(product.id),
+  ]);
   const relatedProducts = getRelatedProducts(product, allProducts);
   const categoryLabel = findCategoryLabel(product.categoria) ?? product.categoria;
 
@@ -319,6 +334,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
           productName={product.nome}
           subtitle={product.subtitulo}
           description={product.descricao}
+        />
+
+        <ProductReviews
+          reviews={reviews}
+          average={product.avaliacaoMedia}
+          total={product.totalAvaliacoes}
         />
 
         {relatedProducts.length > 0 && (

@@ -105,6 +105,7 @@ export async function getOrderByUser(userId: string, orderId: string) {
       shipment: {
         select: {
           status: true,
+          labelStatus: true,
           transportadora: true,
           servico: true,
           codigoRastreio: true,

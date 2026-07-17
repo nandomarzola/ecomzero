@@ -1,5 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import { isDeliveredOrder } from "@/lib/reviews/reviewDomain";
 import type { ProductReviewInput } from "@/lib/validation/productReview";
 
 type ProductReviewErrorCode =
@@ -15,19 +16,6 @@ export class ProductReviewServiceError extends Error {
     super(message);
     this.name = "ProductReviewServiceError";
   }
-}
-
-export function isDeliveredOrder(shipment: {
-  status: string;
-  labelStatus: string;
-  entregueEm: Date | null;
-} | null): boolean {
-  return Boolean(
-    shipment &&
-      (shipment.status === "delivered" ||
-        shipment.labelStatus === "delivered" ||
-        shipment.entregueEm),
-  );
 }
 
 async function recalculateProductRating(
