@@ -17,6 +17,7 @@ export default async function ConfiguracoesPage() {
     productCardStyle: settings.productCardStyle as SettingsFormInitial["productCardStyle"],
     cardCornerStyle: settings.cardCornerStyle as SettingsFormInitial["cardCornerStyle"],
     buttonStyle: settings.buttonStyle as SettingsFormInitial["buttonStyle"],
+    footerCopyrightAno: settings.footerCopyrightAno as SettingsFormInitial["footerCopyrightAno"],
     announcementItems,
     updatedAt: settings.updatedAt.toISOString(),
   };

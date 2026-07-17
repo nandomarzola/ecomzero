@@ -355,37 +355,85 @@ model Banner {
 }
 
 model StoreSettings {
-  id                     String   @id @default("singleton")
-  nomeLoja               String   @default("EcomZero")
-  descricaoFooter        String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
-  mensagemFooter         String   @default("Produtos úteis para facilitar o seu dia a dia.")
-  barraAnuncioAtiva      Boolean  @default(false)
-  barraAnuncioTexto      String?
-  barraAnuncioLink       String?
-  barraAnuncioCor        String?
-  barraAnuncioVelocidade Int      @default(5)
-  emailSuporte           String?
-  telefoneSuporte        String?
-  whatsapp               String?
-  linkShopee             String?
-  linkInstagram          String?
-  linkFacebook           String?
-  linkTiktok             String?
-  logoUrl                String   @default("/images/logo2.png")
-  faviconUrl             String?
-  corPrincipal           String   @default("#A9EC17")
-  fusoHorario            String   @default("America/Sao_Paulo")
-  lojaAtiva              Boolean  @default(true)
-  plano                  String   @default("Profissional")
-  moeda                  String   @default("BRL")
-  idioma                 String   @default("pt-BR")
-  fontFamily             String   @default("geist")
-  productCardStyle       String   @default("standard")
-  cardCornerStyle        String   @default("rounded")
-  showRating             Boolean  @default(true)
-  showBuyNowButton       Boolean  @default(true)
-  buttonStyle            String   @default("filled")
-  updatedAt              DateTime @updatedAt
+  id                            String   @id @default("singleton")
+  nomeLoja                      String   @default("EcomZero")
+  descricaoFooter               String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
+  mensagemFooter                String   @default("Produtos úteis para facilitar o seu dia a dia.")
+  barraAnuncioAtiva             Boolean  @default(false)
+  barraAnuncioTexto             String?
+  barraAnuncioLink              String?
+  barraAnuncioCor               String?
+  barraAnuncioVelocidade        Int      @default(5)
+  emailSuporte                  String?
+  telefoneSuporte               String?
+  whatsapp                      String?
+  linkShopee                    String?
+  linkInstagram                 String?
+  linkFacebook                  String?
+  linkTiktok                    String?
+  linkYoutube                   String?
+  linkTwitter                   String?
+  instagramAtivo                Boolean  @default(false)
+  facebookAtivo                 Boolean  @default(false)
+  tiktokAtivo                   Boolean  @default(false)
+  youtubeAtivo                  Boolean  @default(false)
+  twitterAtivo                  Boolean  @default(false)
+  shopeeAtivo                   Boolean  @default(false)
+  linkMercadoLivre              String?
+  mercadoLivreAtivo             Boolean  @default(false)
+  linkTiktokShop                String?
+  tiktokShopAtivo               Boolean  @default(false)
+  linkShein                     String?
+  sheinAtivo                    Boolean  @default(false)
+  emailSuporteAtivo             Boolean  @default(false)
+  telefoneSuporteAtivo          Boolean  @default(false)
+  whatsappAtivo                 Boolean  @default(false)
+  whatsappMensagem              String   @default("Olá! Preciso de ajuda com a minha compra.")
+  horariosAtendimento           Json?
+  footerColumns                 Json?
+  footerSeloSeguranca           Boolean  @default(true)
+  footerCopyrightTexto          String   @default("Todos os direitos reservados.")
+  footerCopyrightAno            String   @default("automatico")
+  footerCopyrightAnoFixo        Int?
+  razaoSocial                   String?
+  cnpjLoja                      String?
+  enderecoEmpresa               String?
+  mensagemBoasVindasAtiva       Boolean  @default(false)
+  mensagemBoasVindas            String   @default("Olá, {nome_cliente}! Sua conta foi criada com sucesso.")
+  mensagemPedidoConfirmadoAtiva Boolean  @default(true)
+  mensagemPedidoConfirmado      String   @default("O pagamento do pedido {numero_pedido} foi confirmado.")
+  mensagemPedidoEnviadoAtiva    Boolean  @default(true)
+  mensagemPedidoEnviado         String   @default("Seu pedido {numero_pedido} está a caminho!")
+  mensagemPedidoEntregueAtiva   Boolean  @default(true)
+  mensagemPedidoEntregue        String   @default("Seu pedido {numero_pedido} foi entregue!")
+  metaPixelAtivo                Boolean  @default(false)
+  metaPixelId                   String?
+  googleAnalyticsAtivo          Boolean  @default(false)
+  googleAnalyticsId             String?
+  googleTagManagerAtivo         Boolean  @default(false)
+  googleTagManagerId            String?
+  tiktokPixelAtivo              Boolean  @default(false)
+  tiktokPixelId                 String?
+  customHeadCodeAtivo           Boolean  @default(false)
+  customHeadCode                String?
+  modoManutencao                Boolean  @default(false)
+  mensagemManutencao            String   @default("Estamos preparando novidades. Voltamos em breve!")
+  valorMinimoPedido             Decimal  @default(0) @db.Decimal(10, 2)
+  logoUrl                       String   @default("/images/logo2.png")
+  faviconUrl                    String?
+  corPrincipal                  String   @default("#A9EC17")
+  fusoHorario                   String   @default("America/Sao_Paulo")
+  lojaAtiva                     Boolean  @default(true)
+  plano                         String   @default("Profissional")
+  moeda                         String   @default("BRL")
+  idioma                        String   @default("pt-BR")
+  fontFamily                    String   @default("geist")
+  productCardStyle              String   @default("standard")
+  cardCornerStyle               String   @default("rounded")
+  showRating                    Boolean  @default(true)
+  showBuyNowButton              Boolean  @default(true)
+  buttonStyle                   String   @default("filled")
+  updatedAt                     DateTime @updatedAt
 }
 
 model AnnouncementBarItem {

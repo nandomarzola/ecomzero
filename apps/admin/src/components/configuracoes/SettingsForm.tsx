@@ -31,7 +31,6 @@ import {
   Headphones,
   Image as ImageIcon,
   LayoutGrid,
-  Languages,
   Loader2,
   Megaphone,
   MessageSquare,
@@ -52,12 +51,25 @@ import {
   Trash2,
   Type,
   Upload,
-  UserRoundCog,
   Users,
   type LucideIcon,
 } from "lucide-react";
 import { saveSettingsAction } from "@/lib/actions/settings";
 import type { CouponListItem } from "@/lib/services/couponAdminService";
+import type { BusinessHourConfig, FooterColumnConfig } from "@/lib/settingsConfigDomain";
+import {
+  ContactSettingsSection,
+  FooterPreview,
+  FooterSettingsSection,
+  GeneralSettingsSection,
+  HoursSettingsSection,
+  MarketplaceSettingsSection,
+  MessagesSettingsSection,
+  SocialSettingsSection,
+  TrackingSettingsSection,
+  type RemainingSettingsFields,
+} from "@/components/configuracoes/RemainingSettingsSections";
+import SecuritySettingsSection from "@/components/configuracoes/SecuritySettingsSection";
 import {
   BRAZIL_UFS,
   REGIONS,
@@ -91,6 +103,54 @@ export type SettingsFormInitial = {
   linkInstagram: string | null;
   linkFacebook: string | null;
   linkTiktok: string | null;
+  linkYoutube: string | null;
+  linkTwitter: string | null;
+  instagramAtivo: boolean;
+  facebookAtivo: boolean;
+  tiktokAtivo: boolean;
+  youtubeAtivo: boolean;
+  twitterAtivo: boolean;
+  shopeeAtivo: boolean;
+  linkMercadoLivre: string | null;
+  mercadoLivreAtivo: boolean;
+  linkTiktokShop: string | null;
+  tiktokShopAtivo: boolean;
+  linkShein: string | null;
+  sheinAtivo: boolean;
+  emailSuporteAtivo: boolean;
+  telefoneSuporteAtivo: boolean;
+  whatsappAtivo: boolean;
+  whatsappMensagem: string;
+  horariosAtendimento: BusinessHourConfig[];
+  footerColumns: FooterColumnConfig[];
+  footerSeloSeguranca: boolean;
+  footerCopyrightTexto: string;
+  footerCopyrightAno: "automatico" | "fixo";
+  footerCopyrightAnoFixo: number | null;
+  razaoSocial: string | null;
+  cnpjLoja: string | null;
+  enderecoEmpresa: string | null;
+  mensagemBoasVindasAtiva: boolean;
+  mensagemBoasVindas: string;
+  mensagemPedidoConfirmadoAtiva: boolean;
+  mensagemPedidoConfirmado: string;
+  mensagemPedidoEnviadoAtiva: boolean;
+  mensagemPedidoEnviado: string;
+  mensagemPedidoEntregueAtiva: boolean;
+  mensagemPedidoEntregue: string;
+  metaPixelAtivo: boolean;
+  metaPixelId: string | null;
+  googleAnalyticsAtivo: boolean;
+  googleAnalyticsId: string | null;
+  googleTagManagerAtivo: boolean;
+  googleTagManagerId: string | null;
+  tiktokPixelAtivo: boolean;
+  tiktokPixelId: string | null;
+  customHeadCodeAtivo: boolean;
+  customHeadCode: string | null;
+  modoManutencao: boolean;
+  mensagemManutencao: string;
+  valorMinimoPedido: number;
   logoUrl: string;
   faviconUrl: string | null;
   corPrincipal: string;
@@ -113,7 +173,7 @@ type AnnouncementFormItem = Omit<SettingsFormInitial["announcementItems"][number
   couponId: string;
 };
 
-type FormState = Omit<SettingsFormInitial, "updatedAt" | "barraAnuncioTexto" | "barraAnuncioLink" | "barraAnuncioCor" | "announcementItems" | "emailSuporte" | "telefoneSuporte" | "whatsapp" | "linkShopee" | "linkInstagram" | "linkFacebook" | "linkTiktok" | "faviconUrl"> & {
+type FormState = Omit<SettingsFormInitial, "updatedAt" | "barraAnuncioTexto" | "barraAnuncioLink" | "barraAnuncioCor" | "announcementItems" | "emailSuporte" | "telefoneSuporte" | "whatsapp" | "linkShopee" | "linkInstagram" | "linkFacebook" | "linkTiktok" | "linkYoutube" | "linkTwitter" | "linkMercadoLivre" | "linkTiktokShop" | "linkShein" | "razaoSocial" | "cnpjLoja" | "enderecoEmpresa" | "metaPixelId" | "googleAnalyticsId" | "googleTagManagerId" | "tiktokPixelId" | "customHeadCode" | "faviconUrl"> & RemainingSettingsFields & {
   barraAnuncioTexto: string;
   barraAnuncioLink: string;
   barraAnuncioCor: string;
@@ -162,7 +222,6 @@ const navigation: Array<{ label: string; items: NavItem[] }> = [
     label: "Marketing",
     items: [
       { id: "mensagens", label: "Mensagens", icon: MessageSquare },
-      { id: "cupons", label: "Cupons padrão", icon: Ticket },
       { id: "pixel", label: "Pixel e códigos", icon: Code2 },
     ],
   },
@@ -170,8 +229,6 @@ const navigation: Array<{ label: string; items: NavItem[] }> = [
     label: "Loja",
     items: [
       { id: "geral", label: "Geral", icon: Settings2 },
-      { id: "moeda", label: "Moeda e idioma", icon: Languages },
-      { id: "dominio", label: "Domínio", icon: Globe2 },
     ],
   },
   {
@@ -251,6 +308,21 @@ function normalize(initial: SettingsFormInitial): FormState {
     linkInstagram: initial.linkInstagram ?? "",
     linkFacebook: initial.linkFacebook ?? "",
     linkTiktok: initial.linkTiktok ?? "",
+    linkYoutube: initial.linkYoutube ?? "",
+    linkTwitter: initial.linkTwitter ?? "",
+    linkMercadoLivre: initial.linkMercadoLivre ?? "",
+    linkTiktokShop: initial.linkTiktokShop ?? "",
+    linkShein: initial.linkShein ?? "",
+    razaoSocial: initial.razaoSocial ?? "",
+    cnpjLoja: initial.cnpjLoja ?? "",
+    enderecoEmpresa: initial.enderecoEmpresa ?? "",
+    metaPixelId: initial.metaPixelId ?? "",
+    googleAnalyticsId: initial.googleAnalyticsId ?? "",
+    googleTagManagerId: initial.googleTagManagerId ?? "",
+    tiktokPixelId: initial.tiktokPixelId ?? "",
+    customHeadCode: initial.customHeadCode ?? "",
+    horariosAtendimento: initial.horariosAtendimento.map((schedule) => ({ ...schedule })),
+    footerColumns: initial.footerColumns.map((column) => ({ ...column, links: column.links.map((link) => ({ ...link })) })),
     faviconUrl: initial.faviconUrl ?? "",
   };
 }
@@ -565,6 +637,11 @@ export default function SettingsForm({
   }, [form.barraAnuncioAtiva, form.barraAnuncioVelocidade, previewAnnouncements.length]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
+    setError(null);
+  }
+
+  function setRemaining(key: keyof RemainingSettingsFields, value: RemainingSettingsFields[keyof RemainingSettingsFields]) {
     setForm((current) => ({ ...current, [key]: value }));
     setError(null);
   }
@@ -947,6 +1024,45 @@ export default function SettingsForm({
 
               <div className="rounded-md border border-sky-400/15 bg-sky-400/[0.04] px-4 py-3 text-[9px] leading-4 text-sky-100/55">O agendamento individual por data ficará para a fase 2. Nesta versão, mensagens ativas participam da rotação imediatamente.</div>
             </div>
+          ) : activeSection === "rodape" ? (
+            <FooterSettingsSection form={form} onChange={setRemaining} />
+          ) : activeSection === "canais-atendimento" ? (
+            <ContactSettingsSection
+              form={form}
+              emailSuporte={form.emailSuporte}
+              telefoneSuporte={form.telefoneSuporte}
+              whatsapp={form.whatsapp}
+              onChange={setRemaining}
+              onContactChange={(key, value) => set(key, value)}
+            />
+          ) : activeSection === "horarios" ? (
+            <HoursSettingsSection form={form} onChange={setRemaining} />
+          ) : activeSection === "redes" ? (
+            <SocialSettingsSection
+              form={form}
+              linkInstagram={form.linkInstagram}
+              linkFacebook={form.linkFacebook}
+              linkTiktok={form.linkTiktok}
+              onChange={setRemaining}
+              onLegacyChange={(key, value) => set(key, value)}
+            />
+          ) : activeSection === "marketplaces" ? (
+            <MarketplaceSettingsSection form={form} linkShopee={form.linkShopee} onChange={setRemaining} onShopeeChange={(value) => set("linkShopee", value)} />
+          ) : activeSection === "mensagens" ? (
+            <MessagesSettingsSection form={form} onChange={setRemaining} />
+          ) : activeSection === "pixel" ? (
+            <TrackingSettingsSection form={form} onChange={setRemaining} />
+          ) : activeSection === "geral" ? (
+            <GeneralSettingsSection form={form} onChange={setRemaining} />
+          ) : activeSection === "seguranca" ? (
+            <SecuritySettingsSection />
+          ) : activeSection === "usuarios" || activeSection === "sessoes" ? (
+            <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
+              {activeSection === "usuarios" ? <Users className="h-10 w-10 text-amber-300/35" strokeWidth={1.4} /> : <MonitorSmartphone className="h-10 w-10 text-amber-300/35" strokeWidth={1.4} />}
+              <h2 className="font-display mt-4 text-base font-bold text-white">{activeSection === "usuarios" ? "Usuários" : "Sessões"}</h2>
+              <p className="mt-2 max-w-md text-xs leading-5 text-white/40">Esta área exige a evolução do login administrativo para permissões, convites e sessões revogáveis. Ela foi mantida bloqueada para não apresentar controles sem efeito real.</p>
+              <span className="mt-4 rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-3 py-1.5 text-[9px] font-semibold text-amber-200/70">Aguardando autorização da refatoração de autenticação</span>
+            </div>
           ) : (
             <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
               {activeItem ? <activeItem.icon className="h-10 w-10 text-white/20" strokeWidth={1.4} /> : <Settings2 className="h-10 w-10 text-white/20" />}
@@ -961,6 +1077,10 @@ export default function SettingsForm({
             <h2 className="font-display text-[14px] font-bold text-white">Prévia da loja</h2>
             <p className="mt-1 text-[9px] text-white/35">Veja como as informações aparecem para o cliente.</p>
             <div className="mt-4 overflow-hidden rounded-md border border-white/[0.1] bg-black" style={{ fontFamily: appearancePreviewFont }}>
+              {activeSection === "rodape" ? (
+                <FooterPreview form={form} nomeLoja={form.nomeLoja} mensagemFooter={form.mensagemFooter} logoUrl={logoPreview} color={previewColor} />
+              ) : (
+                <>
               {form.barraAnuncioAtiva && currentPreviewAnnouncement ? (
                 <div className="relative min-h-8 px-12 py-2 text-center text-[9px] font-bold" style={{ backgroundColor: announcementPreviewColor, color: contrastText(announcementPreviewColor) }}>
                   <span className="line-clamp-1">{currentPreviewAnnouncement.texto}</span>
@@ -1002,6 +1122,8 @@ export default function SettingsForm({
                   </article>
                 </div>
               ) : null}
+                </>
+              )}
             </div>
           </section>
 

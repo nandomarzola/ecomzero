@@ -77,6 +77,17 @@ export async function createOrderFromCart(
           new Prisma.Decimal(0),
         );
 
+        const storeSettings = await transaction.storeSettings.findUnique({
+          where: { id: "singleton" },
+          select: { valorMinimoPedido: true },
+        });
+        const minimumOrderValue = storeSettings?.valorMinimoPedido ?? new Prisma.Decimal(0);
+        if (minimumOrderValue.greaterThan(0) && subtotal.lessThan(minimumOrderValue)) {
+          throw new CheckoutServiceError(
+            `O valor mínimo do pedido é ${minimumOrderValue.toNumber().toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`,
+          );
+        }
+
         let descontoCupom = new Prisma.Decimal(0);
         let couponId: string | null = null;
         let couponGrantsFreeShipping = false;

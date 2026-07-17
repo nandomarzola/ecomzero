@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { normalizeBusinessHours, normalizeFooterColumns } from "@/lib/settingsConfigDomain";
 import type { StoreSettingsInput } from "@/lib/validation/settings";
 
 const defaults = {
@@ -12,7 +13,13 @@ const defaults = {
 };
 
 export async function getStoreSettings() {
-  return prisma.storeSettings.upsert({ where: { id: "singleton" }, create: defaults, update: {} });
+  const settings = await prisma.storeSettings.upsert({ where: { id: "singleton" }, create: defaults, update: {} });
+  return {
+    ...settings,
+    horariosAtendimento: normalizeBusinessHours(settings.horariosAtendimento),
+    footerColumns: normalizeFooterColumns(settings.footerColumns),
+    valorMinimoPedido: Number(settings.valorMinimoPedido),
+  };
 }
 
 export async function getAnnouncementBarItems() {
@@ -31,10 +38,12 @@ export async function getAnnouncementBarItems() {
 }
 
 export async function updateStoreSettings(input: StoreSettingsInput) {
-  const { announcementItems, ...settingsInput } = input;
+  const { announcementItems, horariosAtendimento, footerColumns, ...settingsInput } = input;
   const firstActiveItem = announcementItems.find((item) => item.ativo);
   const data = {
     ...settingsInput,
+    horariosAtendimento,
+    footerColumns,
     barraAnuncioTexto: firstActiveItem?.texto ?? null,
     barraAnuncioLink: firstActiveItem?.link ?? null,
     barraAnuncioCor: settingsInput.barraAnuncioCor ?? null,
@@ -45,6 +54,19 @@ export async function updateStoreSettings(input: StoreSettingsInput) {
     linkInstagram: settingsInput.linkInstagram ?? null,
     linkFacebook: settingsInput.linkFacebook ?? null,
     linkTiktok: settingsInput.linkTiktok ?? null,
+    linkYoutube: settingsInput.linkYoutube ?? null,
+    linkTwitter: settingsInput.linkTwitter ?? null,
+    linkMercadoLivre: settingsInput.linkMercadoLivre ?? null,
+    linkTiktokShop: settingsInput.linkTiktokShop ?? null,
+    linkShein: settingsInput.linkShein ?? null,
+    razaoSocial: settingsInput.razaoSocial ?? null,
+    cnpjLoja: settingsInput.cnpjLoja ?? null,
+    enderecoEmpresa: settingsInput.enderecoEmpresa ?? null,
+    metaPixelId: settingsInput.metaPixelId ?? null,
+    googleAnalyticsId: settingsInput.googleAnalyticsId ?? null,
+    googleTagManagerId: settingsInput.googleTagManagerId ?? null,
+    tiktokPixelId: settingsInput.tiktokPixelId ?? null,
+    customHeadCode: settingsInput.customHeadCode ?? null,
     faviconUrl: settingsInput.faviconUrl ?? null,
   };
   return prisma.$transaction(async (transaction) => {

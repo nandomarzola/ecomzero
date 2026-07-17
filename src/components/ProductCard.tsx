@@ -198,12 +198,12 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          <div className="store-product-card-actions mt-5 space-y-2 border-t border-white/10 pt-4">
+          <div className="store-product-card-actions mt-5 space-y-2 border-t border-white/10 pt-4 max-md:space-y-3">
             <button
               type="button"
               onClick={() => handleCartAction("buy")}
               disabled={isPending || !defaultVariant}
-              className="store-product-card-buy-now store-primary-action font-display inline-flex min-h-12 w-full items-center justify-center gap-2 px-4 text-xs font-black uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              className="store-product-card-buy-now store-primary-action font-display inline-flex min-h-12 w-full items-center justify-center gap-2 px-4 text-xs font-black uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-not-allowed disabled:opacity-50 max-md:min-h-[52px] max-md:text-base sm:text-sm"
             >
               <Zap className="h-5 w-5" strokeWidth={2.2} />
               {pendingAction === "buy" ? "ABRINDO CARRINHO..." : "COMPRAR AGORA"}
@@ -212,7 +212,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               type="button"
               onClick={() => handleCartAction("cart")}
               disabled={isPending || !defaultVariant}
-              className="font-display inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[var(--brand-color)]/80 px-4 text-xs font-bold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              className="font-display inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-[var(--brand-color)]/80 px-4 text-xs font-bold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:cursor-not-allowed disabled:opacity-50 max-md:min-h-[52px] max-md:text-base sm:text-sm"
             >
               {feedback === "added" ? (
                 <Check className="h-5 w-5" strokeWidth={2.4} />

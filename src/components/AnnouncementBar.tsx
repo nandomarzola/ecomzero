@@ -76,7 +76,7 @@ export default function AnnouncementBar({
   return (
     <aside
       aria-label="Anúncios da loja"
-      className="relative z-[51] min-h-8 px-14 py-2 text-center font-display text-[10px] font-bold uppercase tracking-wide"
+      className="relative z-[51] min-h-8 px-14 py-2 text-center font-display text-[10px] font-bold uppercase tracking-wide max-md:text-xs"
       style={{ backgroundColor, color: textColor }}
     >
       <div aria-live="polite" aria-atomic="true">

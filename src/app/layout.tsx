@@ -8,7 +8,10 @@ import CartDrawer from "@/components/cart/CartDrawer";
 import { CartProvider } from "@/components/CartProvider";
 import { FavoritesProvider } from "@/components/FavoritesProvider";
 import Footer from "@/components/Footer";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 import Header from "@/components/Header";
+import MaintenancePage from "@/components/MaintenancePage";
+import TrackingScripts from "@/components/TrackingScripts";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { getActiveAnnouncementBarItems, getStoreSettings } from "@/lib/services/storeContentService";
 import { ProductFiltersProvider } from "@/components/ProductFiltersProvider";
@@ -69,7 +72,14 @@ export default async function RootLayout({
     name: settings.nomeLoja,
     url: "https://www.ecomzero.com.br",
     logo: logoUrl,
-    sameAs: [settings.linkShopee, settings.linkInstagram, settings.linkFacebook, settings.linkTiktok].filter(Boolean),
+    sameAs: [
+      settings.shopeeAtivo ? settings.linkShopee : null,
+      settings.instagramAtivo ? settings.linkInstagram : null,
+      settings.facebookAtivo ? settings.linkFacebook : null,
+      settings.tiktokAtivo ? settings.linkTiktok : null,
+      settings.youtubeAtivo ? settings.linkYoutube : null,
+      settings.twitterAtivo ? settings.linkTwitter : null,
+    ].filter(Boolean),
   };
   const webSiteJsonLd = {
     "@context": "https://schema.org",
@@ -108,9 +118,16 @@ export default async function RootLayout({
           }}
         />
 
+        <TrackingScripts settings={settings} />
+
+        {settings.modoManutencao ? (
+          <MaintenancePage logoUrl={settings.logoUrl} storeName={settings.nomeLoja} message={settings.mensagemManutencao} />
+        ) : (
+          <>
+
         <AuthSessionProvider>
           <CartProvider>
-            <CartDrawer promotionItems={settings.barraAnuncioAtiva ? announcementItems : []} />
+            <CartDrawer promotionItems={settings.barraAnuncioAtiva ? announcementItems : []} minimumOrderValue={Number(settings.valorMinimoPedido)} />
             <FavoritesProvider>
             <ProductFiltersProvider>
               {settings.barraAnuncioAtiva && announcementItems.length ? (
@@ -126,6 +143,8 @@ export default async function RootLayout({
 
               <Footer />
 
+              {settings.whatsappAtivo && settings.whatsapp ? <FloatingWhatsApp phone={settings.whatsapp} message={settings.whatsappMensagem} /> : null}
+
               <BottomNav />
             </ProductFiltersProvider>
             </FavoritesProvider>
@@ -133,6 +152,8 @@ export default async function RootLayout({
         </AuthSessionProvider>
 
         <Toaster position="top-center" theme="dark" richColors closeButton />
+          </>
+        )}
       </body>
     </html>
   );

@@ -34,7 +34,7 @@ const focusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-export default function CartDrawer({ promotionItems }: { promotionItems: StoreAnnouncementItem[] }) {
+export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { promotionItems: StoreAnnouncementItem[]; minimumOrderValue?: number }) {
   const router = useRouter();
   const {
     cart,
@@ -132,6 +132,11 @@ export default function CartDrawer({ promotionItems }: { promotionItems: StoreAn
   }, [closeCart, isOpen]);
 
   const goToCheckout = () => {
+    if (minimumOrderValue > 0 && cart.subtotal + 0.005 < minimumOrderValue) {
+      const missing = minimumOrderValue - cart.subtotal;
+      setCheckoutError(`Adicione mais ${missing.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} em produtos para atingir o pedido mínimo.`);
+      return;
+    }
     if (!freeShipping && !shippingSelection) {
       setCheckoutError("Calcule o frete e selecione uma opção para continuar.");
       document.getElementById("drawer-shipping-cep")?.focus();
