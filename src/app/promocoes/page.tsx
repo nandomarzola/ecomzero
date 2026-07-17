@@ -15,7 +15,6 @@ export default async function PromocoesPage() {
       <HomeProductSection
         title="Promoções"
         products={products}
-        variant="promo"
         emptyLabel="Nenhuma promoção ativa no momento."
       />
     </div>

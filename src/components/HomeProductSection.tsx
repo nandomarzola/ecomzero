@@ -1,28 +1,25 @@
 import Link from "next/link";
 import { ArrowRight, PackageOpen } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import PromoProductCard from "@/components/PromoProductCard";
 import ProductShelf from "@/components/ProductShelf";
 import type { Product } from "@/types/product";
 
 // Seção reutilizável de produtos da home (Novidades / Promoções / Mais Vendidos)
-// e das páginas "Ver todos". `variant="promo"` usa o card de 2 imagens; as demais
-// usam o ProductCard padrão. `layout="shelf"` (home) = vitrine híbrida (scroll
-// horizontal no mobile/tablet, grid 5 col no desktop); `layout="grid"` (padrão,
-// páginas "Ver todos") = grid fixo 2 → 3 → 4 colunas.
+// e das páginas "Ver todos". Todas usam o mesmo ProductCard — o badge de desconto
+// já é condicional nele (aparece quando precoDe > precoPor). `layout="shelf"`
+// (home) = vitrine híbrida (scroll horizontal no mobile/tablet, grid no desktop);
+// `layout="grid"` (padrão, páginas "Ver todos") = grid fixo 2 → 3 → 5 colunas.
 // Server Component — cada seção busca seus dados fora e passa `products`.
 export default function HomeProductSection({
   title,
   products,
   viewAllHref,
-  variant = "default",
   layout = "grid",
   emptyLabel = "Nenhum produto por aqui ainda.",
 }: {
   title: string;
   products: Product[];
   viewAllHref?: string;
-  variant?: "default" | "promo";
   layout?: "grid" | "shelf";
   emptyLabel?: string;
 }) {
@@ -49,16 +46,12 @@ export default function HomeProductSection({
           <p className="mt-3 text-sm text-white/50">{emptyLabel}</p>
         </div>
       ) : layout === "shelf" ? (
-        <ProductShelf products={products} variant={variant} />
+        <ProductShelf products={products} />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
-          {products.map((product) =>
-            variant === "promo" ? (
-              <PromoProductCard key={product.id} product={product} />
-            ) : (
-              <ProductCard key={product.id} product={product} />
-            ),
-          )}
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
         </div>
       )}
     </section>

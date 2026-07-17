@@ -3,20 +3,13 @@
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
-import PromoProductCard from "@/components/PromoProductCard";
 import type { Product } from "@/types/product";
 
 // Vitrine híbrida: até `lg` é um scroll horizontal com snap + setas (mostra um
-// "peek" do próximo card); a partir de `lg` vira grid de 5 colunas. Mesma lista
-// no DOM — só troca o modo de layout por breakpoint. Client Component por causa
-// das setas (scroll imperativo).
-export default function ProductShelf({
-  products,
-  variant = "default",
-}: {
-  products: Product[];
-  variant?: "default" | "promo";
-}) {
+// "peek" do próximo card); a partir de `lg` vira grid. Mesma lista no DOM — só
+// troca o modo de layout por breakpoint. Client Component por causa das setas
+// (scroll imperativo).
+export default function ProductShelf({ products }: { products: Product[] }) {
   const trackRef = useRef<HTMLDivElement | null>(null);
 
   const scroll = (direction: -1 | 1) => {
@@ -46,11 +39,7 @@ export default function ProductShelf({
             key={product.id}
             className="w-[72%] shrink-0 snap-start sm:w-[47%] md:w-[31%] lg:w-full"
           >
-            {variant === "promo" ? (
-              <PromoProductCard product={product} />
-            ) : (
-              <ProductCard product={product} />
-            )}
+            <ProductCard product={product} />
           </div>
         ))}
       </div>

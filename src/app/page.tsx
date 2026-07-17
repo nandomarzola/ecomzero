@@ -51,7 +51,6 @@ export default async function HomePage() {
         title="Promoções"
         products={promocoes}
         viewAllHref="/promocoes"
-        variant="promo"
         layout="shelf"
         emptyLabel="Nenhuma promoção ativa no momento."
       />
