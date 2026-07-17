@@ -8,6 +8,7 @@ const SCOPES = [
   "cart-write",
   "orders-read",
   "shipping-calculate",
+  "shipping-cancel",
   "shipping-checkout",
   "shipping-generate",
   "shipping-print",

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 const oauthMessages: Record<string, { tone: string; text: string }> = {
   success: {
     tone: "border-[#A9EC17]/25 bg-[#A9EC17]/10 text-[#D9FF87]",
-    text: "Integração reautorizada com as permissões de etiqueta e rastreio.",
+    text: "Integração reautorizada com as permissões de etiqueta, cancelamento e rastreio.",
   },
   config: {
     tone: "border-amber-400/25 bg-amber-400/10 text-amber-200",

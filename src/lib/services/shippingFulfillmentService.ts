@@ -1429,6 +1429,12 @@ export async function cancelShipment(orderId: string) {
     ).catch(() => undefined);
 
     if (error instanceof MelhorEnvioServiceError) {
+      if (/unauthorized|não autorizad|permiss/i.test(providerMessage)) {
+        throw new ShippingFulfillmentError(
+          "A integração não possui a permissão shipping-cancel. Reautorize o Melhor Envio em Fretes > Reautorizar permissões e tente novamente.",
+          "MISSING_CANCEL_PERMISSION",
+        );
+      }
       throw new ShippingFulfillmentError(
         `O Melhor Envio recusou o cancelamento: ${providerMessage}`,
         "LABEL_NOT_CANCELLABLE",
