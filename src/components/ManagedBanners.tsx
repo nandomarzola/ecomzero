@@ -22,7 +22,7 @@ function BannerImage({
       alt={banner.altText}
       fill
       priority={priority}
-      quality={90}
+      quality={100}
       sizes={sizes}
       className="object-cover object-center"
     />
@@ -130,7 +130,7 @@ export function ManagedBannerSection({ banners, position }: { banners: StoreBann
         <article
           key={banner.id}
           className={`relative overflow-hidden rounded-xl border border-white/[0.08] ${
-            !isBottom ? "aspect-[15/4]" : bottomPair ? "aspect-square" : "aspect-[2/1]"
+            !isBottom ? "aspect-[1920/819]" : bottomPair ? "aspect-square" : "aspect-[2/1]"
           }`}
         >
           <BannerImage
