@@ -47,6 +47,7 @@ export async function getOrdersByUser(userId: string) {
       shipment: {
         select: {
           status: true,
+          labelStatus: true,
           transportadora: true,
           servico: true,
           codigoRastreio: true,
@@ -121,7 +122,19 @@ export async function getOrderByUser(userId: string, orderId: string) {
           variant: {
             select: {
               label: true,
-              product: { select: { nome: true, imagem: true } },
+              product: { select: { id: true, nome: true, imagem: true } },
+            },
+          },
+          review: {
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              photos: true,
+              status: true,
+              rejectionReason: true,
+              createdAt: true,
+              updatedAt: true,
             },
           },
         },
@@ -137,11 +150,19 @@ export async function getOrderByUser(userId: string, orderId: string) {
     total: order.total.toNumber(),
     items: order.items.map((item) => ({
       id: item.id,
+      productId: item.variant.product.id,
       nome: item.variant.product.nome,
       imagem: item.variant.product.imagem,
       variante: item.variant.label,
       quantidade: item.quantidade,
       precoUnitario: item.precoUnitario.toNumber(),
+      review: item.review
+        ? {
+            ...item.review,
+            createdAt: item.review.createdAt.toISOString(),
+            updatedAt: item.review.updatedAt.toISOString(),
+          }
+        : null,
     })),
   };
 }

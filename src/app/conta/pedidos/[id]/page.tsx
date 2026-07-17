@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Check, ExternalLink, MapPin, ReceiptText, Truck } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { getOrderByUser } from "@/lib/services/accountService";
+import OrderItemReview from "@/components/account/OrderItemReview";
 
 export const metadata: Metadata = { title: "Detalhes do pedido" };
 
@@ -45,6 +46,13 @@ export default async function AccountOrderDetailsPage({
   if (!order) notFound();
 
   const shipmentStatus = order.shipment?.status;
+  const canReview = Boolean(
+    order.status === "pago" &&
+      order.shipment &&
+      (order.shipment.status === "delivered" ||
+        order.shipment.labelStatus === "delivered" ||
+        order.shipment.entregueEm),
+  );
   const currentStep = progressIndex(shipmentStatus);
   const steps = [
     { label: "Pagamento", detail: order.pagoEm ? `Confirmado em ${order.pagoEm.toLocaleDateString("pt-BR")}` : "Aguardando confirmação" },
@@ -101,10 +109,18 @@ export default async function AccountOrderDetailsPage({
           <div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-[var(--brand-color)]" /><h3 className="font-display text-sm font-bold text-white">Itens e valores</h3></div>
           <ul className="mt-4 divide-y divide-white/[0.07]">
             {order.items.map((item) => (
-              <li key={item.id} className="flex gap-3 py-4 first:pt-0">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white"><Image src={item.imagem} alt={item.nome} fill sizes="64px" className="object-contain" /></div>
-                <div className="min-w-0 flex-1"><p className="text-xs font-semibold leading-5 text-white/80">{item.nome}</p><p className="mt-1 text-[10px] text-white/40">{item.variante} · Quantidade {item.quantidade}</p></div>
-                <p className="text-xs font-semibold text-white/70">{money(item.precoUnitario * item.quantidade)}</p>
+              <li key={item.id} className="py-4 first:pt-0">
+                <div className="flex gap-3">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white"><Image src={item.imagem} alt={item.nome} fill sizes="64px" className="object-contain" /></div>
+                  <div className="min-w-0 flex-1"><p className="text-xs font-semibold leading-5 text-white/80">{item.nome}</p><p className="mt-1 text-[10px] text-white/40">{item.variante} · Quantidade {item.quantidade}</p></div>
+                  <p className="text-xs font-semibold text-white/70">{money(item.precoUnitario * item.quantidade)}</p>
+                </div>
+                <OrderItemReview
+                  orderItemId={item.id}
+                  productName={item.nome}
+                  canReview={canReview}
+                  initialReview={item.review}
+                />
               </li>
             ))}
           </ul>

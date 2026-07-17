@@ -111,6 +111,12 @@ enum CustomerNotificationType {
   order_delivered
 }
 
+enum ProductReviewStatus {
+  pending
+  approved
+  rejected
+}
+
 // Espelho de ../../prisma/schema.prisma (raiz). Mantido em sincronia manual.
 model Product {
   id               String      @id @default(uuid())
@@ -142,6 +148,7 @@ model Product {
   updatedAt DateTime @updatedAt
 
   variantes ProductVariant[]
+  reviews   ProductReview[]
 
   @@index([categoria])
   @@index([categoryId])
@@ -211,7 +218,8 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  notifications Notification[]
+  notifications  Notification[]
+  productReviews ProductReview[]
 }
 
 model Order {
@@ -256,6 +264,7 @@ model Order {
   cancellation          OrderCancellation?
   events                OrderEvent[]
   notifications         Notification[]
+  reviews               ProductReview[]
 
   @@index([userId])
   @@index([status, shippingMode])
@@ -420,10 +429,36 @@ model OrderItem {
   variant       ProductVariant @relation(fields: [variantId], references: [id])
   quantidade    Int
   precoUnitario Decimal        @db.Decimal(10, 2)
+  review        ProductReview?
 
   @@unique([orderId, variantId])
   @@index([orderId])
   @@index([variantId])
+}
+
+model ProductReview {
+  id              String              @id @default(uuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId         String
+  order           Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItemId     String              @unique
+  orderItem       OrderItem           @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  rating          Int
+  comment         String?
+  photos          String[]            @default([])
+  status          ProductReviewStatus @default(pending)
+  moderatedAt     DateTime?
+  moderatedBy     String?
+  rejectionReason String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([productId, status])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 model ShippingSettings {

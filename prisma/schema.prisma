@@ -85,6 +85,12 @@ enum CustomerNotificationType {
   order_delivered
 }
 
+enum ProductReviewStatus {
+  pending
+  approved
+  rejected
+}
+
 enum ProductKind {
   simples
   variacoes
@@ -127,6 +133,7 @@ model User {
   couponRedemptions CouponRedemption[]
   favorites         ProductFavorite[]
   notifications     Notification[]
+  productReviews    ProductReview[]
 }
 
 model Account {
@@ -210,17 +217,16 @@ model Product {
   categoryId       String?
   category         Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
-  // Avaliação/comentários digitados manualmente no admin do Hub — não é um
-  // sistema de avaliação de cliente real (decisão de produto, ver skill).
   avaliacaoMedia  Float?
   totalAvaliacoes Int    @default(0)
-  comentarios     Json? // [{ autor, nota, comentario, data }]
+  comentarios     Json?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   variantes ProductVariant[]
   favorites ProductFavorite[]
+  reviews   ProductReview[]
 
   @@index([categoria])
   @@index([categoryId])
@@ -336,6 +342,7 @@ model Order {
   cancellation          OrderCancellation?
   events                OrderEvent[]
   notifications         Notification[]
+  reviews               ProductReview[]
 
   @@index([userId])
   @@index([couponId])
@@ -500,10 +507,36 @@ model OrderItem {
   variant       ProductVariant @relation(fields: [variantId], references: [id])
   quantidade    Int
   precoUnitario Decimal        @db.Decimal(10, 2)
+  review        ProductReview?
 
   @@unique([orderId, variantId])
   @@index([orderId])
   @@index([variantId])
+}
+
+model ProductReview {
+  id              String              @id @default(uuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderId         String
+  order           Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItemId     String              @unique
+  orderItem       OrderItem           @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  rating          Int
+  comment         String?
+  photos          String[]            @default([])
+  status          ProductReviewStatus @default(pending)
+  moderatedAt     DateTime?
+  moderatedBy     String?
+  rejectionReason String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([productId, status])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 // ── Frete (Melhor Envio) ─────────────────────────────────────────────────
