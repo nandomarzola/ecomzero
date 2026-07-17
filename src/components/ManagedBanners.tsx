@@ -68,7 +68,7 @@ export function ManagedHero({ banners }: { banners: StoreBanner[] }) {
             {banners.map((banner, index) => (
               <article
                 key={banner.id}
-                className="relative h-[190px] min-w-0 flex-[0_0_100%] sm:h-[260px] md:h-[340px] lg:h-[420px] xl:h-[480px]"
+                className="relative aspect-[1920/819] min-w-0 flex-[0_0_100%]"
                 aria-label={`${index + 1} de ${banners.length}`}
               >
                 <BannerImage banner={banner} priority={index === 0} />
