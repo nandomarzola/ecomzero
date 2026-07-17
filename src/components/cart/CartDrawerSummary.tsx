@@ -31,7 +31,7 @@ export default function CartDrawerSummary({
       className="shrink-0 border-t border-white/[0.1] bg-[#090909]/98 px-4 pb-[calc(14px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_45px_rgba(0,0,0,0.45)] sm:px-5"
       aria-label="Resumo do carrinho"
     >
-      <dl className="space-y-1.5 text-[11px]">
+      <dl className="space-y-1.5 text-[11px] max-md:space-y-2 max-md:text-sm">
         <div className="flex items-center justify-between gap-4">
           <dt className="text-white/60">Subtotal</dt>
           <dd className="font-medium text-white">{formatPrice(subtotal)}</dd>
@@ -67,7 +67,7 @@ export default function CartDrawerSummary({
         type="button"
         onClick={onCheckout}
         disabled={isPending}
-        className="store-primary-action mt-3 flex min-h-12 w-full items-center justify-center gap-2 px-4 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60"
+        className="store-primary-action mt-3 flex min-h-12 w-full items-center justify-center gap-2 px-4 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 max-md:min-h-[54px] max-md:text-base"
       >
         {isPending ? (
           <LoaderCircle className="h-4 w-4 animate-spin" />

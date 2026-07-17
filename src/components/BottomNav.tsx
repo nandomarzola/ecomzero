@@ -20,6 +20,11 @@ export default function BottomNav() {
   const pathname = usePathname();
   const { openCart } = useCart();
 
+  // No checkout o foco é um único objetivo por tela (CTA sticky próprio). A barra
+  // inferior de navegação só atrapalharia e sobreporia o CTA — some no mobile.
+  // (BottomNav já é md:hidden, então o desktop nunca a mostrou de qualquer forma.)
+  if (pathname.startsWith("/checkout")) return null;
+
   return (
     <nav
       aria-label="Navegação principal (mobile)"

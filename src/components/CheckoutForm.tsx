@@ -15,6 +15,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
+  ChevronDown,
   LoaderCircle,
   LockKeyhole,
   MapPin,
@@ -23,6 +24,7 @@ import {
   Truck,
 } from "lucide-react";
 import PaymentBadges from "@/components/PaymentBadges";
+import CheckoutSteps from "@/components/checkout/CheckoutSteps";
 import {
   clearCheckoutShippingSelection,
   getCheckoutShippingSnapshot,
@@ -91,7 +93,7 @@ const emptyForm: FormValues = {
 };
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
+  "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60 max-md:h-[52px] max-md:text-base";
 
 const onlyDigits = (value: string) => value.replace(/\D/g, "");
 
@@ -144,7 +146,7 @@ function Field({
   const errorId = `${id}-error`;
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-[12px] font-semibold text-white/85">
+      <label htmlFor={id} className="mb-2 block text-[12px] font-semibold text-white/85 max-md:text-[15px]">
         {label}
       </label>
       <input
@@ -159,7 +161,7 @@ function Field({
         className={inputClassName}
       />
       {error && (
-        <p id={errorId} className="mt-1.5 text-[11px] text-red-300">
+        <p id={errorId} className="mt-1.5 text-[11px] text-red-300 max-md:text-sm">
           {error}
         </p>
       )}
@@ -528,7 +530,7 @@ export default function CheckoutForm({
   }
 
   return (
-    <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-8 sm:px-6 lg:px-8 max-md:pb-28">
       <Link
         href="/carrinho"
         className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white"
@@ -548,6 +550,58 @@ export default function CheckoutForm({
           Confira seus dados antes de escolher a forma de pagamento.
         </p>
       </header>
+
+      {/* Etapas do checkout — mobile-only (o próprio componente é md:hidden). */}
+      <CheckoutSteps current={1} />
+
+      {/* Resumo colapsável no topo — mobile-only (o desktop usa a sidebar). */}
+      <details className="group mt-1 mb-3 overflow-hidden rounded-xl border border-white/[0.1] bg-[#0D0D0D] md:hidden">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 [&::-webkit-details-marker]:hidden">
+          <span className="text-base font-semibold text-white">
+            Resumo do pedido
+          </span>
+          <span className="flex items-center gap-2">
+            <strong className="font-display text-lg font-extrabold text-[var(--brand-color)]">
+              {formatPrice(total)}
+            </strong>
+            <ChevronDown className="h-5 w-5 text-white/50 transition group-open:rotate-180" />
+          </span>
+        </summary>
+        <dl className="space-y-2 border-t border-white/[0.08] px-4 py-4 text-sm">
+          <div className="flex justify-between gap-4 text-white/60">
+            <dt>Subtotal</dt>
+            <dd className="font-medium text-white">{formatPrice(cartSubtotal)}</dd>
+          </div>
+          {cartDiscount > 0 && (
+            <div className="flex justify-between gap-4 text-white/60">
+              <dt>Desconto</dt>
+              <dd className="font-medium text-[var(--brand-color)]">- {formatPrice(cartDiscount)}</dd>
+            </div>
+          )}
+          {!freeShipping && selection && (
+            <div className="flex justify-between gap-4 text-white/60">
+              <dt>Frete</dt>
+              <dd className="font-medium text-white">{formatPrice(selection.preco)}</dd>
+            </div>
+          )}
+        </dl>
+      </details>
+
+      {/* Alerta forte de cotação expirada — mobile-only, com ação direta. */}
+      {selectionExpired && (
+        <div role="alert" className="mb-3 rounded-xl border border-amber-400/40 bg-amber-400/[0.08] p-4 md:hidden">
+          <p className="flex items-start gap-2 text-sm font-semibold text-amber-100">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            O cálculo do frete expirou. Precisamos recalcular para este CEP.
+          </p>
+          <Link
+            href="/carrinho"
+            className="mt-3 flex min-h-12 w-full items-center justify-center rounded-lg bg-amber-400 px-4 text-sm font-bold uppercase text-black transition hover:bg-amber-300"
+          >
+            Voltar ao carrinho e recalcular
+          </Link>
+        </div>
+      )}
 
       <form className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]" noValidate onSubmit={handleSubmit}>
         <div className="space-y-5">
@@ -760,6 +814,27 @@ export default function CheckoutForm({
             <PaymentBadges />
           </section>
         </aside>
+
+        {/* CTA fixo no rodapé — mobile-only. type=submit dispara o mesmo envio. */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080808]/98 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] backdrop-blur md:hidden">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="store-primary-action font-display flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-base font-extrabold uppercase transition disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isSubmitting ? (
+              <>
+                <LoaderCircle className="h-5 w-5 animate-spin" />
+                Preparando pagamento
+              </>
+            ) : (
+              <>
+                Continuar para pagamento
+                <LockKeyhole className="h-5 w-5" />
+              </>
+            )}
+          </button>
+        </div>
       </form>
     </div>
   );

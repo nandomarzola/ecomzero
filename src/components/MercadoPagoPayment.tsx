@@ -357,7 +357,7 @@ export default function MercadoPagoPayment({
   return (
     <div className="payment-checkout-page min-h-screen bg-[radial-gradient(circle_at_50%_38%,rgba(30,30,30,0.18),transparent_43%)] text-white">
       <nav aria-label="Etapas da compra" className="border-b border-white/[0.1] bg-[#050505]">
-        <ol className="mx-auto flex h-10 max-w-[1332px] items-center gap-3 overflow-x-auto px-4 text-[11px] text-white/55 sm:px-6 lg:px-0">
+        <ol className="mx-auto flex h-10 max-w-[1332px] items-center gap-3 overflow-x-auto px-4 text-[11px] text-white/55 sm:px-6 lg:px-0 max-md:h-12 max-md:text-[13px]">
           <li><Link href="/carrinho" className="whitespace-nowrap transition hover:text-white">Carrinho</Link></li>
           <li aria-hidden="true"><ChevronRight className="h-4 w-4 text-white/35" /></li>
           <li><Link href="/checkout" className="whitespace-nowrap transition hover:text-white">Identificação</Link></li>
@@ -490,12 +490,12 @@ export default function MercadoPagoPayment({
                       value={activePayment.qrCode}
                       readOnly
                       onFocus={(event) => event.currentTarget.select()}
-                      className="h-12 min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#080808] px-3 text-xs text-white/65 outline-none focus:border-[var(--brand-color)]"
+                      className="h-12 min-w-0 flex-1 rounded-md border border-white/[0.14] bg-[#080808] px-3 text-xs text-white/65 outline-none focus:border-[var(--brand-color)] max-md:h-[52px] max-md:text-base"
                     />
                     <button
                       type="button"
                       onClick={copyPixCode}
-                      className="store-primary-action font-display inline-flex h-12 shrink-0 items-center justify-center gap-2 px-4 text-[11px] font-extrabold uppercase transition"
+                      className="store-primary-action font-display inline-flex h-12 shrink-0 items-center justify-center gap-2 px-4 text-[11px] font-extrabold uppercase transition max-md:h-[52px] max-md:text-sm"
                     >
                       {copied ? (
                         <Check className="h-4 w-4" />

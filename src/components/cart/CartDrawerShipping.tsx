@@ -248,12 +248,12 @@ export default function CartDrawerShipping({
           onChange={(event) => setCepDraft(maskCep(event.target.value))}
           placeholder="00000-000"
           aria-label="CEP para cálculo do frete"
-          className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-[var(--brand-color)]"
+          className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/30 focus:border-[var(--brand-color)] max-md:h-12 max-md:text-base"
         />
         <button
           type="submit"
           disabled={isLoading || !isValidCep(cep)}
-          className="h-10 min-w-[76px] rounded-md border border-white/20 px-3 text-[10px] font-bold uppercase text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-10 min-w-[76px] rounded-md border border-white/20 px-3 text-[10px] font-bold uppercase text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:cursor-not-allowed disabled:opacity-40 max-md:h-12 max-md:min-w-[92px] max-md:text-xs"
         >
           {isLoading ? (
             <LoaderCircle className="mx-auto h-4 w-4 animate-spin" />
@@ -297,7 +297,7 @@ export default function CartDrawerShipping({
             return (
               <label
                 key={option.id}
-                className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 transition ${isSelected ? "border-[var(--brand-color)] bg-[var(--brand-color)]/[0.06]" : "border-white/[0.1] bg-[#0A0A0A] hover:border-white/25"}`}
+                className={`flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 transition max-md:gap-3 max-md:py-3.5 ${isSelected ? "border-[var(--brand-color)] bg-[var(--brand-color)]/[0.06]" : "border-white/[0.1] bg-[#0A0A0A] hover:border-white/25"}`}
               >
                 <input
                   type="radio"
@@ -305,18 +305,18 @@ export default function CartDrawerShipping({
                   value={option.id}
                   checked={isSelected}
                   onChange={() => selectOption(option)}
-                  className="h-3.5 w-3.5 accent-[var(--brand-color)]"
+                  className="h-3.5 w-3.5 accent-[var(--brand-color)] max-md:h-5 max-md:w-5"
                 />
-                <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
+                <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)] max-md:h-[18px] max-md:w-[18px]" />
                 <span className="min-w-0 flex-1">
-                  <strong className="block truncate text-[10px] font-medium text-white">
+                  <strong className="block truncate text-[10px] font-medium text-white max-md:text-sm">
                     {option.transportadora} · {option.servico}
                   </strong>
-                  <span className="text-[9px] text-white/45">
+                  <span className="text-[9px] text-white/45 max-md:text-xs">
                     Até {option.prazoDias} dias úteis
                   </span>
                 </span>
-                <strong className="text-[11px] text-white">
+                <strong className="text-[11px] text-white max-md:text-base">
                   {formatPrice(option.preco)}
                 </strong>
               </label>
