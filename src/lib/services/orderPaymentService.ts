@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
 import { after } from "next/server";
+import { savePurchasedAddressForUser } from "@/lib/services/accountService";
 import { recordCouponUsage } from "@/lib/services/couponService";
 import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentService";
 import {
@@ -527,6 +528,13 @@ async function reconcilePayment(
       descontoCupom: true,
       userId: true,
       emailCliente: true,
+      cepDestino: true,
+      logradouro: true,
+      numero: true,
+      complemento: true,
+      bairro: true,
+      cidade: true,
+      uf: true,
     },
   });
 
@@ -646,6 +654,32 @@ async function reconcilePayment(
 
     return result;
   });
+
+  if (
+    updated.count === 1 &&
+    order.userId &&
+    order.cepDestino &&
+    order.logradouro &&
+    order.numero &&
+    order.bairro &&
+    order.cidade &&
+    order.uf
+  ) {
+    await savePurchasedAddressForUser(order.userId, {
+      cep: order.cepDestino,
+      logradouro: order.logradouro,
+      numero: order.numero,
+      complemento: order.complemento,
+      bairro: order.bairro,
+      cidade: order.cidade,
+      uf: order.uf,
+    }).catch((error: unknown) => {
+      console.error("Falha ao salvar endereço usado na compra", {
+        orderId: order.id,
+        error: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+    });
+  }
 
   let preparationPending = updated.count === 1;
   if (updated.count === 0) {

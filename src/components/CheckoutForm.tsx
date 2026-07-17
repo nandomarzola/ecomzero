@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -199,6 +200,7 @@ export default function CheckoutForm({
     () => null,
   );
   const [cepOverride, setCepOverride] = useState<string | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
@@ -234,6 +236,33 @@ export default function CheckoutForm({
     return () => window.clearInterval(timer);
   }, []);
 
+  const applySavedAddress = useCallback((address: SavedAddress) => {
+    setSelectedAddressId(address.id);
+    setValues((current) => ({
+      ...current,
+      logradouro: address.logradouro,
+      numero: address.numero,
+      complemento: address.complemento ?? "",
+      bairro: address.bairro,
+      cidade: address.cidade,
+      uf: address.uf,
+    }));
+    setCepOverride(formatCep(address.cep));
+    setErrors((current) => ({
+      ...current,
+      cep: undefined,
+      logradouro: undefined,
+      numero: undefined,
+      complemento: undefined,
+      bairro: undefined,
+      cidade: undefined,
+      uf: undefined,
+    }));
+    setCepLookupStatus("success");
+    setCepLookupMessage("Endereço salvo selecionado.");
+    setStatusMessage("");
+  }, []);
+
   useEffect(() => {
     if (!isLoggedIn) return;
 
@@ -258,34 +287,25 @@ export default function CheckoutForm({
         }
         if (addressResponse.ok) {
           const payload = (await addressResponse.json()) as { addresses: SavedAddress[] };
+          setSavedAddresses(payload.addresses);
           const targetCep = onlyDigits(selection?.cep ?? savedUserCep ?? "");
           const matchingAddress =
             payload.addresses.find(
               (address) => onlyDigits(address.cep) === targetCep,
             ) ??
-            (freeShipping
+            (!targetCep
               ? payload.addresses.find((address) => address.padrao) ??
                 payload.addresses[0]
               : undefined);
           if (matchingAddress) {
-            setSelectedAddressId(matchingAddress.id);
-            setValues((current) => ({
-              ...current,
-              logradouro: matchingAddress.logradouro,
-              numero: matchingAddress.numero,
-              complemento: matchingAddress.complemento ?? "",
-              bairro: matchingAddress.bairro,
-              cidade: matchingAddress.cidade,
-              uf: matchingAddress.uf,
-            }));
-            setCepOverride(formatCep(matchingAddress.cep));
+            applySavedAddress(matchingAddress);
           }
         }
       } catch {}
     };
 
     void loadAccount();
-  }, [freeShipping, isLoggedIn, savedUserCep, selection?.cep]);
+  }, [applySavedAddress, isLoggedIn, savedUserCep, selection?.cep]);
 
   const selectionExpired = Boolean(
     !freeShipping &&
@@ -377,6 +397,16 @@ export default function CheckoutForm({
 
   const updateField = (field: FormField, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
+    if (
+      field === "logradouro" ||
+      field === "numero" ||
+      field === "complemento" ||
+      field === "bairro" ||
+      field === "cidade" ||
+      field === "uf"
+    ) {
+      setSelectedAddressId("");
+    }
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
@@ -384,6 +414,29 @@ export default function CheckoutForm({
       return next;
     });
     setStatusMessage("");
+  };
+
+  const handleSavedAddressChange = (addressId: string) => {
+    if (!addressId) {
+      setSelectedAddressId("");
+      setCepOverride(null);
+      setValues((current) => ({
+        ...current,
+        logradouro: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
+      }));
+      setCepLookupStatus("idle");
+      setCepLookupMessage("");
+      setStatusMessage("");
+      return;
+    }
+
+    const address = savedAddresses.find((item) => item.id === addressId);
+    if (address) applySavedAddress(address);
   };
 
   const validateField = (field: FormField) => {
@@ -529,6 +582,33 @@ export default function CheckoutForm({
                 </p>
               </div>
             </div>
+
+            {isLoggedIn && savedAddresses.length > 0 && (
+              <div className="mt-5">
+                <label
+                  htmlFor="saved-address"
+                  className="mb-2 block text-[12px] font-semibold text-white/85"
+                >
+                  Usar endereço salvo
+                </label>
+                <select
+                  id="saved-address"
+                  value={selectedAddressId}
+                  onChange={(event) => handleSavedAddressChange(event.target.value)}
+                  className={`${inputClassName} appearance-none`}
+                >
+                  <option value="">Preencher outro endereço</option>
+                  {savedAddresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {address.apelido || address.logradouro} — nº {address.numero}, {address.cidade}/{address.uf}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-[11px] text-white/40">
+                  Escolha um endereço usado anteriormente ou preencha um novo abaixo.
+                </p>
+              </div>
+            )}
 
             <div className="mt-5 grid gap-4 sm:grid-cols-6">
               <div className="sm:col-span-2">

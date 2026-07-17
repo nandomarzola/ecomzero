@@ -230,6 +230,74 @@ export async function getAddressesByUser(userId: string) {
   });
 }
 
+type PurchasedAddressInput = {
+  cep: string;
+  logradouro: string;
+  numero: string;
+  complemento: string | null;
+  bairro: string;
+  cidade: string;
+  uf: string;
+};
+
+const normalizeAddressPart = (value: string | null) =>
+  (value ?? "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR");
+
+export async function savePurchasedAddressForUser(
+  userId: string,
+  input: PurchasedAddressInput,
+) {
+  const candidates = await prisma.address.findMany({
+    where: {
+      userId,
+      cep: input.cep,
+      numero: input.numero,
+    },
+    select: addressSelect,
+  });
+  const existingAddress = candidates.find(
+    (address) =>
+      normalizeAddressPart(address.logradouro) ===
+        normalizeAddressPart(input.logradouro) &&
+      normalizeAddressPart(address.complemento) ===
+        normalizeAddressPart(input.complemento),
+  );
+
+  if (existingAddress) {
+    return prisma.address.update({
+      where: { id: existingAddress.id },
+      data: {
+        apelido: existingAddress.apelido || input.logradouro.slice(0, 40),
+        bairro: input.bairro,
+        cidade: input.cidade,
+        uf: input.uf,
+      },
+      select: addressSelect,
+    });
+  }
+
+  const addressCount = await prisma.address.count({ where: { userId } });
+  return prisma.address.create({
+    data: {
+      userId,
+      apelido: input.logradouro.slice(0, 40),
+      cep: input.cep,
+      logradouro: input.logradouro,
+      numero: input.numero,
+      complemento: input.complemento,
+      bairro: input.bairro,
+      cidade: input.cidade,
+      uf: input.uf,
+      padrao: addressCount === 0,
+    },
+    select: addressSelect,
+  });
+}
+
 export async function createAddress(
   userId: string,
   input: CreateAddressInput,
