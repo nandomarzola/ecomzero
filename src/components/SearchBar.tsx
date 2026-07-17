@@ -1,12 +1,11 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useProductFilters } from "@/components/ProductFiltersProvider";
 
 export default function SearchBar({ compact = false }: { compact?: boolean }) {
   const { searchQuery, setSearchQuery } = useProductFilters();
-  const pathname = usePathname();
   const router = useRouter();
 
   return (
@@ -22,9 +21,10 @@ export default function SearchBar({ compact = false }: { compact?: boolean }) {
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
         onKeyDown={(event) => {
-          if (event.key === "Enter" && pathname !== "/") {
+          if (event.key === "Enter") {
             event.preventDefault();
-            router.push("/#vitrine");
+            const q = searchQuery.trim();
+            router.push(q ? `/busca?q=${encodeURIComponent(q)}` : "/busca");
           }
         }}
         placeholder="O que você está procurando?"

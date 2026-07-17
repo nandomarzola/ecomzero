@@ -10,7 +10,7 @@ import { useCart } from "@/components/CartProvider";
 // não exige Suspense nem tira "/" da geração estática.
 const tabs = [
   { label: "Início", href: "/", icon: Home, matchExact: true },
-  { label: "Categorias", href: "/#vitrine", icon: Grid2X2, matchExact: false },
+  { label: "Categorias", href: "/categorias", icon: Grid2X2, matchExact: false },
   { label: "Carrinho", href: "/carrinho", icon: ShoppingCart, matchExact: true },
   { label: "Conta", href: "/conta/pedidos", icon: UserRound, matchExact: false },
   { label: "Sobre", href: "/#sobre", icon: Info, matchExact: false },

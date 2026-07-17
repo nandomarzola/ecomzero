@@ -134,7 +134,7 @@ const buildBreadcrumbJsonLd = (product: Product) => ({
       "@type": "ListItem",
       position: 2,
       name: "Produtos",
-      item: `${siteUrl}/#vitrine`,
+      item: `${siteUrl}/produtos`,
     },
     { "@type": "ListItem", position: 3, name: product.nome },
   ],
@@ -188,7 +188,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <span>/</span>
 
           <Link
-            href="/#vitrine"
+            href="/produtos"
             className="transition hover:text-[var(--brand-color)]"
           >
             Produtos

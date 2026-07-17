@@ -51,7 +51,7 @@ export default function RelatedProductsCarousel({
           </h2>
         </div>
         <Link
-          href="/#vitrine"
+          href="/"
           className="font-display shrink-0 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-xs"
         >
           Ver toda a vitrine →

@@ -41,6 +41,7 @@ export default async function HomePage() {
         title="Novidades"
         products={novidades}
         viewAllHref="/novidades"
+        layout="shelf"
         emptyLabel="Em breve, novidades por aqui."
       />
 
@@ -49,6 +50,7 @@ export default async function HomePage() {
         products={promocoes}
         viewAllHref="/promocoes"
         variant="promo"
+        layout="shelf"
         emptyLabel="Nenhuma promoção ativa no momento."
       />
 
@@ -56,6 +58,7 @@ export default async function HomePage() {
         title="Mais Vendidos"
         products={maisVendidos}
         viewAllHref="/mais-vendidos"
+        layout="shelf"
         emptyLabel="Ainda calculando os mais vendidos."
       />
 

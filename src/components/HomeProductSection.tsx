@@ -2,23 +2,28 @@ import Link from "next/link";
 import { ArrowRight, PackageOpen } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import PromoProductCard from "@/components/PromoProductCard";
+import ProductShelf from "@/components/ProductShelf";
 import type { Product } from "@/types/product";
 
 // Seção reutilizável de produtos da home (Novidades / Promoções / Mais Vendidos)
-// e das páginas "Ver todos". Grid responsivo 2 → 3 → 5 colunas. `variant="promo"`
-// usa o card de 2 imagens; as demais usam o ProductCard padrão (imagem única).
+// e das páginas "Ver todos". `variant="promo"` usa o card de 2 imagens; as demais
+// usam o ProductCard padrão. `layout="shelf"` (home) = vitrine híbrida (scroll
+// horizontal no mobile/tablet, grid 5 col no desktop); `layout="grid"` (padrão,
+// páginas "Ver todos") = grid fixo 2 → 3 → 4 colunas.
 // Server Component — cada seção busca seus dados fora e passa `products`.
 export default function HomeProductSection({
   title,
   products,
   viewAllHref,
   variant = "default",
+  layout = "grid",
   emptyLabel = "Nenhum produto por aqui ainda.",
 }: {
   title: string;
   products: Product[];
   viewAllHref?: string;
   variant?: "default" | "promo";
+  layout?: "grid" | "shelf";
   emptyLabel?: string;
 }) {
   return (
@@ -43,6 +48,8 @@ export default function HomeProductSection({
           <PackageOpen className="h-9 w-9 text-[var(--brand-color)]/45" strokeWidth={1.4} />
           <p className="mt-3 text-sm text-white/50">{emptyLabel}</p>
         </div>
+      ) : layout === "shelf" ? (
+        <ProductShelf products={products} variant={variant} />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-5">
           {products.map((product) =>

@@ -13,7 +13,7 @@ import SearchBar from "@/components/SearchBar";
 
 const navigation = [
   { label: "Início", href: "/" },
-  { label: "Categorias", href: "/#vitrine" },
+  { label: "Categorias", href: "/categorias" },
   { label: "Sobre a EcomZero", href: "/#sobre" },
 ];
 

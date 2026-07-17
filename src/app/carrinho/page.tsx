@@ -83,7 +83,7 @@ export default async function CartPage() {
 
         <header className="pb-5 pt-7 sm:pb-6 sm:pt-8">
           <Link
-            href="/#vitrine"
+            href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-sm"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -111,7 +111,7 @@ export default async function CartPage() {
           <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] px-6 py-16 text-center">
             <p className="text-sm text-white/65">Seu carrinho está vazio.</p>
             <Link
-              href="/#vitrine"
+              href="/"
               className="store-primary-action font-display mt-5 inline-flex min-h-11 items-center justify-center px-6 text-xs font-bold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               Ver produtos

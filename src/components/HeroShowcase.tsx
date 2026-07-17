@@ -115,7 +115,7 @@ export default function HeroShowcase({ slides }: HeroShowcaseProps) {
                     </p>
 
                     <Link
-                      href={isPrimary ? "/#vitrine" : slide.href}
+                      href={isPrimary ? "/" : slide.href}
                       className="store-primary-action font-display mt-6 inline-flex h-12 items-center justify-center gap-3 px-7 text-xs font-extrabold uppercase transition duration-[250ms] hover:-translate-y-0.5 hover:shadow-[0_10px_28px_rgba(169,236,23,0.14)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand-color)] motion-reduce:transform-none motion-reduce:transition-none"
                     >
                       {isPrimary ? "Ver todos os produtos" : "Ver produto"}

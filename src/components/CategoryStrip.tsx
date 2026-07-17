@@ -39,7 +39,7 @@ export default function CategoryStrip({ categories }: { categories: StoreCategor
             categoria.id === "tudo"
               ? pathname === "/"
               : pathname === categoryPath || pathname.startsWith(`${categoryPath}/`);
-          const href = categoria.id === "tudo" ? "/#vitrine" : categoryPath;
+          const href = categoria.id === "tudo" ? "/" : categoryPath;
 
           return (
             <Link

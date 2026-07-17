@@ -45,7 +45,7 @@ export default async function Footer() {
           <ul className="mt-4 space-y-3">
             <li><Link href="/" className={linkClass}>Início</Link></li>
             <li><Link href="/#sobre" className={linkClass}>Sobre a EcomZero</Link></li>
-            <li><Link href="/#vitrine" className={linkClass}>Todos os produtos</Link></li>
+            <li><Link href="/produtos" className={linkClass}>Todos os produtos</Link></li>
           </ul>
         </nav>
 
@@ -56,7 +56,7 @@ export default async function Footer() {
           <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-1">
             {categories.map((category) => (
               <li key={category.id}>
-                <Link href={`/?cat=${category.slug}#vitrine`} className={linkClass}>
+                <Link href={`/categorias/${category.slug}`} className={linkClass}>
                   {category.nome}
                 </Link>
               </li>
@@ -70,7 +70,7 @@ export default async function Footer() {
           </h2>
           <ul className="mt-4 space-y-3">
             <li><Link href="/carrinho" className={linkClass}>Meu carrinho</Link></li>
-            <li><Link href="/#vitrine" className={linkClass}>Como comprar</Link></li>
+            <li><Link href="/como-comprar" className={linkClass}>Como comprar</Link></li>
             <li><Link href="/#sobre" className={linkClass}>Entrega e segurança</Link></li>
           </ul>
         </nav>

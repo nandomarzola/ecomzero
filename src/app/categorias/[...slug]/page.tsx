@@ -141,7 +141,7 @@ async function CategoryEmptyState({ currentId }: { currentId: string }) {
       )}
 
       <Link
-        href="/#vitrine"
+        href="/produtos"
         className="store-primary-action font-display mt-6 inline-flex min-h-11 items-center justify-center px-6 text-xs font-bold uppercase transition"
       >
         Ver todos os produtos
