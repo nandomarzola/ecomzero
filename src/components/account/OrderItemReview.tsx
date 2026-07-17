@@ -231,11 +231,9 @@ export default function OrderItemReview({
               {status.label}
             </span>
           </div>
-          {review.status !== "rejected" ? (
-            <button type="button" onClick={openEditor} className="inline-flex items-center gap-1.5 text-xs text-white/50 transition hover:text-white">
-              <Pencil className="h-3.5 w-3.5" /> Editar
-            </button>
-          ) : null}
+          <button type="button" onClick={openEditor} className="inline-flex items-center gap-1.5 text-xs text-white/50 transition hover:text-white">
+            <Pencil className="h-3.5 w-3.5" /> {review.status === "rejected" ? "Avaliar novamente" : "Editar"}
+          </button>
         </div>
         {review.comment ? <p className="mt-3 text-xs leading-5 text-white/65">{review.comment}</p> : null}
         {review.photos.length > 0 ? (
