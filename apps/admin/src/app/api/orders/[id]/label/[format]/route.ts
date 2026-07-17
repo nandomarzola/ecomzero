@@ -24,12 +24,12 @@ export async function GET(
   }
 
   const { id, format: rawFormat } = await params;
-  if (rawFormat !== "jpeg") {
+  if (rawFormat !== "pdf" && rawFormat !== "jpeg") {
     return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
   }
 
   try {
-    const upstream = await getMelhorEnvioLabelFile(id);
+    const upstream = await getMelhorEnvioLabelFile(id, rawFormat);
     await markShipmentPrinted(id);
     const upstreamType = upstream.headers.get("content-type") ?? "";
     if (upstreamType.includes("application/json")) {
@@ -44,8 +44,10 @@ export async function GET(
 
     return new NextResponse(upstream.body, {
       headers: {
-        "Content-Type": upstreamType || "image/jpeg",
-        "Content-Disposition": `${new URL(request.url).searchParams.get("download") === "1" ? "attachment" : "inline"}; filename="ecomzero-${id.slice(0, 8)}.jpeg"`,
+        "Content-Type":
+          upstreamType ||
+          (rawFormat === "pdf" ? "application/pdf" : "image/jpeg"),
+        "Content-Disposition": `${new URL(request.url).searchParams.get("download") === "1" ? "attachment" : "inline"}; filename="ecomzero-${id.slice(0, 8)}.${rawFormat}"`,
         "Cache-Control": "private, no-store, max-age=0",
       },
     });

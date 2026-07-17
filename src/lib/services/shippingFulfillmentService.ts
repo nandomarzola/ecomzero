@@ -54,6 +54,9 @@ export type ShipmentPreparation = {
   fiscalDocumentType: FiscalDocumentType | null;
   fiscalDocumentConfirmedAt: string | null;
   invoiceKey: string | null;
+  labelUrl: string | null;
+  lastError: string | null;
+  lastErrorCode: string | null;
   balance: MelhorEnvioBalance;
   autoPurchaseEnabled: boolean;
 };
@@ -426,6 +429,9 @@ function preparationFromShipment(
     fiscalDocumentConfirmedAt:
       shipment?.tipoDocumentoFiscalConfirmadoEm?.toISOString() ?? null,
     invoiceKey: shipment?.chaveNotaFiscal ?? null,
+    labelUrl: shipment?.urlEtiqueta ?? null,
+    lastError: shipment?.ultimoErro ?? null,
+    lastErrorCode: shipment?.ultimoErroCodigo ?? null,
     balance,
     autoPurchaseEnabled: config.melhorEnvio.autoPurchaseEnabled,
   };
@@ -901,11 +907,26 @@ async function updateFailure(
 export async function executeShipmentPurchase(
   orderId: string,
   source: "automatic" | "manual",
+  preference?: { preferredServiceId?: string },
 ): Promise<ShipmentPreparation> {
-  const preparation = await prepareOrderShipment(orderId);
-  if (preparation.labelStatus !== "ready_to_purchase") return preparation;
-  if (!config.melhorEnvio.autoPurchaseEnabled) return preparation;
+  const preparation = await prepareOrderShipment(orderId, preference);
+  if (
+    ["generated", "printed", "posted", "in_transit", "delivered"].includes(
+      preparation.labelStatus,
+    )
+  ) {
+    return preparation;
+  }
+  if (
+    source === "automatic" &&
+    !config.melhorEnvio.autoPurchaseEnabled
+  ) {
+    return preparation;
+  }
   if (source === "automatic" && preparation.shippingMode !== "melhor_envio") {
+    return preparation;
+  }
+  if (!["ready_to_purchase", "purchased"].includes(preparation.labelStatus)) {
     return preparation;
   }
 
@@ -914,7 +935,7 @@ export async function executeShipmentPurchase(
   const claimed = await prisma.shipment.updateMany({
     where: {
       orderId,
-      labelStatus: "ready_to_purchase",
+      labelStatus: { in: ["ready_to_purchase", "purchased"] },
       OR: [{ processandoEm: null }, { processandoEm: { lt: staleBefore } }],
     },
     data: {
@@ -980,25 +1001,19 @@ export async function executeShipmentPurchase(
       validateNfeKey(order.shipment.chaveNotaFiscal ?? "");
     }
     const cost = Number(order.shipment.custoEstimado);
-    if (!balance.available || balance.value === null) {
+    const alreadyPurchased = Boolean(order.shipment.compradoEm);
+    if (!alreadyPurchased && (!balance.available || balance.value === null)) {
       throw new ShippingFulfillmentError(
         "Não foi possível consultar o saldo da Melhor Carteira.",
         "BALANCE_UNAVAILABLE",
       );
     }
-    if (balance.value < cost) {
+    if (!alreadyPurchased && balance.value !== null && balance.value < cost) {
       throw new ShippingFulfillmentError(
         "Saldo insuficiente na Melhor Carteira.",
         "INSUFFICIENT_BALANCE",
       );
     }
-    if (!config.melhorEnvio.autoPurchaseEnabled) {
-      throw new ShippingFulfillmentError(
-        "A compra de etiquetas está desabilitada neste ambiente.",
-        "PURCHASE_DISABLED",
-      );
-    }
-
     let melhorEnvioId = order.shipment.melhorEnvioId;
     let protocol = order.shipment.melhorEnvioProtocol;
     if (!melhorEnvioId) {
@@ -1036,29 +1051,30 @@ export async function executeShipmentPurchase(
       },
     });
 
-    await melhorEnvioRequest("/api/v2/me/shipment/checkout", {
-      method: "POST",
-      body: { orders: [melhorEnvioId] },
-    });
-    const purchasedAt = new Date();
-    const purchased = await prisma.shipment.update({
-      where: { orderId },
-      data: {
-        status: "released",
-        labelStatus: "purchased",
-        custoEtiqueta: cost,
-        compradoEm: purchasedAt,
-        ultimoErro: null,
-        ultimoErroCodigo: null,
-      },
-    });
-    await addEvent(
-      purchased.id,
-      "purchased",
-      "purchased",
-      "Etiqueta comprada no Melhor Envio.",
-      { cost },
-    );
+    if (!alreadyPurchased) {
+      await melhorEnvioRequest("/api/v2/me/shipment/checkout", {
+        method: "POST",
+        body: { orders: [melhorEnvioId] },
+      });
+      const purchased = await prisma.shipment.update({
+        where: { orderId },
+        data: {
+          status: "released",
+          labelStatus: "purchased",
+          custoEtiqueta: cost,
+          compradoEm: new Date(),
+          ultimoErro: null,
+          ultimoErroCodigo: null,
+        },
+      });
+      await addEvent(
+        purchased.id,
+        "purchased",
+        "purchased",
+        "Etiqueta comprada no Melhor Envio.",
+        { cost },
+      );
+    }
 
     await melhorEnvioRequest("/api/v2/me/shipment/generate", {
       method: "POST",

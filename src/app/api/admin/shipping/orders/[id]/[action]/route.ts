@@ -96,7 +96,20 @@ export async function POST(
       );
     }
     if (action === "purchase") {
-      return NextResponse.json(await executeShipmentPurchase(id, "manual"));
+      const parsed = preparationSchema.safeParse(
+        await request.json().catch(() => ({})),
+      );
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Serviço de frete inválido." },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json(
+        await executeShipmentPurchase(id, "manual", {
+          preferredServiceId: parsed.data.serviceId,
+        }),
+      );
     }
     if (action === "external") {
       await markOrderAsExternalShipment(id);

@@ -434,10 +434,11 @@ async function getShipmentForOperation(orderId: string) {
 
 export async function getMelhorEnvioLabelFile(
   orderId: string,
+  format: "pdf" | "jpeg" = "pdf",
 ): Promise<Response> {
   const shipment = await getShipmentForOperation(orderId);
   return melhorEnvioFileRequest(
-    `/api/v2/me/imprimir/jpeg/${shipment.melhorEnvioId}`,
+    `/api/v2/me/imprimir/${format}/${shipment.melhorEnvioId}`,
   );
 }
 

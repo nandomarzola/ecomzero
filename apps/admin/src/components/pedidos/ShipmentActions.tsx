@@ -12,7 +12,6 @@ import {
   PackageCheck,
   Printer,
   RefreshCw,
-  ShieldCheck,
   Trash2,
   Truck,
 } from "lucide-react";
@@ -21,9 +20,7 @@ import {
   calculateOrderShippingAction,
   cancelShipmentAction,
   confirmFiscalDocumentAction,
-  generateLabelAction,
   markExternalShipmentAction,
-  prepareShipmentAction,
   purchaseShipmentAction,
   syncShipmentStatusAction,
 } from "@/lib/actions/shipping";
@@ -93,7 +90,6 @@ export default function ShipmentActions({
   shippingAmountCharged,
   senderStateRegister,
   defaultFiscalDocumentType,
-  autoPurchaseEnabled,
   balance,
   shipment,
 }: {
@@ -102,7 +98,6 @@ export default function ShipmentActions({
   shippingAmountCharged: number;
   senderStateRegister: string | null;
   defaultFiscalDocumentType: "nota_fiscal" | "declaracao_conteudo";
-  autoPurchaseEnabled: boolean;
   balance: {
     status: "live" | "stale" | "unavailable";
     value: number | null;
@@ -142,6 +137,17 @@ export default function ShipmentActions({
   );
   const invoiceFormatValid = /^\d{44}$/.test(invoiceKey);
   const labelStatus = shipment?.labelStatus ?? "awaiting_shipping_data";
+  const labelAlreadyGenerated = [
+    "generated",
+    "printed",
+    "posted",
+    "in_transit",
+    "delivered",
+  ].includes(labelStatus);
+  const canGenerateLabel =
+    fiscalDocumentConfirmed &&
+    (selectedFiscalType === "declaracao_conteudo" || invoiceSaved) &&
+    labelStatus !== "processing";
 
   function applyQuote(result: ShippingQuote) {
     setShippingQuote(result);
@@ -230,21 +236,40 @@ export default function ShipmentActions({
     );
   }
 
-  function prepare(serviceId?: string) {
-    run(
-      "prepare",
-      () => prepareShipmentAction(orderId, serviceId),
-      "Cotação e dados logísticos atualizados.",
-    );
-  }
-
   function purchase() {
-    if (!window.confirm("Comprar e gerar esta etiqueta no Melhor Envio? O custo será debitado da Melhor Carteira.")) return;
-    run(
-      "purchase",
-      () => purchaseShipmentAction(orderId),
-      "Etiqueta gerada com sucesso.",
-    );
+    setError(null);
+    setSuccess(null);
+    setOperation("purchase");
+
+    const printWindow = window.open("", `ecomzero-label-${orderId}`);
+    if (printWindow) {
+      printWindow.document.title = "Gerando etiqueta 10x15";
+      printWindow.document.body.style.cssText =
+        "margin:0;display:grid;place-items:center;min-height:100vh;background:#090909;color:#fff;font:16px system-ui";
+      printWindow.document.body.textContent =
+        "Comprando e gerando etiqueta no Melhor Envio...";
+    }
+
+    startTransition(async () => {
+      const result = await purchaseShipmentAction(
+        orderId,
+        selectedShippingOptionId || undefined,
+      );
+      if (!result.ok) {
+        printWindow?.close();
+        setError(result.error ?? "Não foi possível gerar a etiqueta.");
+      } else {
+        const pdfUrl = `/api/orders/${orderId}/label/pdf`;
+        if (printWindow && !printWindow.closed) {
+          printWindow.location.replace(pdfUrl);
+        } else {
+          window.open(pdfUrl, "_blank");
+        }
+        setSuccess("Etiqueta comprada e gerada. O PDF 10×15 foi aberto para impressão.");
+        router.refresh();
+      }
+      setOperation(null);
+    });
   }
 
   function markExternal() {
@@ -262,15 +287,6 @@ export default function ShipmentActions({
       "cancel",
       () => cancelShipmentAction(orderId),
       "Cancelamento solicitado ao Melhor Envio.",
-    );
-  }
-
-  function generateLegacyLabel() {
-    if (!window.confirm("Gerar o arquivo da etiqueta comprada?")) return;
-    run(
-      "generate",
-      () => generateLabelAction(orderId),
-      "Etiqueta gerada com sucesso.",
     );
   }
 
@@ -449,41 +465,22 @@ export default function ShipmentActions({
                       <strong className="text-[#A9EC17]">{money(option.preco)}</strong>
                     </label>
                   ))}
-                  <button type="button" disabled={pending || !selectedShippingOptionId} onClick={() => prepare(selectedShippingOptionId)} className="rounded-lg border border-[#A9EC17]/30 px-4 py-2.5 text-sm font-semibold text-[#A9EC17] disabled:opacity-50 lg:col-span-2">
-                    Confirmar serviço selecionado
-                  </button>
                 </div>
               ) : null}
             </div>
           ) : null}
 
-          {!autoPurchaseEnabled ? (
-            <div className="flex gap-3 rounded-lg border border-amber-300/20 bg-amber-300/[0.05] p-3 text-xs leading-5 text-amber-100/75">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-              Compra real bloqueada por segurança. Para liberar, configure MELHOR_ENVIO_AUTO_PURCHASE_ENABLED=true no storefront e no admin.
-            </div>
-          ) : null}
-
           <div className="flex flex-wrap gap-2">
-            {["awaiting_shipping_data", "awaiting_fiscal_document", "error", "insufficient_balance", "awaiting_invoice"].includes(labelStatus) ? (
-              <button type="button" disabled={pending || quotePending} onClick={() => prepare()} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70 disabled:opacity-50">
-                <RefreshCw className={`h-4 w-4 ${operation === "prepare" ? "animate-spin" : ""}`} /> Revalidar preparação
+            {fiscalDocumentConfirmed && !labelAlreadyGenerated && labelStatus !== "external" ? (
+              <button type="button" disabled={pending || quotePending || !canGenerateLabel} onClick={purchase} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-45">
+                {operation === "purchase" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
+                {operation === "purchase" ? "Comprando e gerando..." : labelStatus === "insufficient_balance" ? "Tentar gerar etiqueta" : "Gerar etiqueta"}
               </button>
             ) : null}
-            {labelStatus === "ready_to_purchase" ? (
-              <button type="button" disabled={pending || !autoPurchaseEnabled} onClick={purchase} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-45">
-                {operation === "purchase" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />} Comprar e gerar etiqueta
-              </button>
-            ) : null}
-            {labelStatus === "purchased" ? (
-              <button type="button" disabled={pending} onClick={generateLegacyLabel} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-50">
-                <PackageCheck className="h-4 w-4" /> Gerar etiqueta comprada
-              </button>
-            ) : null}
-            {["generated", "printed", "posted", "in_transit", "delivered"].includes(labelStatus) ? (
+            {labelAlreadyGenerated ? (
               <>
-                <a href={`/pedidos/${orderId}/etiqueta?autoprint=1`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black"><Printer className="h-4 w-4" /> Imprimir etiqueta</a>
-                <a href={`/api/orders/${orderId}/label/jpeg?download=1`} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70"><FileText className="h-4 w-4" /> Baixar etiqueta</a>
+                <a href={`/api/orders/${orderId}/label/pdf`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black"><Printer className="h-4 w-4" /> Abrir etiqueta 10×15</a>
+                <a href={`/api/orders/${orderId}/label/pdf?download=1`} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70"><FileText className="h-4 w-4" /> Baixar PDF</a>
               </>
             ) : null}
             {shipment?.melhorEnvioId ? (

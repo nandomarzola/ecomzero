@@ -14,6 +14,9 @@ export type ShippingPreparationResult = {
   fiscalDocumentType: "nota_fiscal" | "declaracao_conteudo" | null;
   fiscalDocumentConfirmedAt: string | null;
   invoiceKey: string | null;
+  labelUrl: string | null;
+  lastError: string | null;
+  lastErrorCode: string | null;
   balance: {
     available: boolean;
     value: number | null;
@@ -170,10 +173,10 @@ export function confirmFiscalDocumentInStorefront(
   );
 }
 
-export function purchaseShipmentInStorefront(orderId: string) {
+export function purchaseShipmentInStorefront(orderId: string, serviceId?: string) {
   return internalRequest<ShippingPreparationResult>(
     `/api/admin/shipping/orders/${orderId}/purchase`,
-    {},
+    serviceId ? { serviceId } : {},
   );
 }
 

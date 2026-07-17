@@ -114,7 +114,6 @@ export default async function AdminOrderDetailsPage({
           shippingAmountCharged={Number(order.shippingAmountCharged)}
           senderStateRegister={shippingSettings?.inscricaoEstadual ?? null}
           defaultFiscalDocumentType={shippingSettings?.documentoFiscalPadrao ?? "declaracao_conteudo"}
-          autoPurchaseEnabled={config.melhorEnvioAutoPurchaseEnabled}
           balance={balance}
           shipment={order.shipment
             ? {

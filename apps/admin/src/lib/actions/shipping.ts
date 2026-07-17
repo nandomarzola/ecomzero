@@ -102,8 +102,41 @@ async function runShipmentAction(
   }
 }
 
-export async function purchaseShipmentAction(orderId: string) {
-  return runShipmentAction(orderId, purchaseShipmentInStorefront);
+export async function purchaseShipmentAction(orderId: string, serviceId?: string) {
+  if (!(await isAuthenticated())) {
+    return { ok: false as const, error: "Sessão expirada. Faça login novamente." };
+  }
+  try {
+    const data = await purchaseShipmentInStorefront(orderId, serviceId);
+    revalidatePath(`/pedidos/${orderId}`);
+    revalidatePath("/pedidos");
+
+    if (
+      !["generated", "printed", "posted", "in_transit", "delivered"].includes(
+        data.labelStatus,
+      )
+    ) {
+      const fallbackByStatus: Record<string, string> = {
+        awaiting_fiscal_document: "Confirme NF-e ou declaração de conteúdo antes de gerar a etiqueta.",
+        awaiting_invoice: "Informe uma chave de NF-e válida antes de gerar a etiqueta.",
+        awaiting_shipping_data: "Complete os dados obrigatórios de envio antes de gerar a etiqueta.",
+        insufficient_balance: "Saldo insuficiente na Melhor Carteira para comprar esta etiqueta.",
+        processing: "A etiqueta já está sendo processada. Aguarde alguns segundos.",
+        purchased: "A etiqueta foi comprada, mas ainda não terminou de ser gerada. Tente novamente.",
+      };
+      return {
+        ok: false as const,
+        error:
+          data.lastError ??
+          fallbackByStatus[data.labelStatus] ??
+          "Não foi possível concluir a geração da etiqueta.",
+      };
+    }
+
+    return { ok: true as const, data };
+  } catch (error) {
+    return { ok: false as const, error: errorMessage(error) };
+  }
 }
 
 export async function prepareShipmentAction(orderId: string, serviceId?: string) {

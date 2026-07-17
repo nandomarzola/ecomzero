@@ -123,7 +123,7 @@ export default function OrdersTable({
                           : order.labelStatus === "awaiting_invoice"
                           ? "Informar NF-e"
                           : order.labelStatus === "ready_to_purchase"
-                            ? "Comprar etiqueta"
+                            ? "Gerar etiqueta"
                             : ["insufficient_balance", "error", "awaiting_shipping_data"].includes(order.labelStatus)
                               ? "Tentar novamente"
                               : ["generated", "printed"].includes(order.labelStatus)
