@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { CheckCircle2, Gift, LoaderCircle, Truck } from "lucide-react";
+import { CheckCircle2, Gift, Truck } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { isAnnouncementEligibleForUf } from "@/lib/client/announcementRegion";
 import { getUserUfSnapshot, subscribeUserCep } from "@/lib/client/cepStorage";
@@ -37,18 +37,17 @@ function campaignProgress(
 export default function CartPromotionProgress({ items }: { items: StoreAnnouncementItem[] }) {
   const { cart, autoApplyCampaignCoupon } = useCart();
   const storedUf = useSyncExternalStore(subscribeUserCep, getUserUfSnapshot, () => null);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState("");
-  const [autoRejected, setAutoRejected] = useState(false);
+  const [rejectedCampaignIds, setRejectedCampaignIds] = useState<Set<string>>(() => new Set());
   const automaticAttempts = useRef(new Set<string>());
 
   const campaigns = useMemo(() => {
     return items.filter((item) =>
       item.coupon &&
       item.coupon.available &&
+      !rejectedCampaignIds.has(item.coupon.id) &&
       isAnnouncementEligibleForUf(item.regioesElegiveis, storedUf),
     );
-  }, [items, storedUf]);
+  }, [items, rejectedCampaignIds, storedUf]);
 
   const campaign = campaigns.find((item) => item.coupon?.code === cart.coupon?.code) ??
     campaigns.find((item) => item.coupon && campaignProgress(item.coupon, cart).unlocked) ??
@@ -79,20 +78,20 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
     const attemptKey = `${cart.id}:${coupon.id}:${cart.subtotal}:${eligibleSubtotal}`;
     if (automaticAttempts.current.has(attemptKey)) return;
     automaticAttempts.current.add(attemptKey);
-    setIsPending(true);
-    setError("");
-    setAutoRejected(false);
     void autoApplyCampaignCoupon(coupon.code)
       .then((result) => {
-        if (!result.success) {
-          setAutoRejected(true);
-          setError(result.error);
+        if (!result.success || result.cart.coupon?.code !== coupon.code) {
+          setRejectedCampaignIds((current) => {
+            const next = new Set(current);
+            next.add(coupon.id);
+            return next;
+          });
         }
-      })
-      .finally(() => setIsPending(false));
+      });
   }, [autoApplyCampaignCoupon, cart.id, cart.subtotal, coupon, eligibleSubtotal, hasAnotherCoupon, isApplied, unlocked]);
 
   if (!campaign || !coupon) return null;
+  if (unlocked && !isApplied && !hasAnotherCoupon) return null;
   const BenefitIcon = coupon.type === "frete_gratis" ? Truck : Gift;
 
   return (
@@ -104,8 +103,6 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
         <div className="min-w-0 flex-1">
           {isApplied ? (
             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[var(--brand-color)]"><CheckCircle2 className="h-4 w-4" /> Benefício aplicado</p>
-          ) : autoRejected ? (
-            <p className="text-[11px] font-bold uppercase leading-4 text-white">{coupon.firstPurchase ? "Oferta exclusiva para a primeira compra" : "Não foi possível aplicar o benefício"}</p>
           ) : missingEligibleProduct ? (
             <p className="text-[11px] font-bold uppercase leading-4 text-white">Adicione um item de {coupon.scopeLabel} para liberar {benefitLabel(coupon)}</p>
           ) : remaining > 0 ? (
@@ -122,15 +119,13 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
         <div className="h-full bg-[var(--brand-color)] transition-[width] duration-500 motion-reduce:transition-none" style={{ width: `${progress}%` }} />
       </div>
 
-      {!isApplied && unlocked ? (
+      {!isApplied && unlocked && hasAnotherCoupon ? (
         <div className="flex items-center justify-between gap-3 border-t border-white/[0.07] px-3.5 py-2.5">
           <span className="inline-flex items-center gap-2 text-[9px] text-white/45">
-            {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[var(--brand-color)]" /> : null}
-            {hasAnotherCoupon ? "Remova o cupom atual para usar esta oferta." : autoRejected ? "Este benefício não está disponível para este cliente." : "Aplicando o benefício automaticamente..."}
+            Remova o cupom atual para usar esta oferta.
           </span>
         </div>
       ) : null}
-      {error ? <p role="alert" className="border-t border-red-500/20 bg-red-500/[0.08] px-3.5 py-2 text-[9px] text-red-300">{error}</p> : null}
     </section>
   );
 }
