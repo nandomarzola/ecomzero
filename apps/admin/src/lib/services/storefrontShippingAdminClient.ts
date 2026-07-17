@@ -39,11 +39,24 @@ type ErrorMetadata = {
   hostname: string | null;
 };
 
+function sanitizeErrorMessage(value: unknown) {
+  if (typeof value !== "string") return null;
+
+  return value
+    .replace(
+      /Bearer\s+[\s\S]*?(?="\s+is an invalid header value)/gi,
+      "Bearer [REDACTED]",
+    )
+    .replace(/\b[A-Za-z0-9_-]{32,}\b/g, "[REDACTED]")
+    .replace(/([?&](?:token|key|secret)=)[^&\s]+/gi, "$1[REDACTED]")
+    .slice(0, 1_000);
+}
+
 function errorMetadata(error: unknown): ErrorMetadata {
   if (!error || typeof error !== "object") {
     return {
       name: null,
-      message: typeof error === "string" ? error : null,
+      message: sanitizeErrorMessage(error),
       code: null,
       errno: null,
       syscall: null,
@@ -54,7 +67,7 @@ function errorMetadata(error: unknown): ErrorMetadata {
   const value = error as Record<string, unknown>;
   return {
     name: typeof value.name === "string" ? value.name : null,
-    message: typeof value.message === "string" ? value.message : null,
+    message: sanitizeErrorMessage(value.message),
     code: typeof value.code === "string" ? value.code : null,
     errno:
       typeof value.errno === "string" || typeof value.errno === "number"
@@ -111,10 +124,7 @@ async function internalRequest<T>(path: string, body?: unknown): Promise<T> {
   if (!response.ok) {
     console.error("[storefront-shipping] Resposta rejeitada pela loja", {
       name: "StorefrontShippingHttpError",
-      message:
-        typeof data?.error === "string"
-          ? data.error
-          : "Resposta HTTP sem mensagem de erro.",
+      message: sanitizeErrorMessage(data?.error) ?? "Resposta HTTP sem mensagem de erro.",
       cause: null,
       hostname: requestUrl.hostname,
       route: requestUrl.pathname,

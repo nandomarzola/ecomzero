@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+function normalizeSingleLineSecret(value: unknown) {
+  if (typeof value !== "string") return value;
+  return value.trim().split(/\s+/)[0] ?? "";
+}
+
 // Lê e valida as env vars uma vez. DATABASE_URL é a MESMA connection string da
 // loja (ecomzero raiz) — este painel escreve direto no banco do storefront.
 const envSchema = z.object({
@@ -16,7 +21,10 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
-  STOREFRONT_SYNC_API_KEY: z.string().min(1).optional(),
+  STOREFRONT_SYNC_API_KEY: z.preprocess(
+    normalizeSingleLineSecret,
+    z.string().min(1).optional(),
+  ),
   NEXT_PUBLIC_STOREFRONT_URL: z.string().url().optional(),
   NEXT_PUBLIC_ADMIN_LOGO_URL: z.string().min(1).optional(),
 });

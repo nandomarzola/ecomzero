@@ -1,12 +1,20 @@
 import { z } from "zod";
 
+function normalizeSingleLineSecret(value: unknown) {
+  if (typeof value !== "string") return value;
+  return value.trim().split(/\s+/)[0] ?? "";
+}
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL não configurada"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa ter pelo menos 32 caracteres"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   // Opcional: sem ela, o endpoint /api/admin/sync-catalog recusa todo request
   // em vez de derrubar o app inteiro (integração opcional, não é o core do site).
-  STOREFRONT_SYNC_API_KEY: z.string().min(1).optional(),
+  STOREFRONT_SYNC_API_KEY: z.preprocess(
+    normalizeSingleLineSecret,
+    z.string().min(1).optional(),
+  ),
   // Vercel Blob (fotos/vídeos de produto) — criado via `vercel blob create-store`.
   // Também opcional pelo mesmo motivo: sem ela, só o upload fica indisponível.
   BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
