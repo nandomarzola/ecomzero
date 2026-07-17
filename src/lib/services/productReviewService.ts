@@ -129,7 +129,6 @@ export async function getApprovedProductReviews(productId: string) {
   return prisma.productReview.findMany({
     where: { productId, status: "approved" },
     orderBy: { createdAt: "desc" },
-    take: 30,
     select: {
       id: true,
       rating: true,
@@ -139,5 +138,10 @@ export async function getApprovedProductReviews(productId: string) {
       user: { select: { name: true } },
       orderItem: { select: { variant: { select: { label: true } } } },
     },
-  });
+  }).then((reviews) =>
+    reviews.map((review) => ({
+      ...review,
+      createdAt: review.createdAt.toISOString(),
+    })),
+  );
 }

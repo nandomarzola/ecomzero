@@ -2,7 +2,6 @@ import CategoryStrip from "@/components/CategoryStrip";
 import CepCaptureModal from "@/components/CepCaptureModal";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import FeatureBar from "@/components/FeatureBar";
-import HomeInstitutional from "@/components/HomeInstitutional";
 import NewsletterBanner from "@/components/NewsletterBanner";
 import HomeProductSection from "@/components/HomeProductSection";
 import {
@@ -66,8 +65,6 @@ export default async function HomePage() {
       />
 
       <DeliveryBanner />
-
-      <HomeInstitutional />
 
       <NewsletterBanner />
     </div>
