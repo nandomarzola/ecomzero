@@ -227,7 +227,7 @@ async function assertCustomerEligibility(
   }
 }
 
-export async function validateForAutomaticFirstPurchase(
+export async function validateForAutomaticCampaign(
   code: string,
   params: {
     orderId: string;
@@ -237,7 +237,7 @@ export async function validateForAutomaticFirstPurchase(
   },
 ): Promise<AppliedCoupon | null> {
   const coupon = await findCoupon(prisma, code);
-  if (!coupon || !coupon.primeiraCompra) return null;
+  if (!coupon) return null;
 
   const subtotal = subtotalFromLines(params.lines);
   assertUsableNow(coupon, subtotal);

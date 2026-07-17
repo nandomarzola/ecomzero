@@ -15,8 +15,27 @@ function benefitLabel(coupon: StorePromotionCoupon) {
   return coupon.type === "percentual" ? `${coupon.value}% de desconto` : `${money(coupon.value)} de desconto`;
 }
 
+function campaignProgress(
+  coupon: StorePromotionCoupon,
+  cart: ReturnType<typeof useCart>["cart"],
+) {
+  const eligibleSubtotal = cart.items.reduce((total, item) => {
+    if (coupon.appliesTo === "produto" && item.productId !== coupon.productId) return total;
+    if (coupon.appliesTo === "categoria" && (!item.categoryId || !coupon.eligibleCategoryIds.includes(item.categoryId))) return total;
+    return total + item.subtotal;
+  }, 0);
+  const missingEligibleProduct = coupon.appliesTo !== "toda_loja" && eligibleSubtotal <= 0;
+  const remaining = Math.max(0, (coupon.minimumOrderValue ?? 0) - cart.subtotal);
+  return {
+    eligibleSubtotal,
+    missingEligibleProduct,
+    remaining,
+    unlocked: remaining <= 0 && !missingEligibleProduct,
+  };
+}
+
 export default function CartPromotionProgress({ items }: { items: StoreAnnouncementItem[] }) {
-  const { cart, applyCoupon, autoApplyFirstPurchaseCoupon } = useCart();
+  const { cart, autoApplyCampaignCoupon } = useCart();
   const storedUf = useSyncExternalStore(subscribeUserCep, getUserUfSnapshot, () => null);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState("");
@@ -31,32 +50,39 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
     );
   }, [items, storedUf]);
 
-  const campaign = campaigns.find((item) => item.coupon?.code === cart.coupon?.code) ?? campaigns[0];
+  const campaign = campaigns.find((item) => item.coupon?.code === cart.coupon?.code) ??
+    campaigns.find((item) => item.coupon && campaignProgress(item.coupon, cart).unlocked) ??
+    [...campaigns].sort((first, second) => {
+      if (!first.coupon) return 1;
+      if (!second.coupon) return -1;
+      const firstProgress = campaignProgress(first.coupon, cart);
+      const secondProgress = campaignProgress(second.coupon, cart);
+      if (firstProgress.missingEligibleProduct !== secondProgress.missingEligibleProduct) {
+        return firstProgress.missingEligibleProduct ? 1 : -1;
+      }
+      return firstProgress.remaining - secondProgress.remaining;
+    })[0];
   const coupon = campaign?.coupon;
 
-  const eligibleSubtotal = cart.items.reduce((total, item) => {
-    if (!coupon) return total;
-    if (coupon.appliesTo === "produto" && item.productId !== coupon.productId) return total;
-    if (coupon.appliesTo === "categoria" && (!item.categoryId || !coupon.eligibleCategoryIds.includes(item.categoryId))) return total;
-    return total + item.subtotal;
-  }, 0);
-  const missingEligibleProduct = Boolean(coupon && coupon.appliesTo !== "toda_loja" && eligibleSubtotal <= 0);
+  const selectedProgress = coupon ? campaignProgress(coupon, cart) : null;
+  const eligibleSubtotal = selectedProgress?.eligibleSubtotal ?? 0;
+  const missingEligibleProduct = selectedProgress?.missingEligibleProduct ?? false;
   const minimum = coupon?.minimumOrderValue ?? 0;
-  const remaining = Math.max(0, minimum - cart.subtotal);
+  const remaining = selectedProgress?.remaining ?? 0;
   const progress = minimum > 0 ? Math.min(100, Math.max(4, (cart.subtotal / minimum) * 100)) : 100;
   const isApplied = Boolean(coupon && cart.coupon?.code === coupon.code);
   const hasAnotherCoupon = Boolean(cart.coupon && !isApplied);
-  const unlocked = Boolean(coupon && remaining <= 0 && !missingEligibleProduct);
+  const unlocked = selectedProgress?.unlocked ?? false;
 
   useEffect(() => {
-    if (!coupon?.firstPurchase || !unlocked || isApplied || hasAnotherCoupon || !cart.id) return;
+    if (!coupon || !unlocked || isApplied || hasAnotherCoupon || !cart.id) return;
     const attemptKey = `${cart.id}:${coupon.id}:${cart.subtotal}:${eligibleSubtotal}`;
     if (automaticAttempts.current.has(attemptKey)) return;
     automaticAttempts.current.add(attemptKey);
     setIsPending(true);
     setError("");
     setAutoRejected(false);
-    void autoApplyFirstPurchaseCoupon(coupon.code)
+    void autoApplyCampaignCoupon(coupon.code)
       .then((result) => {
         if (!result.success) {
           setAutoRejected(true);
@@ -64,21 +90,10 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
         }
       })
       .finally(() => setIsPending(false));
-  }, [autoApplyFirstPurchaseCoupon, cart.id, cart.subtotal, coupon, eligibleSubtotal, hasAnotherCoupon, isApplied, unlocked]);
+  }, [autoApplyCampaignCoupon, cart.id, cart.subtotal, coupon, eligibleSubtotal, hasAnotherCoupon, isApplied, unlocked]);
 
   if (!campaign || !coupon) return null;
   const BenefitIcon = coupon.type === "frete_gratis" ? Truck : Gift;
-
-  const apply = async () => {
-    setIsPending(true);
-    setError("");
-    try {
-      const result = await applyCoupon(coupon.code);
-      if (!result.success) setError(result.error);
-    } finally {
-      setIsPending(false);
-    }
-  };
 
   return (
     <section className="my-3 overflow-hidden rounded-lg border border-[var(--brand-color)]/25 bg-[var(--brand-color)]/[0.055]" aria-label={`Progresso da oferta ${coupon.code}`}>
@@ -90,7 +105,7 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
           {isApplied ? (
             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[var(--brand-color)]"><CheckCircle2 className="h-4 w-4" /> Benefício aplicado</p>
           ) : autoRejected ? (
-            <p className="text-[11px] font-bold uppercase leading-4 text-white">Oferta exclusiva para a primeira compra</p>
+            <p className="text-[11px] font-bold uppercase leading-4 text-white">{coupon.firstPurchase ? "Oferta exclusiva para a primeira compra" : "Não foi possível aplicar o benefício"}</p>
           ) : missingEligibleProduct ? (
             <p className="text-[11px] font-bold uppercase leading-4 text-white">Adicione um item de {coupon.scopeLabel} para liberar {benefitLabel(coupon)}</p>
           ) : remaining > 0 ? (
@@ -109,20 +124,10 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
 
       {!isApplied && unlocked ? (
         <div className="flex items-center justify-between gap-3 border-t border-white/[0.07] px-3.5 py-2.5">
-          {coupon.firstPurchase ? (
-            <span className="inline-flex items-center gap-2 text-[9px] text-white/45">
-              {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[var(--brand-color)]" /> : null}
-              {hasAnotherCoupon ? "Remova o cupom atual para usar esta oferta." : autoRejected ? "Este benefício não está disponível para este cliente." : "Aplicando o benefício automaticamente..."}
-            </span>
-          ) : (
-            <>
-              <span className="text-[9px] text-white/45">{hasAnotherCoupon ? "Remova o cupom atual para usar esta oferta." : "A meta foi atingida. Aplique antes de finalizar."}</span>
-              <button type="button" onClick={() => void apply()} disabled={isPending || hasAnotherCoupon} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md bg-[var(--brand-color)] px-3 text-[9px] font-bold uppercase text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45">
-                {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Gift className="h-3.5 w-3.5" />}
-                Aplicar cupom
-              </button>
-            </>
-          )}
+          <span className="inline-flex items-center gap-2 text-[9px] text-white/45">
+            {isPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[var(--brand-color)]" /> : null}
+            {hasAnotherCoupon ? "Remova o cupom atual para usar esta oferta." : autoRejected ? "Este benefício não está disponível para este cliente." : "Aplicando o benefício automaticamente..."}
+          </span>
         </div>
       ) : null}
       {error ? <p role="alert" className="border-t border-red-500/20 bg-red-500/[0.08] px-3.5 py-2 text-[9px] text-red-300">{error}</p> : null}

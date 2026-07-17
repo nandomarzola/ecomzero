@@ -383,7 +383,7 @@ function SortableAnnouncementItem({
                       <span><strong className="text-white/65">Benefício:</strong> {couponBenefitLabel(selectedCoupon)}</span>
                       <span><strong className="text-white/65">Meta:</strong> {selectedCoupon.valorMinimoPedido ? money(selectedCoupon.valorMinimoPedido) : "Sem valor mínimo"}</span>
                       <span className="sm:col-span-2"><strong className="text-white/65">Aplicação:</strong> {couponScopeLabel(selectedCoupon)}</span>
-                      {selectedCoupon.primeiraCompra ? <span className="sm:col-span-2 font-semibold text-[#A9EC17]">Aplicação automática para clientes elegíveis na primeira compra.</span> : null}
+                      <span className="sm:col-span-2 font-semibold text-[#A9EC17]">Aplicação automática quando o cliente atingir a meta.{selectedCoupon.primeiraCompra ? " Elegibilidade restrita à primeira compra." : ""}</span>
                     </div>
                     {!selectedCoupon.ativo ? <p className="mt-2 text-[8px] leading-4 text-amber-300/80">Ative este cupom antes de publicar a campanha. A loja não exibirá progresso para cupons inativos.</p> : null}
                   </div>

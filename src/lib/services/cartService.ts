@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import type { OrderGetPayload } from "@/generated/prisma/models";
 import type { Cart, CartItem } from "@/types/cart";
-import { revalidateAppliedCoupon, validateForAutomaticFirstPurchase, validateForCart, type CouponCartLine } from "@/lib/services/couponService";
+import { revalidateAppliedCoupon, validateForAutomaticCampaign, validateForCart, type CouponCartLine } from "@/lib/services/couponService";
 
 // Única camada que toca o Prisma para o carrinho. O carrinho é um Order com
 // status "draft" vinculado a uma sessão anônima (sessionId, cookie).
@@ -143,7 +143,7 @@ export async function applyCoupon(sessionId: string, code: string): Promise<Cart
   return getCart(sessionId);
 }
 
-export async function autoApplyFirstPurchaseCoupon(
+export async function autoApplyCampaignCoupon(
   sessionId: string,
   code: string,
   identity: { userId: string | null; email: string | null },
@@ -159,7 +159,7 @@ export async function autoApplyFirstPurchaseCoupon(
     return getCart(sessionId);
   }
 
-  const applied = await validateForAutomaticFirstPurchase(code, {
+  const applied = await validateForAutomaticCampaign(code, {
     orderId: order.id,
     lines: toCouponLines(order.items),
     userId: identity.userId,

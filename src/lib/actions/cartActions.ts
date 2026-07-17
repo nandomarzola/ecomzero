@@ -105,7 +105,7 @@ export async function applyCouponAction(code: unknown): Promise<CartActionResult
   }
 }
 
-export async function autoApplyFirstPurchaseCouponAction(code: unknown): Promise<CartActionResult> {
+export async function autoApplyCampaignCouponAction(code: unknown): Promise<CartActionResult> {
   if (typeof code !== "string" || normalizeCode(code).length < 3) {
     return { success: false, error: "Campanha inválida." };
   }
@@ -114,7 +114,7 @@ export async function autoApplyFirstPurchaseCouponAction(code: unknown): Promise
   const session = await auth();
 
   try {
-    const cart = await cartService.autoApplyFirstPurchaseCoupon(sessionId, code, {
+    const cart = await cartService.autoApplyCampaignCoupon(sessionId, code, {
       userId: session?.user?.id ?? null,
       email: session?.user?.email ?? null,
     });
