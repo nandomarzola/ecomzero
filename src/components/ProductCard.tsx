@@ -26,6 +26,12 @@ const formatPrice = (price: number) =>
     currency: "BRL",
   });
 
+const formatCompactCount = (value: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    notation: value >= 1000 ? "compact" : "standard",
+    maximumFractionDigits: 1,
+  }).format(value);
+
 export default function ProductCard({ product }: ProductCardProps) {
   const [feedback, setFeedback] = useState<"idle" | "added">("idle");
   const [pendingAction, setPendingAction] = useState<"buy" | "cart" | null>(null);
@@ -147,25 +153,28 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.subtitulo}
         </p>
 
-        {hasRating && (
-          <div
-            className="store-product-card-rating mt-3 flex items-center gap-2"
-            aria-label={`${rating.toFixed(1)} de 5, com ${product.totalAvaliacoes} avaliações`}
-          >
-            <div className="flex items-center gap-0.5 text-[var(--brand-color)]" aria-hidden="true">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  className={`h-4 w-4 ${star <= Math.round(rating) ? "fill-current" : ""}`}
-                  strokeWidth={1.8}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-white/55">
-              {rating.toFixed(1)} ({product.totalAvaliacoes})
+        <div
+          className="store-product-card-social-proof mt-3 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/52 sm:text-xs"
+          aria-label={`${hasRating ? `${rating.toFixed(1)} de 5, ${product.totalAvaliacoes} avaliações` : "Sem avaliações"}, ${product.quantidadeVendida} vendidos`}
+        >
+          <span className="store-product-card-rating inline-flex items-center gap-1.5">
+            <Star
+              className={`h-3.5 w-3.5 text-amber-300 ${hasRating ? "fill-current" : ""}`}
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+            <strong className="font-semibold text-white/75">
+              {hasRating ? rating.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : "—"}
+            </strong>
+            <span>
+              ({formatCompactCount(product.totalAvaliacoes)} {product.totalAvaliacoes === 1 ? "avaliação" : "avaliações"})
             </span>
-          </div>
-        )}
+            <span className="text-white/20" aria-hidden="true">·</span>
+          </span>
+          <span className="font-medium text-white/58">
+            {formatCompactCount(product.quantidadeVendida)} vendido{product.quantidadeVendida === 1 ? "" : "s"}
+          </span>
+        </div>
 
         <div className="store-product-card-price-area mt-auto pt-5">
           {hasPriceVariation && (

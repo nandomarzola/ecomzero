@@ -8,6 +8,10 @@ import type {
   ProductVariant as ProductVariantRecord,
 } from "@/generated/prisma/client";
 
+type CatalogProductRecord = ProductRecord & {
+  variantes: ProductVariantRecord[];
+};
+
 // Única camada que toca o Prisma para produtos — componentes e API routes
 // nunca importam @/lib/db ou @/generated/prisma diretamente.
 
@@ -26,7 +30,8 @@ const cleanCatalogText = (value: string) =>
   value.replace(/\s*:contentReference\[[^\]]+\]\{[^}]+\}/g, "").trim();
 
 function toProduct(
-  record: ProductRecord & { variantes: ProductVariantRecord[] },
+  record: CatalogProductRecord,
+  quantidadeVendida = 0,
 ): Product {
   const images = [record.imagem, ...record.imagens.filter((image) => image !== record.imagem)];
   return {
@@ -47,11 +52,52 @@ function toProduct(
     linkShein: record.linkShein,
     avaliacaoMedia: record.avaliacaoMedia,
     totalAvaliacoes: record.totalAvaliacoes,
+    quantidadeVendida,
     ativo: record.ativo,
     isNovidade: record.isNovidade,
     isPromocao: record.isPromocao,
     variantes: record.variantes.map(toVariant),
   };
+}
+
+async function toProductsWithSales(
+  records: CatalogProductRecord[],
+): Promise<Product[]> {
+  if (records.length === 0) return [];
+
+  const productIdByVariantId = new Map<string, string>();
+  for (const record of records) {
+    for (const variant of record.variantes) {
+      productIdByVariantId.set(variant.id, record.id);
+    }
+  }
+
+  const variantIds = [...productIdByVariantId.keys()];
+  if (variantIds.length === 0) return records.map((record) => toProduct(record));
+
+  const sales = await prisma.orderItem.groupBy({
+    by: ["variantId"],
+    where: {
+      variantId: { in: variantIds },
+      order: { status: "pago" },
+    },
+    _sum: { quantidade: true },
+  });
+  const quantityByProductId = new Map<string, number>();
+
+  for (const sale of sales) {
+    const productId = productIdByVariantId.get(sale.variantId);
+    if (!productId) continue;
+    quantityByProductId.set(
+      productId,
+      (quantityByProductId.get(productId) ?? 0) +
+        (sale._sum.quantidade ?? 0),
+    );
+  }
+
+  return records.map((record) =>
+    toProduct(record, quantityByProductId.get(record.id) ?? 0),
+  );
 }
 
 // Produtos favoritados por um cliente (mais recentes primeiro), só ativos.
@@ -61,7 +107,7 @@ export async function getFavoriteProducts(userId: string): Promise<Product[]> {
     orderBy: { createdAt: "desc" },
     include: { product: { include: { variantes: { orderBy: { id: "asc" } } } } },
   });
-  return favorites.map((favorite) => toProduct(favorite.product));
+  return toProductsWithSales(favorites.map((favorite) => favorite.product));
 }
 
 export async function getAllProducts(): Promise<Product[]> {
@@ -71,7 +117,7 @@ export async function getAllProducts(): Promise<Product[]> {
     orderBy: { createdAt: "asc" },
   });
 
-  return records.map(toProduct);
+  return toProductsWithSales(records);
 }
 
 // Produtos de uma categoria, em qualquer profundidade. Vínculo duplo (decisão
@@ -98,7 +144,7 @@ export async function getProductsByCategory(
     orderBy: { createdAt: "asc" },
   });
 
-  return records.map(toProduct);
+  return toProductsWithSales(records);
 }
 
 export async function getBestSellingProducts(
@@ -160,7 +206,8 @@ export async function getBestSellingProducts(
     where: { id: { in: rankedProductIds }, ativo: true },
     include: { variantes: { orderBy: { id: "asc" } } },
   });
-  const productById = new Map(records.map((record) => [record.id, toProduct(record)]));
+  const products = await toProductsWithSales(records);
+  const productById = new Map(products.map((product) => [product.id, product]));
 
   return rankedProductIds.flatMap((productId) => {
     const product = productById.get(productId);
@@ -178,7 +225,7 @@ export async function getNovidades(limit = 10): Promise<Product[]> {
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     take: limit,
   });
-  return records.map(toProduct);
+  return toProductsWithSales(records);
 }
 
 // Produtos marcados manualmente como "promoção" no admin.
@@ -190,7 +237,7 @@ export async function getPromocoes(limit = 10): Promise<Product[]> {
     orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     take: limit,
   });
-  return records.map(toProduct);
+  return toProductsWithSales(records);
 }
 
 // "Mais vendidos" (últimos 30 dias) com cache/revalidação de 1h — evita rodar a
@@ -211,7 +258,7 @@ export async function getLatestProducts(limit = 5): Promise<Product[]> {
     take: limit,
   });
 
-  return records.map(toProduct);
+  return toProductsWithSales(records);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
@@ -225,7 +272,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
   if (!record || !record.ativo) return null;
 
-  return toProduct(record);
+  return (await toProductsWithSales([record]))[0] ?? null;
 }
 
 export function findCategoryLabel(categoria: string): string | null {

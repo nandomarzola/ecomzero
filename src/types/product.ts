@@ -25,6 +25,7 @@ export type Product = {
   linkShein: string | null;
   avaliacaoMedia: number | null;
   totalAvaliacoes: number;
+  quantidadeVendida: number;
   ativo: boolean;
   isNovidade: boolean;
   isPromocao: boolean;
