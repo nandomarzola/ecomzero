@@ -1080,20 +1080,12 @@ export async function executeShipmentPurchase(
       method: "POST",
       body: { orders: [melhorEnvioId] },
     });
-    const printResponse = asObject(
-      await melhorEnvioRequest("/api/v2/me/shipment/print", {
-        method: "POST",
-        body: { mode: "private", orders: [melhorEnvioId] },
-      }).catch(() => null),
-    );
-    const printUrl = optionalString(printResponse?.url);
     const generated = await prisma.shipment.update({
       where: { orderId },
       data: {
         status: "generated",
         labelStatus: "generated",
         geradoEm: new Date(),
-        urlEtiqueta: printUrl,
         referenciaEtiqueta: melhorEnvioId,
         processandoEm: null,
         processamentoToken: null,
@@ -1361,7 +1353,10 @@ export async function cancelShipment(orderId: string) {
       "LABEL_NOT_FOUND",
     );
   }
-  if (["posted", "in_transit", "delivered", "canceled"].includes(shipment.labelStatus)) {
+  if (shipment.labelStatus === "canceled") {
+    return;
+  }
+  if (["posted", "in_transit", "delivered"].includes(shipment.labelStatus)) {
     throw new ShippingFulfillmentError(
       "Esta etiqueta não pode mais ser cancelada neste estágio.",
       "LABEL_NOT_CANCELLABLE",

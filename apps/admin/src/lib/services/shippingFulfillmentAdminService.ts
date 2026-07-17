@@ -30,6 +30,7 @@ export type AdminShippingSelection = {
 
 const MELHOR_ENVIO_SERVICES = "1,2,3,4,17,27,31,32,33";
 const ADMIN_QUOTE_TTL_MS = 15 * 60 * 1000;
+const LABEL_FILE_RETRY_DELAYS_MS = [0, 1_000, 2_000, 3_000, 5_000, 7_000, 9_000, 12_000];
 
 type JsonObject = Record<string, unknown>;
 
@@ -437,9 +438,32 @@ export async function getMelhorEnvioLabelFile(
   format: "pdf" | "jpeg" = "pdf",
 ): Promise<Response> {
   const shipment = await getShipmentForOperation(orderId);
-  return melhorEnvioFileRequest(
-    `/api/v2/me/imprimir/${format}/${shipment.melhorEnvioId}`,
-  );
+  let lastError: unknown;
+
+  for (const delayMs of LABEL_FILE_RETRY_DELAYS_MS) {
+    if (delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    try {
+      return await melhorEnvioFileRequest(
+        `/api/v2/me/imprimir/${format}/${shipment.melhorEnvioId}`,
+      );
+    } catch (error) {
+      lastError = error;
+      const generationPending =
+        error instanceof Error &&
+        (/E-PRT-0011/i.test(error.message) ||
+          /precisa estar gerad[oa]/i.test(error.message));
+      if (!generationPending) throw error;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? new Error(
+        "O Melhor Envio ainda está finalizando a etiqueta. Aguarde alguns segundos e tente abri-la novamente.",
+      )
+    : new Error("O Melhor Envio ainda está finalizando a etiqueta.");
 }
 
 export async function purchaseMelhorEnvioShipment(orderId: string) {

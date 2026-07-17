@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   CheckCircle2,
-  ExternalLink,
   FileCheck2,
   FileText,
   Loader2,
@@ -491,9 +490,6 @@ export default function ShipmentActions({
             ) : null}
             {!shipment?.melhorEnvioId && labelStatus !== "external" ? (
               <button type="button" disabled={pending} onClick={markExternal} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-50"><Truck className="h-4 w-4" /> Marcar como envio externo</button>
-            ) : null}
-            {shipment?.urlRastreio ? (
-              <a href={shipment.urlRastreio} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70">Abrir rastreio <ExternalLink className="h-4 w-4" /></a>
             ) : null}
           </div>
         </div>

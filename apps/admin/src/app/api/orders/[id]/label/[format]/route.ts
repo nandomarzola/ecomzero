@@ -5,6 +5,8 @@ import {
   markShipmentPrinted,
 } from "@/lib/services/shippingFulfillmentAdminService";
 
+export const maxDuration = 60;
+
 function findUrl(value: unknown): string | null {
   if (typeof value === "string" && value.startsWith("https://")) return value;
   if (!value || typeof value !== "object") return null;
