@@ -83,7 +83,7 @@ export function ManagedHero({ banners }: { banners: StoreBanner[] }) {
               type="button"
               onClick={() => emblaApi?.scrollPrev()}
               aria-label="Banner anterior"
-              className="absolute left-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:opacity-100 md:left-4 md:h-11 md:w-11 md:opacity-0 md:group-hover:opacity-100"
+              className="absolute left-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:opacity-100 md:left-4 md:opacity-0 md:group-hover:opacity-100"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -91,7 +91,7 @@ export function ManagedHero({ banners }: { banners: StoreBanner[] }) {
               type="button"
               onClick={() => emblaApi?.scrollNext()}
               aria-label="Próximo banner"
-              className="absolute right-2 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:opacity-100 md:right-4 md:h-11 md:w-11 md:opacity-0 md:group-hover:opacity-100"
+              className="absolute right-2 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)] focus-visible:opacity-100 md:right-4 md:opacity-0 md:group-hover:opacity-100"
             >
               <ChevronRight className="h-5 w-5" />
             </button>

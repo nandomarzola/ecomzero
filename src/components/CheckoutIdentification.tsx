@@ -18,10 +18,11 @@ import {
   UserRoundPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import CheckoutSteps from "@/components/checkout/CheckoutSteps";
 import TrustBadges from "@/components/TrustBadges";
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.15] bg-[#080808] pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80";
+  "h-12 w-full rounded-md border border-white/[0.15] bg-[#080808] pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 max-md:h-[52px] max-md:text-base";
 
 const trustBadges = [
   {
@@ -113,14 +114,14 @@ export default function CheckoutIdentification() {
       <div className="mx-auto max-w-[1320px] px-4 pb-14 pt-6 sm:px-6 sm:pb-16 lg:px-8">
         <Link
           href="/carrinho"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-sm"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-sm max-md:min-h-11 max-md:text-sm"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar para o carrinho
         </Link>
 
         <header className="mt-7">
-          <h1 className="font-display text-[30px] font-extrabold leading-tight text-white sm:text-[38px]">
+          <h1 className="font-display text-[30px] font-extrabold leading-tight text-white sm:text-[38px] max-md:text-[28px]">
             Finalizar compra
           </h1>
           <p className="mt-1.5 text-sm text-white/58 sm:text-base">
@@ -128,10 +129,12 @@ export default function CheckoutIdentification() {
           </p>
         </header>
 
+        <CheckoutSteps current={1} />
+
         <div className="mt-7 grid gap-5 lg:grid-cols-2 lg:items-stretch">
           <section
             aria-labelledby="checkout-login-title"
-            className="rounded-xl border border-white/[0.12] bg-[linear-gradient(145deg,#101010,#0A0A0A)] p-5 sm:p-7"
+            className="rounded-xl border border-white/[0.12] bg-[linear-gradient(145deg,#101010,#0A0A0A)] p-5 sm:p-7 max-md:p-4"
           >
             <div className="flex items-center gap-4">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)] ring-1 ring-[var(--brand-color)]/15">
@@ -141,7 +144,7 @@ export default function CheckoutIdentification() {
                 <h2 id="checkout-login-title" className="font-display text-lg font-bold text-white">
                   Já sou cliente
                 </h2>
-                <p className="mt-1 text-xs text-white/52 sm:text-sm">
+                <p className="mt-1 text-xs text-white/52 sm:text-sm max-md:text-sm">
                   Acesse sua conta para continuar.
                 </p>
               </div>
@@ -206,7 +209,7 @@ export default function CheckoutIdentification() {
               <button
                 type="button"
                 onClick={() => showUnavailableMessage("A recuperação de senha")}
-                className="mt-3 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
+                className="mt-3 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] max-md:mt-2 max-md:inline-flex max-md:min-h-11 max-md:items-center max-md:text-sm"
               >
                 Esqueci minha senha
               </button>
@@ -223,12 +226,12 @@ export default function CheckoutIdentification() {
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="store-primary-action font-display mt-5 flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-65"
+                className="store-primary-action font-display mt-5 flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-65 max-md:min-h-[52px] max-md:text-sm"
               >
                 {isLoggingIn ? "Acessando..." : "Acessar conta"}
               </button>
 
-              <div className="my-4 flex items-center gap-3 text-[11px] text-white/38">
+              <div className="my-4 flex items-center gap-3 text-[11px] text-white/38 max-md:text-sm">
                 <span className="h-px flex-1 bg-white/10" />
                 <span>ou</span>
                 <span className="h-px flex-1 bg-white/10" />
@@ -237,7 +240,7 @@ export default function CheckoutIdentification() {
               <button
                 type="button"
                 onClick={() => showUnavailableMessage("O acesso sem senha")}
-                className="font-display flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-[var(--brand-color)]/55 px-5 text-xs font-bold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
+                className="font-display flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-[var(--brand-color)]/55 px-5 text-xs font-bold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] max-md:min-h-[52px] max-md:text-sm"
               >
                 Entrar sem senha
                 <MessageSquareText className="h-4 w-4" strokeWidth={1.8} />
@@ -247,7 +250,7 @@ export default function CheckoutIdentification() {
 
           <section
             aria-labelledby="checkout-register-title"
-            className="flex flex-col rounded-xl border border-white/[0.12] bg-[linear-gradient(145deg,#101010,#0A0A0A)] p-5 sm:p-7"
+            className="flex flex-col rounded-xl border border-white/[0.12] bg-[linear-gradient(145deg,#101010,#0A0A0A)] p-5 sm:p-7 max-md:p-4"
           >
             <div className="flex items-center gap-4">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)] ring-1 ring-[var(--brand-color)]/15">
@@ -257,7 +260,7 @@ export default function CheckoutIdentification() {
                 <h2 id="checkout-register-title" className="font-display text-lg font-bold text-white">
                   Criar conta
                 </h2>
-                <p className="mt-1 text-xs text-white/52 sm:text-sm">
+                <p className="mt-1 text-xs text-white/52 sm:text-sm max-md:text-sm">
                   É rápido, fácil e seguro.
                 </p>
               </div>
@@ -292,7 +295,7 @@ export default function CheckoutIdentification() {
               )}
               <button
                 type="submit"
-                className="store-primary-action font-display mt-4 flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="store-primary-action font-display mt-4 flex min-h-12 w-full items-center justify-center px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white max-md:min-h-[52px] max-md:text-sm"
               >
                 Criar conta e continuar
               </button>
@@ -319,7 +322,7 @@ export default function CheckoutIdentification() {
 
         <section
           aria-labelledby="social-access-title"
-          className="mt-5 rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-6"
+          className="mt-5 rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-6 max-md:p-4"
         >
           <div className="text-center">
             <h2 id="social-access-title" className="font-display text-sm font-bold text-white sm:text-base">

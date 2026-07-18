@@ -44,11 +44,11 @@ export default function BottomNav() {
                 <button
                   type="button"
                   onClick={openCart}
-                  className="flex min-h-16 w-full flex-col items-center justify-center gap-1 text-[10px] font-semibold text-white/60 transition hover:text-white"
+                  className="flex min-h-16 w-full flex-col items-center justify-center gap-1 text-[11px] font-semibold text-white/60 transition hover:text-white"
                   aria-label="Abrir carrinho"
                 >
                   <span className="relative">
-                    <Icon className="h-5 w-5" strokeWidth={1.8} />
+                    <Icon className="h-[22px] w-[22px]" strokeWidth={1.8} />
                     <CartBadgeCount />
                   </span>
                   {label}
@@ -57,12 +57,12 @@ export default function BottomNav() {
                 <Link
                   href={href}
                   aria-current={isActive ? "page" : undefined}
-                  className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition ${
+                  className={`flex min-h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold transition ${
                     isActive ? "text-[var(--brand-color)]" : "text-white/60 hover:text-white"
                   }`}
                 >
                   <span className="relative">
-                    <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 1.8} />
+                    <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.2 : 1.8} />
                   </span>
                   {label}
                 </Link>

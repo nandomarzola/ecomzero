@@ -227,7 +227,7 @@ export default function CartDrawerShipping({
 
   return (
     <section className="py-4" aria-labelledby="drawer-shipping-title">
-      <h3 id="drawer-shipping-title" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/65">
+      <h3 id="drawer-shipping-title" className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/65 max-md:text-sm">
         Calcule o frete
       </h3>
 
@@ -266,7 +266,7 @@ export default function CartDrawerShipping({
       </form>
 
       {error ? (
-        <p role="alert" className="mt-2 flex items-start gap-1.5 text-[10px] leading-4 text-red-400">
+        <p role="alert" className="mt-2 flex items-start gap-1.5 text-[10px] leading-4 text-red-400 max-md:text-sm max-md:leading-5">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           {error}
         </p>
@@ -276,14 +276,14 @@ export default function CartDrawerShipping({
         <div className="mt-3 flex items-center gap-2.5 rounded-lg border border-[var(--brand-color)] bg-[var(--brand-color)]/[0.06] px-3 py-2.5">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[var(--brand-color)]" />
           <span className="min-w-0 flex-1">
-            <strong className="block truncate text-[10px] font-medium text-white">
+            <strong className="block truncate text-[10px] font-medium text-white max-md:text-sm">
               {selection.transportadora} · {selection.servico}
             </strong>
-            <span className="text-[9px] text-white/45">
+            <span className="text-[9px] text-white/45 max-md:text-xs">
               Até {selection.prazoDias} dias úteis
             </span>
           </span>
-          <strong className="text-[11px] text-[var(--brand-color)]">
+          <strong className="text-[11px] text-[var(--brand-color)] max-md:text-base">
             {formatPrice(selection.preco)}
           </strong>
         </div>

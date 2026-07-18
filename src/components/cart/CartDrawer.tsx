@@ -178,15 +178,15 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
         aria-modal="true"
         aria-label="Carrinho de compras"
         tabIndex={-1}
-        className={`absolute inset-y-0 right-0 flex w-[92vw] max-w-[450px] flex-col border-l border-white/[0.12] bg-[#090909] text-white shadow-[-24px_0_70px_rgba(0,0,0,0.65)] transition-transform duration-300 ease-out motion-reduce:transition-none sm:w-[450px] ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`absolute inset-y-0 right-0 flex w-full max-w-none flex-col border-l border-white/[0.12] bg-[#090909] text-white shadow-[-24px_0_70px_rgba(0,0,0,0.65)] transition-transform duration-300 ease-out motion-reduce:transition-none max-md:border-l-0 md:w-[450px] md:max-w-[450px] ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         <header className="flex min-h-[72px] shrink-0 items-center gap-3 border-b border-white/[0.1] px-4 pt-[env(safe-area-inset-top)] sm:px-5">
           <ShoppingCart className="h-6 w-6 text-white" strokeWidth={1.7} />
           <span className="min-w-0 flex-1">
-            <strong className="block text-sm font-bold uppercase tracking-[0.03em] text-white">
+            <strong className="block text-sm font-bold uppercase tracking-[0.03em] text-white max-md:text-base">
               Carrinho
             </strong>
-            <span className="mt-0.5 block text-[10px] font-medium text-[var(--brand-color)]" aria-live="polite">
+            <span className="mt-0.5 block text-[10px] font-medium text-[var(--brand-color)] max-md:text-xs" aria-live="polite">
               {cart.itemCount} {cart.itemCount === 1 ? "item" : "itens"}
             </span>
           </span>
@@ -195,7 +195,7 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
               type="button"
               onClick={() => void clearAllItems()}
               disabled={isMutating}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-semibold text-red-300/75 transition hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-semibold text-red-300/75 transition hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:text-xs"
             >
               {isMutating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
               Limpar carrinho
@@ -205,14 +205,14 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
             ref={closeButtonRef}
             type="button"
             onClick={closeCart}
-            className="flex h-10 w-10 items-center justify-center rounded-md text-white/70 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-white/70 transition hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] max-md:h-11 max-md:w-11"
             aria-label="Fechar carrinho"
           >
             <X className="h-5 w-5" />
           </button>
         </header>
 
-        {clearError ? <p role="alert" className="shrink-0 border-b border-red-500/20 bg-red-500/[0.08] px-5 py-2 text-[10px] text-red-300">{clearError}</p> : null}
+        {clearError ? <p role="alert" className="shrink-0 border-b border-red-500/20 bg-red-500/[0.08] px-5 py-2 text-[10px] text-red-300 max-md:text-sm">{clearError}</p> : null}
 
         {isLoading ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
@@ -223,8 +223,8 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
             <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/[0.1] bg-white/[0.03]">
               <PackageOpen className="h-7 w-7 text-white/35" />
             </span>
-            <h2 className="mt-5 text-base font-bold text-white">Seu carrinho está vazio</h2>
-            <p className="mt-2 max-w-[260px] text-xs leading-5 text-white/45">
+            <h2 className="mt-5 text-base font-bold text-white max-md:text-lg">Seu carrinho está vazio</h2>
+            <p className="mt-2 max-w-[260px] text-xs leading-5 text-white/45 max-md:text-sm max-md:leading-6">
               Explore nossos produtos e adicione seus favoritos.
             </p>
             <button
@@ -249,7 +249,7 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
                 <CartDrawerShipping subtotal={cart.subtotal} active={isOpen} />
               ) : null}
               {checkoutError ? (
-                <p role="alert" className="pb-2 text-[10px] leading-4 text-amber-300">
+                <p role="alert" className="pb-2 text-[10px] leading-4 text-amber-300 max-md:text-sm max-md:leading-5">
                   {checkoutError}
                 </p>
               ) : null}

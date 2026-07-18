@@ -35,7 +35,7 @@ export default function RelatedProductsCarousel({
 
   return (
     <section aria-labelledby="related-products-title">
-      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6 max-md:flex-col max-md:items-start max-md:gap-1">
         <div>
           <span className="mb-3 block h-0.5 w-11 bg-[var(--brand-color)]" />
           {eyebrow && (
@@ -52,7 +52,7 @@ export default function RelatedProductsCarousel({
         </div>
         <Link
           href="/"
-          className="font-display shrink-0 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-xs"
+          className="font-display shrink-0 text-[10px] font-bold uppercase text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] sm:text-xs max-md:inline-flex max-md:min-h-11 max-md:items-center max-md:text-xs"
         >
           Ver toda a vitrine →
         </Link>

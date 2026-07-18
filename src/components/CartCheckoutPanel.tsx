@@ -307,19 +307,19 @@ export default function CartCheckoutPanel({
                   onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
                   placeholder="Cupom de desconto"
                   aria-label="Código do cupom"
-                  className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs uppercase text-white outline-none transition placeholder:text-white/32 focus:border-[#A9EC17]"
+                  className="h-10 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs uppercase text-white outline-none transition placeholder:text-white/32 focus:border-[#A9EC17] max-md:h-12 max-md:text-base"
                 />
                 <button
                   type="submit"
                   disabled={couponPending || couponCode.trim().length < 3}
-                  className="h-10 shrink-0 rounded-md border border-white/15 px-4 text-[11px] font-bold text-white transition hover:border-[#A9EC17]/40 disabled:cursor-not-allowed disabled:opacity-45"
+                  className="h-10 shrink-0 rounded-md border border-white/15 px-4 text-[11px] font-bold text-white transition hover:border-[#A9EC17]/40 disabled:cursor-not-allowed disabled:opacity-45 max-md:h-12 max-md:text-sm"
                 >
                   {couponPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : "Aplicar"}
                 </button>
               </form>
             )}
             {couponError && (
-              <p role="alert" className="mt-2 flex gap-1.5 text-[10px] leading-4 text-red-400">
+              <p role="alert" className="mt-2 flex gap-1.5 text-[10px] leading-4 text-red-400 max-md:text-sm max-md:leading-5">
                 <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" /> {couponError}
               </p>
             )}
@@ -331,7 +331,7 @@ export default function CartCheckoutPanel({
               {formatPrice(total)}
             </strong>
           </div>
-          <p className="mt-1 min-h-4 text-[10px] text-white/38">
+          <p className="mt-1 min-h-4 text-[10px] text-white/38 max-md:text-xs max-md:leading-5">
             {freeShipping
               ? "A transportadora será definida após a confirmação do pedido."
               : selection && !selectionExpired
@@ -342,7 +342,7 @@ export default function CartCheckoutPanel({
           <button
             type="button"
             onClick={goToCheckout}
-            className="store-primary-action font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="store-primary-action font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white max-md:hidden"
           >
             {canCheckout ? "Finalizar compra" : "Escolher frete para continuar"}
             <ArrowRight className="h-4 w-4" />
@@ -374,12 +374,12 @@ export default function CartCheckoutPanel({
               onChange={(event) => setCepDraft(event.target.value)}
               placeholder="Digite seu CEP"
               aria-label="CEP"
-              className="h-11 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/32 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)]"
+              className="h-11 min-w-0 flex-1 rounded-md border border-white/15 bg-[#090909] px-3 text-xs text-white outline-none transition placeholder:text-white/32 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] max-md:h-12 max-md:text-base"
             />
             <button
               type="submit"
               disabled={status === "loading" || autoLoading || onlyDigits(cep).length !== 8}
-              className="store-primary-action h-11 shrink-0 px-4 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45"
+              className="store-primary-action h-11 shrink-0 px-4 text-[10px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 max-md:h-12 max-md:text-sm"
             >
               {status === "loading" ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
@@ -390,21 +390,21 @@ export default function CartCheckoutPanel({
           </form>
 
           {autoLoading && !quote && (
-            <p className="mt-3 flex items-center gap-1.5 text-[10px] text-white/45">
+            <p className="mt-3 flex items-center gap-1.5 text-[10px] text-white/45 max-md:text-sm">
               <LoaderCircle className="h-3.5 w-3.5 animate-spin text-[var(--brand-color)]" />
               Calculando frete para o seu CEP...
             </p>
           )}
 
           {errorMessage && (
-            <p role="alert" className="mt-3 flex gap-2 text-[10px] leading-4 text-red-400">
+            <p role="alert" className="mt-3 flex gap-2 text-[10px] leading-4 text-red-400 max-md:text-sm max-md:leading-5">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               {errorMessage}
             </p>
           )}
 
           {selectionExpired && (
-            <p role="alert" className="mt-3 flex gap-2 text-[10px] leading-4 text-amber-300">
+            <p role="alert" className="mt-3 flex gap-2 text-[10px] leading-4 text-amber-300 max-md:text-sm max-md:leading-5">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               Sua cotação expirou. Calcule o frete novamente.
             </p>
@@ -414,7 +414,7 @@ export default function CartCheckoutPanel({
             <fieldset
               className={`mt-4 space-y-2 transition-opacity ${autoLoading ? "pointer-events-none opacity-40" : "opacity-100"}`}
             >
-              <legend className="mb-2 text-[10px] font-semibold uppercase text-white/50">
+              <legend className="mb-2 text-[10px] font-semibold uppercase text-white/50 max-md:text-xs">
                 Escolha uma opção
               </legend>
               {quote.options.map((option) => {
@@ -430,18 +430,18 @@ export default function CartCheckoutPanel({
                       value={option.id}
                       checked={selected}
                       onChange={() => selectShipping(option)}
-                      className="h-4 w-4 accent-[var(--brand-color)]"
+                      className="h-4 w-4 accent-[var(--brand-color)] max-md:h-5 max-md:w-5"
                     />
                     <Truck className="h-4 w-4 shrink-0 text-[var(--brand-color)]" />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[11px] font-medium text-white">
+                      <span className="block truncate text-[11px] font-medium text-white max-md:text-sm">
                         {option.transportadora} · {option.servico}
                       </span>
-                      <span className="mt-0.5 block text-[10px] text-white/45">
+                      <span className="mt-0.5 block text-[10px] text-white/45 max-md:text-xs">
                         Até {option.prazoDias} dias úteis
                       </span>
                     </span>
-                    <strong className="text-xs text-[var(--brand-color)]">
+                    <strong className="text-xs text-[var(--brand-color)] max-md:text-base">
                       {formatPrice(option.preco)}
                     </strong>
                   </label>
@@ -460,15 +460,15 @@ export default function CartCheckoutPanel({
       <div className="fixed inset-x-0 bottom-16 z-40 border-t border-white/10 bg-black/95 px-4 py-3 backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] uppercase text-white/40">Total</p>
-            <strong className="font-display text-lg font-extrabold text-[var(--brand-color)]">
+            <p className="text-xs uppercase text-white/45">Total</p>
+            <strong className="font-display text-xl font-extrabold text-[var(--brand-color)]">
               {formatPrice(total)}
             </strong>
           </div>
           <button
             type="button"
             onClick={goToCheckout}
-            className="store-primary-action font-display min-h-11 flex-1 px-4 text-[10px] font-extrabold uppercase"
+            className="store-primary-action font-display min-h-[52px] flex-1 px-4 text-sm font-extrabold uppercase"
           >
             {canCheckout ? "Finalizar compra" : "Escolher frete"}
           </button>

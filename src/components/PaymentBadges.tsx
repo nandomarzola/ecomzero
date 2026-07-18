@@ -22,11 +22,11 @@ export default function PaymentBadges() {
             className="inline-flex min-h-12 min-w-[58px] flex-col items-center justify-center gap-1 rounded-md border border-white/15 bg-[#090909] px-2.5 text-white/70"
           >
             <Icon className="h-4 w-4 text-[var(--brand-color)]" strokeWidth={1.7} />
-            <span className="text-[8px] font-bold uppercase tracking-wide">{label}</span>
+            <span className="text-[8px] font-bold uppercase tracking-wide max-md:text-[11px]">{label}</span>
           </span>
         ))}
       </div>
-      <p className="mt-3 text-[10px] leading-4 text-white/40">
+      <p className="mt-3 text-[10px] leading-4 text-white/40 max-md:text-sm max-md:leading-5">
         Disponibilidade confirmada na finalização do pedido.
       </p>
     </div>

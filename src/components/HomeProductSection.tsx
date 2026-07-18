@@ -25,14 +25,14 @@ export default function HomeProductSection({
 }) {
   return (
     <section className="mx-auto max-w-[1440px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
-      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
+      <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6 max-md:flex-col max-md:items-start max-md:gap-1">
         <h2 className="font-display text-xl font-extrabold uppercase tracking-tight text-white sm:text-2xl">
           {title}
         </h2>
         {viewAllHref && products.length > 0 && (
           <Link
             href={viewAllHref}
-            className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--brand-color)] transition hover:text-white sm:text-sm"
+            className="inline-flex shrink-0 items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[var(--brand-color)] transition hover:text-white sm:text-sm max-md:min-h-11"
           >
             Ver todos
             <ArrowRight className="h-4 w-4" />

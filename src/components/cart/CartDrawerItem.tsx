@@ -80,7 +80,7 @@ export default function CartDrawerItem({ item }: { item: CartItem }) {
           {item.productName}
         </Link>
         {item.variantLabel ? (
-          <p className="mt-1 truncate text-[10px] text-white/45">
+          <p className="mt-1 truncate text-[10px] text-white/45 max-md:text-xs">
             {item.variantLabel}
           </p>
         ) : null}
@@ -112,10 +112,10 @@ export default function CartDrawerItem({ item }: { item: CartItem }) {
           </button>
         </div>
         {item.quantidade >= 20 ? (
-          <p className="mt-1.5 text-[9px] text-amber-300">Quantidade máxima atingida.</p>
+          <p className="mt-1.5 text-[9px] text-amber-300 max-md:text-sm">Quantidade máxima atingida.</p>
         ) : null}
         {error ? (
-          <p role="alert" className="mt-1.5 text-[9px] leading-4 text-red-400">
+          <p role="alert" className="mt-1.5 text-[9px] leading-4 text-red-400 max-md:text-sm max-md:leading-5">
             {error}
           </p>
         ) : null}
@@ -132,23 +132,22 @@ export default function CartDrawerItem({ item }: { item: CartItem }) {
         <Trash2 className="h-4 w-4 max-md:h-5 max-md:w-5" strokeWidth={1.7} />
       </button>
 
-      {/* Confirmação de remoção — só aparece no mobile (confirming só vira true lá). */}
       {confirming ? (
-        <div className="col-span-full mt-1 flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-500/[0.06] p-2">
-          <span className="min-w-0 flex-1 pl-1 text-sm font-medium text-white/85">
+        <div className="col-span-full mt-1 flex items-center gap-2 rounded-lg border border-red-400/30 bg-red-500/[0.06] p-2 max-md:grid max-md:grid-cols-2">
+          <span className="min-w-0 flex-1 pl-1 text-sm font-medium text-white/85 max-md:col-span-2 max-md:py-1">
             Remover este item?
           </span>
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="min-h-11 rounded-md border border-white/20 px-4 text-sm font-semibold text-white/80 transition hover:bg-white/[0.05]"
+            className="min-h-11 rounded-md border border-white/20 px-4 text-sm font-semibold text-white/80 transition hover:bg-white/[0.05] max-md:w-full"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={() => void remove()}
-            className="min-h-11 rounded-md bg-red-500/90 px-4 text-sm font-bold text-white transition hover:bg-red-500"
+            className="min-h-11 rounded-md bg-red-500/90 px-4 text-sm font-bold text-white transition hover:bg-red-500 max-md:w-full"
           >
             Remover
           </button>

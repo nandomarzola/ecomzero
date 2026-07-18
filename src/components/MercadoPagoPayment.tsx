@@ -31,6 +31,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
+import CheckoutSteps from "@/components/checkout/CheckoutSteps";
 import type { OrderPaymentPageData } from "@/lib/services/orderPaymentService";
 import { clearCheckoutShippingSelection } from "@/lib/client/checkoutShippingStorage";
 
@@ -356,8 +357,8 @@ export default function MercadoPagoPayment({
 
   return (
     <div className="payment-checkout-page min-h-screen bg-[radial-gradient(circle_at_50%_38%,rgba(30,30,30,0.18),transparent_43%)] text-white">
-      <nav aria-label="Etapas da compra" className="border-b border-white/[0.1] bg-[#050505]">
-        <ol className="mx-auto flex h-10 max-w-[1332px] items-center gap-3 overflow-x-auto px-4 text-[11px] text-white/55 sm:px-6 lg:px-0 max-md:h-12 max-md:text-[13px]">
+      <nav aria-label="Etapas da compra" className="border-b border-white/[0.1] bg-[#050505] max-md:hidden">
+        <ol className="mx-auto flex h-10 max-w-[1332px] items-center gap-3 overflow-x-auto px-4 text-[11px] text-white/55 sm:px-6 lg:px-0">
           <li><Link href="/carrinho" className="whitespace-nowrap transition hover:text-white">Carrinho</Link></li>
           <li aria-hidden="true"><ChevronRight className="h-4 w-4 text-white/35" /></li>
           <li><Link href="/checkout" className="whitespace-nowrap transition hover:text-white">Identificação</Link></li>
@@ -368,35 +369,81 @@ export default function MercadoPagoPayment({
         </ol>
       </nav>
 
-      <div className="mx-auto max-w-[1332px] px-4 pb-5 pt-6 sm:px-6 lg:px-0 lg:pt-7">
+      <div className="mx-auto max-w-[1332px] px-4 pb-5 pt-6 sm:px-6 lg:px-0 lg:pt-7 max-md:pb-10 max-md:pt-5">
         <header>
-          <h1 className="font-display text-[30px] font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-[36px]">
+          <h1 className="font-display text-[30px] font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-[36px] max-md:text-[28px]">
             Escolha como pagar
           </h1>
-          <p className="mt-2 text-[13px] leading-5 text-white/65">
+          <p className="mt-2 text-[13px] leading-5 text-white/65 max-md:text-sm max-md:leading-6">
             Finalize sem sair da EcomZero.
             <span className="block">Seus dados financeiros são protegidos e processados pelo Mercado Pago.</span>
           </p>
         </header>
 
-        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-9">
+        <CheckoutSteps current={2} />
+
+        <details className="group overflow-hidden rounded-xl border border-white/[0.12] bg-[#0D0D0D] md:hidden">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 [&::-webkit-details-marker]:hidden">
+            <span className="text-base font-semibold text-white">Resumo do pedido</span>
+            <span className="flex items-center gap-2">
+              <strong className="font-display text-lg font-extrabold text-[var(--brand-color)]">
+                {formatPrice(order.total)}
+              </strong>
+              <ChevronRight className="h-5 w-5 rotate-90 text-white/50 transition group-open:-rotate-90" />
+            </span>
+          </summary>
+          <div className="border-t border-white/[0.09] px-4 py-4">
+            <div className="space-y-3 border-b border-white/[0.09] pb-4">
+              {order.items.map((item) => (
+                <div key={item.id} className="flex items-center gap-3">
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-white/[0.1] bg-white">
+                    <Image src={item.image} alt={item.name} fill sizes="48px" className="object-contain" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-sm font-medium leading-5 text-white/85">{item.name}</p>
+                    <p className="mt-0.5 text-xs text-white/45">{item.quantity} un. · {item.variant}</p>
+                  </div>
+                  <strong className="shrink-0 text-sm text-white">{formatPrice(item.lineTotal)}</strong>
+                </div>
+              ))}
+            </div>
+            <dl className="space-y-2 pt-4 text-sm">
+              <div className="flex justify-between gap-4 text-white/60">
+                <dt>Subtotal</dt>
+                <dd className="font-medium text-white">{formatPrice(order.subtotal)}</dd>
+              </div>
+              {order.discount > 0 ? (
+                <div className="flex justify-between gap-4 text-white/60">
+                  <dt>Desconto</dt>
+                  <dd className="font-semibold text-[var(--brand-color)]">-{formatPrice(order.discount)}</dd>
+                </div>
+              ) : null}
+              <div className="flex justify-between gap-4 text-white/60">
+                <dt>Frete</dt>
+                <dd className="font-medium text-white">{formatPrice(order.shipping)}</dd>
+              </div>
+            </dl>
+          </div>
+        </details>
+
+        <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-9 max-md:mt-4">
           <div className="min-w-0 space-y-4">
             <section
               aria-label="Pagamento processado pelo Mercado Pago"
-              className="flex min-h-[102px] items-center justify-between gap-5 rounded-[10px] border border-[#009EE3]/35 bg-[linear-gradient(100deg,rgba(0,158,227,0.15),rgba(0,91,128,0.08))] px-5 py-4 sm:px-8"
+              className="flex min-h-[102px] items-center justify-between gap-5 rounded-[10px] border border-[#009EE3]/35 bg-[linear-gradient(100deg,rgba(0,158,227,0.15),rgba(0,91,128,0.08))] px-5 py-4 sm:px-8 max-md:min-h-0 max-md:items-start max-md:gap-3 max-md:p-4"
             >
               <div className="flex min-w-0 items-center gap-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#169EE7] to-[#075DBB] text-white shadow-[0_0_24px_rgba(0,158,227,0.25)]">
                   <ShieldCheck className="h-6 w-6" strokeWidth={1.8} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#75D7FF]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#75D7FF] max-md:text-xs max-md:leading-5">
                     Ambiente de pagamento seguro
                   </p>
-                  <p className="font-display mt-1 text-[15px] font-bold text-white sm:text-[16px]">
+                  <p className="font-display mt-1 text-[15px] font-bold text-white sm:text-[16px] max-md:text-base max-md:leading-5">
                     Pagamento processado pelo Mercado Pago
                   </p>
-                  <p className="mt-1 text-[10px] leading-4 text-white/50 sm:text-[11px]">
+                  <p className="mt-1 text-[10px] leading-4 text-white/50 sm:text-[11px] max-md:text-xs max-md:leading-5">
                     Seus dados são protegidos com criptografia de ponta a ponta e nunca são armazenados pela EcomZero.
                   </p>
                 </div>
@@ -404,9 +451,9 @@ export default function MercadoPagoPayment({
               <MercadoPagoBrand className="hidden shrink-0 sm:inline-flex" />
             </section>
 
-            <main className="min-w-0 rounded-[10px] border border-white/[0.13] bg-[linear-gradient(145deg,#111111,#0B0B0B)] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.22)] sm:p-4">
+            <main className="min-w-0 rounded-[10px] border border-white/[0.13] bg-[linear-gradient(145deg,#111111,#0B0B0B)] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.22)] sm:p-4 max-md:p-4">
               {isCheckingPayment ? (
-                <div className="flex min-h-[420px] items-center justify-center gap-3 text-sm text-white/50">
+                <div className="flex min-h-[420px] items-center justify-center gap-3 text-sm text-white/50 max-md:min-h-[320px]">
                   <LoaderCircle className="h-5 w-5 animate-spin text-[var(--brand-color)]" />
                   Consultando pagamento...
                 </div>
@@ -508,7 +555,7 @@ export default function MercadoPagoPayment({
                 </div>
               )}
 
-              <div className="mt-6 flex items-center justify-center gap-2 rounded-lg border border-[var(--brand-color)]/15 bg-[var(--brand-color)]/[0.05] px-4 py-3 text-[11px] text-white/55">
+              <div className="mt-6 flex items-center justify-center gap-2 rounded-lg border border-[var(--brand-color)]/15 bg-[var(--brand-color)]/[0.05] px-4 py-3 text-[11px] text-white/55 max-md:text-sm max-md:leading-5">
                 <LoaderCircle className="h-4 w-4 animate-spin text-[var(--brand-color)]" />
                 Aguardando confirmação automática do pagamento
               </div>
@@ -520,7 +567,7 @@ export default function MercadoPagoPayment({
                   {errorMessage && (
                     <p
                       role="alert"
-                      className="mb-4 flex gap-2 rounded-md border border-red-400/20 bg-red-400/[0.06] p-3 text-[11px] leading-5 text-red-200"
+                      className="mb-4 flex gap-2 rounded-md border border-red-400/20 bg-red-400/[0.06] p-3 text-[11px] leading-5 text-red-200 max-md:text-sm"
                     >
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                       {errorMessage}
@@ -544,7 +591,7 @@ export default function MercadoPagoPayment({
             </main>
           </div>
 
-          <aside className="lg:sticky lg:top-[92px] lg:self-start">
+          <aside className="max-md:hidden lg:sticky lg:top-[92px] lg:self-start">
             <section className="rounded-[10px] border border-white/[0.13] bg-[linear-gradient(145deg,#111111,#0B0B0B)] p-5 shadow-[0_18px_55px_rgba(0,0,0,0.22)] sm:p-6">
               <h2 className="font-display text-[18px] font-bold text-white">
                 Resumo do pedido
@@ -631,19 +678,19 @@ export default function MercadoPagoPayment({
 
       <section aria-label="Confiança Mercado Pago" className="mt-3 border-y border-white/[0.09] bg-[#050505]">
         <div className="mx-auto max-w-[900px] px-4 py-3 sm:px-6">
-          <p className="text-center text-[12px] font-medium text-white/85">
+          <p className="text-center text-[12px] font-medium text-white/85 max-md:text-sm">
             O Mercado Pago é a maior plataforma de pagamentos da América Latina.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:items-center sm:gap-8">
-            <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70">
+            <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70 max-md:text-xs max-md:leading-5">
               <ShieldCheck className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.6} />
               Mais de 15 anos<br />de experiência
             </span>
-            <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70">
+            <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70 max-md:text-xs max-md:leading-5">
               <Globe2 className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.6} />
               Presente em mais de<br />18 países
             </span>
-            <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70">
+            <span className="flex items-center gap-3 text-[11px] leading-4 text-white/70 max-md:text-xs max-md:leading-5">
               <Info className="h-7 w-7 shrink-0 text-[var(--brand-color)]" strokeWidth={1.6} />
               Milhões de pessoas<br />e empresas confiam
             </span>

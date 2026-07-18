@@ -80,7 +80,7 @@ export default function CartDrawerSummary({
       <button
         type="button"
         onClick={onContinue}
-        className="mt-2.5 flex min-h-8 w-full items-center justify-center gap-2 text-[10px] font-medium uppercase tracking-[0.06em] text-white/55 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
+        className="mt-2.5 flex min-h-8 w-full items-center justify-center gap-2 text-[10px] font-medium uppercase tracking-[0.06em] text-white/55 transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] max-md:min-h-11 max-md:text-xs"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Continuar comprando

@@ -79,22 +79,22 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           <Link
             href={`/produto/${item.productSlug}`}
             title={item.productName}
-            className="font-display line-clamp-2 text-[13px] font-bold leading-[1.35] text-white transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:text-[var(--brand-color)] sm:text-[15px]"
+            className="font-display line-clamp-2 text-[13px] font-bold leading-[1.35] text-white transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:text-[var(--brand-color)] sm:text-[15px] max-md:text-sm"
           >
             {item.productName}
           </Link>
-          <p className="mt-1 text-[10px] text-white/40 sm:text-[11px]">
+          <p className="mt-1 text-[10px] text-white/40 sm:text-[11px] max-md:text-xs">
             Ref: {item.skuInterno ?? item.variantLabel}
           </p>
-          <p className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--brand-color)] sm:text-[11px]">
+          <p className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--brand-color)] sm:text-[11px] max-md:text-xs">
             <CircleCheck className="h-3.5 w-3.5" strokeWidth={2} />
             Em estoque
           </p>
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 border-t border-white/[0.07] pt-3 xl:contents">
-        <div className="min-w-0">
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 border-t border-white/[0.07] pt-3 max-md:grid-cols-2 xl:contents">
+        <div className="min-w-0 max-md:order-1">
           {hasDiscount && (
             <p className="text-[9px] text-white/38 sm:text-[10px]">
               De <span className="line-through">{formatPrice(item.precoDe)}</span>
@@ -110,13 +110,13 @@ export default function CartItemRow({ item }: { item: CartItem }) {
           )}
         </div>
 
-        <div className="flex h-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#090909] px-1">
+        <div className="flex h-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#090909] px-1 max-md:order-3 max-md:col-span-2 max-md:h-12 max-md:w-full">
           <button
             type="button"
             disabled={isPending || item.quantidade <= 1}
             onClick={() => handleQuantityChange(item.quantidade - 1)}
             aria-label="Diminuir quantidade"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-white/55 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-white/55 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30 max-md:h-11 max-md:flex-1"
           >
             <Minus className="h-3.5 w-3.5" />
           </button>
@@ -128,13 +128,13 @@ export default function CartItemRow({ item }: { item: CartItem }) {
             disabled={isPending}
             onClick={() => handleQuantityChange(item.quantidade + 1)}
             aria-label="Aumentar quantidade"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-white/65 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-white/65 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] disabled:opacity-30 max-md:h-11 max-md:flex-1"
           >
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
 
-        <div className="min-w-0 text-right xl:text-left">
+        <div className="min-w-0 text-right max-md:order-2 xl:text-left">
           <p className="text-[9px] text-white/42 sm:text-[10px]">Subtotal</p>
           <strong className="font-display block whitespace-nowrap text-sm font-extrabold text-[var(--brand-color)] sm:text-base">
             {formatPrice(item.subtotal)}
@@ -148,7 +148,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
         onClick={handleRemove}
         title="Remover produto"
         aria-label={`Remover ${item.productName} do carrinho`}
-        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md text-white/42 transition hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:opacity-30 xl:static xl:h-10 xl:w-10"
+        className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md text-white/42 transition hover:bg-red-500/10 hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 disabled:opacity-30 max-md:h-11 max-md:w-11 xl:static xl:h-10 xl:w-10"
       >
         <Trash2 className="h-[18px] w-[18px]" strokeWidth={1.7} />
       </button>
@@ -156,7 +156,7 @@ export default function CartItemRow({ item }: { item: CartItem }) {
       {errorMessage && (
         <p
           role="alert"
-          className="mt-3 text-[10px] text-red-400 xl:col-span-full xl:mt-0"
+          className="mt-3 text-[10px] text-red-400 max-md:text-sm xl:col-span-full xl:mt-0"
         >
           {errorMessage}
         </p>

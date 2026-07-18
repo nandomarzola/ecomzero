@@ -530,23 +530,23 @@ export default function CheckoutForm({
   }
 
   return (
-    <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-8 sm:px-6 lg:px-8 max-md:pb-28">
+    <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-8 sm:px-6 lg:px-8 max-md:pb-32 max-md:pt-6">
       <Link
         href="/carrinho"
-        className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white"
+        className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white max-md:min-h-11 max-md:text-sm"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar ao carrinho
       </Link>
 
-      <header className="mt-5 border-b border-white/[0.08] pb-7">
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand-color)]">
+      <header className="mt-4 border-b border-white/[0.08] pb-6 md:mt-5 md:pb-7">
+        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand-color)] max-md:text-xs">
           Checkout seguro
         </p>
-        <h1 className="font-display mt-2 text-[30px] font-extrabold leading-tight text-white sm:text-[38px]">
+        <h1 className="font-display mt-2 text-[30px] font-extrabold leading-tight text-white sm:text-[38px] max-md:text-[28px]">
           Finalize sua compra
         </h1>
-        <p className="mt-2 text-sm text-white/50">
+        <p className="mt-2 text-sm text-white/50 max-md:leading-6 max-md:text-white/55">
           Confira seus dados antes de escolher a forma de pagamento.
         </p>
       </header>
@@ -555,7 +555,7 @@ export default function CheckoutForm({
       <CheckoutSteps current={1} />
 
       {/* Resumo colapsável no topo — mobile-only (o desktop usa a sidebar). */}
-      <details className="group mt-1 mb-3 overflow-hidden rounded-xl border border-white/[0.1] bg-[#0D0D0D] md:hidden">
+      <details className="group mb-3 mt-1 overflow-hidden rounded-xl border border-white/[0.1] bg-[#0D0D0D] md:hidden">
         <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 [&::-webkit-details-marker]:hidden">
           <span className="text-base font-semibold text-white">
             Resumo do pedido
@@ -603,33 +603,33 @@ export default function CheckoutForm({
         </div>
       )}
 
-      <form className="mt-7 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]" noValidate onSubmit={handleSubmit}>
+      <form className="mt-5 grid gap-6 md:mt-7 lg:grid-cols-[minmax(0,1fr)_360px]" noValidate onSubmit={handleSubmit}>
         <div className="space-y-5">
-          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
+          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-4 md:p-7">
             <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                 <Check className="h-4 w-4" />
               </span>
               <div>
                 <h2 className="font-display text-lg font-bold text-white">Dados do cliente</h2>
-                <p className="text-[11px] text-white/42">Usados na identificação e no contato do pedido.</p>
+                <p className="text-[11px] text-white/42 max-md:mt-1 max-md:text-sm max-md:leading-5">Usados na identificação e no contato do pedido.</p>
               </div>
             </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
               <Field id="nome" label="Nome completo" value={values.nome} error={errors.nome} autoComplete="name" placeholder="Digite seu nome completo" onChange={(value) => updateField("nome", value)} onBlur={() => validateField("nome")} />
               <Field id="email" label="E-mail" value={values.email} error={errors.email} type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" onChange={(value) => updateField("email", value)} onBlur={() => validateField("email")} />
               <Field id="telefone" label="Telefone / WhatsApp" value={values.telefone} error={errors.telefone} type="tel" inputMode="numeric" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={15} onChange={(value) => updateField("telefone", formatPhone(value))} onBlur={() => validateField("telefone")} />
             </div>
           </section>
 
-          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
+          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-4 md:p-7">
             <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                 <MapPin className="h-4 w-4" />
               </span>
               <div>
                 <h2 className="font-display text-lg font-bold text-white">Endereço de entrega</h2>
-                <p className="text-[11px] text-white/42">
+                <p className="text-[11px] text-white/42 max-md:mt-1 max-md:text-sm max-md:leading-5">
                   {freeShipping
                     ? "Informe o endereço onde o pedido será entregue."
                     : "O CEP deve ser o mesmo usado na cotação."}
@@ -641,7 +641,7 @@ export default function CheckoutForm({
               <div className="mt-5">
                 <label
                   htmlFor="saved-address"
-                  className="mb-2 block text-[12px] font-semibold text-white/85"
+                  className="mb-2 block text-[12px] font-semibold text-white/85 max-md:text-[15px]"
                 >
                   Usar endereço salvo
                 </label>
@@ -658,32 +658,32 @@ export default function CheckoutForm({
                     </option>
                   ))}
                 </select>
-                <p className="mt-2 text-[11px] text-white/40">
+                <p className="mt-2 text-[11px] text-white/40 max-md:text-sm max-md:leading-5">
                   Escolha um endereço usado anteriormente ou preencha um novo abaixo.
                 </p>
               </div>
             )}
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-6">
-              <div className="sm:col-span-2">
+            <div className="mt-5 grid gap-4 md:grid-cols-6">
+              <div className="md:col-span-2">
                 <Field id="cep" label="CEP" value={effectiveCep} error={errors.cep} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} onChange={(value) => { setCepOverride(formatCep(value)); setValues((current) => ({ ...current, logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" })); setErrors((current) => ({ ...current, cep: undefined })); setStatusMessage(""); setSelectedAddressId(""); setCepLookupStatus("idle"); setCepLookupMessage(""); }} onBlur={() => validateField("cep")} />
               </div>
-              <div className="sm:col-span-4">
+              <div className="md:col-span-4">
                 <Field id="logradouro" label="Logradouro" value={values.logradouro} error={errors.logradouro} autoComplete="address-line1" placeholder="Rua, avenida..." onChange={(value) => updateField("logradouro", value)} onBlur={() => validateField("logradouro")} />
               </div>
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <Field id="numero" label="Número" value={values.numero} error={errors.numero} autoComplete="address-line2" placeholder="123" onChange={(value) => updateField("numero", value)} onBlur={() => validateField("numero")} />
               </div>
-              <div className="sm:col-span-4">
+              <div className="md:col-span-4">
                 <Field id="complemento" label="Complemento (opcional)" value={values.complemento} error={errors.complemento} autoComplete="address-line3" placeholder="Apartamento, bloco, referência" onChange={(value) => updateField("complemento", value)} onBlur={() => validateField("complemento")} />
               </div>
-              <div className="sm:col-span-3">
+              <div className="md:col-span-3">
                 <Field id="bairro" label="Bairro" value={values.bairro} error={errors.bairro} placeholder="Seu bairro" onChange={(value) => updateField("bairro", value)} onBlur={() => validateField("bairro")} />
               </div>
-              <div className="sm:col-span-2">
+              <div className="md:col-span-2">
                 <Field id="cidade" label="Cidade" value={values.cidade} error={errors.cidade} autoComplete="address-level2" placeholder="Sua cidade" onChange={(value) => updateField("cidade", value)} onBlur={() => validateField("cidade")} />
               </div>
-              <div className="sm:col-span-1">
+              <div className="md:col-span-1">
                 <Field id="uf" label="UF" value={values.uf} error={errors.uf} autoComplete="address-level1" placeholder="SP" maxLength={2} onChange={(value) => updateField("uf", value.replace(/[^A-Za-z]/g, "").toUpperCase())} onBlur={() => validateField("uf")} />
               </div>
             </div>
@@ -691,7 +691,7 @@ export default function CheckoutForm({
             {cepLookupStatus !== "idle" && (
               <p
                 role={cepLookupStatus === "error" ? "alert" : "status"}
-                className={`mt-4 flex items-center gap-2 text-[11px] leading-5 ${
+                className={`mt-4 flex items-center gap-2 text-[11px] leading-5 max-md:text-sm ${
                   cepLookupStatus === "error"
                     ? "text-red-300"
                     : cepLookupStatus === "success"
@@ -713,21 +713,21 @@ export default function CheckoutForm({
             )}
 
             {!cepMatchesShipping && (
-              <p role="alert" className="mt-4 flex gap-2 rounded-md border border-amber-300/20 bg-amber-300/[0.06] p-3 text-[11px] leading-5 text-amber-200">
+              <p role="alert" className="mt-4 flex gap-2 rounded-md border border-amber-300/20 bg-amber-300/[0.06] p-3 text-[11px] leading-5 text-amber-200 max-md:text-sm">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 Este CEP é diferente do cotado. Volte ao carrinho e recalcule o frete para continuar.
               </p>
             )}
           </section>
 
-          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
+          <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-4 md:p-7">
             <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
               <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
                 <ReceiptText className="h-4 w-4" />
               </span>
               <div>
                 <h2 className="font-display text-lg font-bold text-white">Dados para nota fiscal</h2>
-                <p className="text-[11px] text-white/42">Documento utilizado na emissão da nota e no pagamento.</p>
+                <p className="text-[11px] text-white/42 max-md:mt-1 max-md:text-sm max-md:leading-5">Documento utilizado na emissão da nota e no pagamento.</p>
               </div>
             </div>
             <div className="mt-5 max-w-[420px]">
@@ -736,7 +736,7 @@ export default function CheckoutForm({
           </section>
         </div>
 
-        <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
+        <aside className="space-y-3 max-md:hidden lg:sticky lg:top-24 lg:self-start">
           <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5">
             <h2 className="font-display text-lg font-bold text-white">Resumo do pedido</h2>
             <dl className="mt-5 space-y-3 text-[12px]">
@@ -815,12 +815,11 @@ export default function CheckoutForm({
           </section>
         </aside>
 
-        {/* CTA fixo no rodapé — mobile-only. type=submit dispara o mesmo envio. */}
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080808]/98 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] backdrop-blur md:hidden">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="store-primary-action font-display flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-base font-extrabold uppercase transition disabled:cursor-not-allowed disabled:opacity-45"
+            className="store-primary-action font-display flex min-h-14 w-full items-center justify-center gap-2 px-4 text-sm font-extrabold uppercase transition disabled:cursor-not-allowed disabled:opacity-45"
           >
             {isSubmitting ? (
               <>
