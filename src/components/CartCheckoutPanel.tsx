@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransiti
 import { useRouter } from "next/navigation";
 import { AlertCircle, ArrowRight, Info, LoaderCircle, Tag, Truck, X } from "lucide-react";
 import PaymentBadges from "@/components/PaymentBadges";
+import { useCart } from "@/components/CartProvider";
 import { applyCouponAction, removeCouponAction } from "@/lib/actions/cartActions";
+import { trackMetaPixelCommerceEvent } from "@/lib/client/metaPixel";
 import type { AppliedCartCoupon } from "@/types/cart";
 import {
   clearCheckoutShippingSelection,
@@ -61,6 +63,7 @@ export default function CartCheckoutPanel({
   isLoggedIn,
 }: CartCheckoutPanelProps) {
   const router = useRouter();
+  const { cart } = useCart();
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
   const [couponPending, startCoupon] = useTransition();
@@ -215,6 +218,15 @@ export default function CartCheckoutPanel({
 
   const goToCheckout = () => {
     if (freeShipping) {
+      trackMetaPixelCommerceEvent({
+        event: "InitiateCheckout",
+        items: cart.items.map((item) => ({
+          variantId: item.variantId,
+          quantity: item.quantidade,
+          unitPrice: item.precoUnitario,
+        })),
+        value: total,
+      });
       router.push(isLoggedIn ? "/checkout" : "/checkout/identificacao");
       return;
     }
@@ -235,6 +247,15 @@ export default function CartCheckoutPanel({
       }, 350);
       return;
     }
+    trackMetaPixelCommerceEvent({
+      event: "InitiateCheckout",
+      items: cart.items.map((item) => ({
+        variantId: item.variantId,
+        quantity: item.quantidade,
+        unitPrice: item.precoUnitario,
+      })),
+      value: total,
+    });
     router.push(isLoggedIn ? "/checkout" : "/checkout/identificacao");
   };
 

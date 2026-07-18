@@ -717,8 +717,16 @@ export async function getOrderPaymentStatus(
       id: true,
       userId: true,
       status: true,
+      total: true,
       mercadoPagoPaymentStatus: true,
       pagoEm: true,
+      items: {
+        select: {
+          variantId: true,
+          quantidade: true,
+          precoUnitario: true,
+        },
+      },
     },
   });
 
@@ -746,5 +754,11 @@ export async function getOrderPaymentStatus(
     status: order.status,
     paymentStatus: order.mercadoPagoPaymentStatus,
     pagoEm: order.pagoEm,
+    total: Number(order.total),
+    items: order.items.map((item) => ({
+      variantId: item.variantId,
+      quantity: item.quantidade,
+      unitPrice: Number(item.precoUnitario),
+    })),
   };
 }

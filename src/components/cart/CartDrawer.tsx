@@ -23,6 +23,7 @@ import {
   subscribeCheckoutShippingSelection,
 } from "@/lib/client/checkoutShippingStorage";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
+import { trackMetaPixelCommerceEvent } from "@/lib/client/metaPixel";
 import type { StoreAnnouncementItem } from "@/types/storePromotion";
 
 const focusableSelector = [
@@ -143,6 +144,15 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
       return;
     }
     setCheckoutError("");
+    trackMetaPixelCommerceEvent({
+      event: "InitiateCheckout",
+      items: cart.items.map((item) => ({
+        variantId: item.variantId,
+        quantity: item.quantidade,
+        unitPrice: item.precoUnitario,
+      })),
+      value: total,
+    });
     closeCart();
     router.push("/checkout");
   };

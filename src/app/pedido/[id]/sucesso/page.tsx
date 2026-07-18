@@ -23,6 +23,7 @@ export default async function OrderSuccessPage({
       description="O retorno do pagamento foi concluído. Agora estamos aguardando a confirmação oficial do Mercado Pago para atualizar seu pedido."
       orderId={id}
       initialOrderStatus={order?.status ?? null}
+      initialPurchaseData={order ? { total: order.total, items: order.items } : null}
     />
   );
 }

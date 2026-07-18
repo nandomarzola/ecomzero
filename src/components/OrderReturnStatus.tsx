@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import { clearCheckoutShippingSelection } from "@/lib/client/checkoutShippingStorage";
+import { trackMetaPixelCommerceEvent, type MetaPixelItem } from "@/lib/client/metaPixel";
 
 type OrderReturnStatusProps = {
   tone: "success" | "pending" | "failure";
@@ -23,6 +24,10 @@ type OrderReturnStatusProps = {
     | "pago"
     | "cancelado"
     | null;
+  initialPurchaseData?: {
+    total: number;
+    items: MetaPixelItem[];
+  } | null;
 };
 
 const styles: Record<
@@ -52,9 +57,11 @@ export default function OrderReturnStatus({
   description,
   orderId,
   initialOrderStatus,
+  initialPurchaseData = null,
 }: OrderReturnStatusProps) {
   const { clearCart } = useCart();
   const [orderStatus, setOrderStatus] = useState(initialOrderStatus);
+  const [purchaseData, setPurchaseData] = useState(initialPurchaseData);
   const effectiveTone =
     orderStatus === "pago"
       ? "success"
@@ -77,6 +84,31 @@ export default function OrderReturnStatus({
   }, [clearCart, orderStatus]);
 
   useEffect(() => {
+    if (orderStatus !== "pago" || !purchaseData) return;
+    const storageKey = `meta-purchase:${orderId}`;
+    let alreadyTracked = false;
+    try {
+      alreadyTracked = Boolean(window.sessionStorage.getItem(storageKey));
+    } catch {
+      alreadyTracked = false;
+    }
+    if (alreadyTracked) return;
+    const sent = trackMetaPixelCommerceEvent({
+      event: "Purchase",
+      items: purchaseData.items,
+      value: purchaseData.total,
+      eventId: `purchase_${orderId}`,
+    });
+    if (sent) {
+      try {
+        window.sessionStorage.setItem(storageKey, "1");
+      } catch {
+        return;
+      }
+    }
+  }, [orderId, orderStatus, purchaseData]);
+
+  useEffect(() => {
     if (orderStatus !== "aguardando_pagamento") return;
 
     const controller = new AbortController();
@@ -89,8 +121,15 @@ export default function OrderReturnStatus({
         if (!response.ok) return;
         const data = (await response.json()) as {
           status?: OrderReturnStatusProps["initialOrderStatus"];
+          total?: number;
+          items?: MetaPixelItem[];
         };
-        if (data.status) setOrderStatus(data.status);
+        if (data.status) {
+          setOrderStatus(data.status);
+          if (typeof data.total === "number" && Array.isArray(data.items)) {
+            setPurchaseData({ total: data.total, items: data.items });
+          }
+        }
       } catch {
         return;
       }

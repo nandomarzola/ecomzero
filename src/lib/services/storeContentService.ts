@@ -240,7 +240,17 @@ export const getStoreSettings = cache(async () => {
       where: { id: "singleton" },
       create: { id: "singleton" },
       update: {},
-      omit: { footerBenefits: true, footerSecurityItems: true },
+      omit: {
+        footerBenefits: true,
+        footerSecurityItems: true,
+        metaCatalogFeedAtivo: true,
+        metaCatalogIncludeOutOfStock: true,
+        metaCatalogIncludeSalePrice: true,
+        metaCatalogIncludeImages: true,
+        metaCatalogDefaultBrand: true,
+        metaCatalogDefaultCategory: true,
+        metaCatalogLastValidatedAt: true,
+      },
     }),
     getFooterContentSettings(),
   ]);

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import ShippingCalculator from "@/components/ShippingCalculator";
+import { trackMetaPixelCommerceEvent } from "@/lib/client/metaPixel";
 import type { ProductVariant } from "@/types/product";
 
 type ProductPurchaseProps = {
@@ -21,6 +22,7 @@ const formatPrice = (price: number) =>
 
 export default function ProductPurchase({
   variants,
+  productName,
 }: ProductPurchaseProps) {
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
@@ -34,6 +36,15 @@ export default function ProductPurchase({
   const discountPercentage = hasDiscount
     ? Math.round((1 - selectedVariant.precoPor / selectedVariant.precoDe) * 100)
     : 0;
+
+  useEffect(() => {
+    trackMetaPixelCommerceEvent({
+      event: "ViewContent",
+      items: [{ variantId: selectedVariant.id, quantity: 1, unitPrice: selectedVariant.precoPor }],
+      value: selectedVariant.precoPor,
+      contentName: productName,
+    });
+  }, [productName, selectedVariant]);
 
   const handleSelectVariant = (variantId: string) => {
     setSelectedId(variantId);
@@ -50,6 +61,12 @@ export default function ProductPurchase({
       });
 
       if (result.success) {
+        trackMetaPixelCommerceEvent({
+          event: "AddToCart",
+          items: [{ variantId: selectedVariant.id, quantity, unitPrice: selectedVariant.precoPor }],
+          value: selectedVariant.precoPor * quantity,
+          contentName: productName,
+        });
         if (action === "buy") {
           window.location.assign("/carrinho");
         }
