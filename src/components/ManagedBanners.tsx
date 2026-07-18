@@ -125,12 +125,12 @@ export function ManagedBannerSection({ banners, position }: { banners: StoreBann
   const items = isBottom ? banners.slice(0, 2) : banners;
   const bottomPair = isBottom && items.length >= 2;
   return (
-    <section className={`mx-auto grid max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-10 ${bottomPair ? "grid-cols-2 max-md:grid-cols-1 gap-3" : "gap-4"}`}>
+    <section className={`mx-auto grid max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-10 ${!isBottom ? "max-md:px-0" : ""} ${bottomPair ? "grid-cols-2 max-md:grid-cols-1 gap-3" : "gap-4"}`}>
       {items.map((banner) => (
         <article
           key={banner.id}
           className={`relative overflow-hidden rounded-xl border border-white/[0.08] ${
-            !isBottom ? "aspect-[1920/819]" : bottomPair ? "aspect-square" : "aspect-[2/1]"
+            !isBottom ? "aspect-[1920/819] max-md:rounded-none max-md:border-x-0" : bottomPair ? "aspect-square" : "aspect-[2/1]"
           }`}
         >
           <BannerImage
