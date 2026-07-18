@@ -8,7 +8,10 @@ import {
   Camera,
   Clock3,
   Code2,
+  FileText,
   Globe2,
+  Headphones,
+  LockKeyhole,
   Mail,
   MessageCircle,
   PackageCheck,
@@ -17,13 +20,21 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  Truck,
   Trash2,
   Users,
   Video,
 } from "lucide-react";
-import type { BusinessHourConfig, FooterColumnConfig } from "@/lib/settingsConfigDomain";
+import type {
+  BusinessHourConfig,
+  FooterColumnConfig,
+  FooterContentItemConfig,
+  FooterIconKey,
+} from "@/lib/settingsConfigDomain";
 
 export type RemainingSettingsFields = {
+  descricaoFooter: string;
+  mensagemFooter: string;
   linkYoutube: string;
   linkTwitter: string;
   instagramAtivo: boolean;
@@ -44,6 +55,8 @@ export type RemainingSettingsFields = {
   whatsappMensagem: string;
   horariosAtendimento: BusinessHourConfig[];
   footerColumns: FooterColumnConfig[];
+  footerBenefits: FooterContentItemConfig[];
+  footerSecurityItems: FooterContentItemConfig[];
   footerSeloSeguranca: boolean;
   footerCopyrightTexto: string;
   footerCopyrightAno: "automatico" | "fixo";
@@ -92,7 +105,71 @@ function SectionHeader({ title, description }: { title: string; description: str
   return <header><h2 className="font-display text-[15px] font-bold text-white">{title}</h2><p className="mt-1 text-[10px] text-white/38">{description}</p></header>;
 }
 
-export function FooterSettingsSection({ form, onChange }: { form: RemainingSettingsFields; onChange: Change }) {
+const footerIconOptions: Array<{ value: FooterIconKey; label: string; icon: typeof Truck }> = [
+  { value: "truck", label: "Entrega", icon: Truck },
+  { value: "shield", label: "Escudo", icon: ShieldCheck },
+  { value: "receipt", label: "Documento", icon: FileText },
+  { value: "badge", label: "Certificado", icon: BadgeCheck },
+  { value: "lock", label: "Cadeado", icon: LockKeyhole },
+  { value: "headset", label: "Atendimento", icon: Headphones },
+];
+
+function FooterItemsEditor({
+  items,
+  onUpdate,
+}: {
+  items: FooterContentItemConfig[];
+  onUpdate: (id: string, patch: Partial<FooterContentItemConfig>) => void;
+}) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      {items.map((item) => {
+        const Icon = footerIconOptions.find((option) => option.value === item.icone)?.icon ?? ShieldCheck;
+        return (
+          <article key={item.id} className="rounded-md border border-white/[0.08] bg-[#090909] p-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md border border-[#A9EC17]/20 bg-[#A9EC17]/[0.05] text-[#A9EC17]">
+                <Icon className="h-4 w-4" />
+              </span>
+              <Toggle checked={item.ativo} onChange={() => onUpdate(item.id, { ativo: !item.ativo })} label={`Exibir ${item.titulo}`} />
+            </div>
+            <div className="mt-3 grid gap-2">
+              <input aria-label="Título" required maxLength={40} value={item.titulo} onChange={(event) => onUpdate(item.id, { titulo: event.target.value })} className={inputClass} />
+              <input aria-label="Descrição" required maxLength={100} value={item.descricao} onChange={(event) => onUpdate(item.id, { descricao: event.target.value })} className={inputClass} />
+              <select aria-label="Ícone" value={item.icone} onChange={(event) => onUpdate(item.id, { icone: event.target.value as FooterIconKey })} className={inputClass}>
+                {footerIconOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+export function FooterSettingsSection({
+  form,
+  emailSuporte,
+  telefoneSuporte,
+  whatsapp,
+  linkInstagram,
+  linkFacebook,
+  linkTiktok,
+  onChange,
+  onContactChange,
+  onSocialChange,
+}: {
+  form: RemainingSettingsFields;
+  emailSuporte: string;
+  telefoneSuporte: string;
+  whatsapp: string;
+  linkInstagram: string;
+  linkFacebook: string;
+  linkTiktok: string;
+  onChange: Change;
+  onContactChange: (key: "emailSuporte" | "telefoneSuporte" | "whatsapp", value: string) => void;
+  onSocialChange: (key: "linkInstagram" | "linkFacebook" | "linkTiktok", value: string) => void;
+}) {
   function updateColumn(id: string, patch: Partial<FooterColumnConfig>) {
     onChange("footerColumns", form.footerColumns.map((column) => column.id === id ? { ...column, ...patch } : column));
   }
@@ -120,12 +197,43 @@ export function FooterSettingsSection({ form, onChange }: { form: RemainingSetti
       : column));
   }
 
+  function updateFooterItem(
+    key: "footerBenefits" | "footerSecurityItems",
+    id: string,
+    patch: Partial<FooterContentItemConfig>,
+  ) {
+    onChange(key, form[key].map((item) => item.id === id ? { ...item, ...patch } : item));
+  }
+
   return (
     <div className="space-y-5">
-      <SectionHeader title="Rodapé" description="Edite as colunas, dados legais, copyright e selo exibidos no rodapé real da loja." />
+      <SectionHeader title="Rodapé" description="Configure todo o conteúdo do novo rodapé. As formas de pagamento são fixas e processadas pelo Mercado Pago." />
+      <section className={`${panelClass} grid gap-4 sm:grid-cols-2`}>
+        <label className="flex flex-col gap-1.5 text-[10px] text-white/55 sm:col-span-2">
+          Descrição ao lado da logo
+          <textarea required minLength={10} maxLength={160} value={form.descricaoFooter} onChange={(event) => onChange("descricaoFooter", event.target.value)} className={`${inputClass} min-h-20 resize-y py-3`} />
+        </label>
+        <label className="flex flex-col gap-1.5 text-[10px] text-white/55 sm:col-span-2">
+          Mensagem do bloco “Site seguro”
+          <textarea required minLength={5} maxLength={160} value={form.mensagemFooter} onChange={(event) => onChange("mensagemFooter", event.target.value)} className={`${inputClass} min-h-20 resize-y py-3`} />
+        </label>
+      </section>
+      <section className={`${panelClass} space-y-4`}>
+        <div><h3 className="text-[10px] font-semibold text-white/70">Faixa superior de benefícios</h3><p className="mt-1 text-[9px] text-white/30">Quatro destaques exibidos no topo do rodapé, como no layout de referência.</p></div>
+        <FooterItemsEditor items={form.footerBenefits} onUpdate={(id, patch) => updateFooterItem("footerBenefits", id, patch)} />
+      </section>
+      <ContactSettingsSection
+        form={form}
+        emailSuporte={emailSuporte}
+        telefoneSuporte={telefoneSuporte}
+        whatsapp={whatsapp}
+        onChange={onChange}
+        onContactChange={onContactChange}
+      />
+      <HoursSettingsSection form={form} onChange={onChange} />
       <section className={`${panelClass} space-y-4`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h3 className="text-[10px] font-semibold text-white/70">Colunas de navegação</h3><p className="mt-1 text-[9px] text-white/30">A coluna de categorias é alimentada automaticamente pelo catálogo.</p></div>
+          <div><h3 className="text-[10px] font-semibold text-white/70">Colunas de navegação</h3><p className="mt-1 text-[9px] text-white/30">O layout mostra as duas primeiras colunas de links ativas. Categorias entram automaticamente se faltar uma segunda coluna de links.</p></div>
           <button type="button" onClick={addColumn} disabled={form.footerColumns.length >= 5} className="inline-flex h-8 items-center gap-2 rounded-md border border-[#A9EC17]/35 px-3 text-[9px] font-semibold text-[#A9EC17] disabled:opacity-35"><Plus className="h-3.5 w-3.5" /> Nova coluna</button>
         </div>
         <div className="space-y-3">
@@ -156,6 +264,22 @@ export function FooterSettingsSection({ form, onChange }: { form: RemainingSetti
           ))}
         </div>
       </section>
+      <section className={`${panelClass} space-y-4`}>
+        <div><h3 className="text-[10px] font-semibold text-white/70">Coluna “Compra segura”</h3><p className="mt-1 text-[9px] text-white/30">Edite os cinco argumentos de confiança exibidos ao lado dos links.</p></div>
+        <FooterItemsEditor items={form.footerSecurityItems} onUpdate={(id, patch) => updateFooterItem("footerSecurityItems", id, patch)} />
+      </section>
+      <section className="rounded-md border border-sky-400/15 bg-sky-400/[0.04] px-4 py-3">
+        <p className="text-[10px] font-semibold text-sky-100/70">Formas de pagamento</p>
+        <p className="mt-1 text-[9px] leading-4 text-sky-100/45">Pix, cartões e boleto são informações fixas do checkout. O footer sempre informa que o processamento é feito pelo Mercado Pago.</p>
+      </section>
+      <SocialSettingsSection
+        form={form}
+        linkInstagram={linkInstagram}
+        linkFacebook={linkFacebook}
+        linkTiktok={linkTiktok}
+        onChange={onChange}
+        onLegacyChange={onSocialChange}
+      />
       <section className={`${panelClass} grid gap-4 sm:grid-cols-2`}>
         <label className="flex flex-col gap-1.5 text-[10px] text-white/55">Razão social<input value={form.razaoSocial} maxLength={100} onChange={(event) => onChange("razaoSocial", event.target.value)} className={inputClass} /></label>
         <label className="flex flex-col gap-1.5 text-[10px] text-white/55">CNPJ<input value={form.cnpjLoja} maxLength={18} onChange={(event) => onChange("cnpjLoja", event.target.value)} placeholder="00.000.000/0000-00" className={inputClass} /></label>
@@ -254,5 +378,59 @@ export function GeneralSettingsSection({ form, onChange }: { form: RemainingSett
 
 export function FooterPreview({ form, nomeLoja, mensagemFooter, logoUrl, color }: { form: RemainingSettingsFields; nomeLoja: string; mensagemFooter: string; logoUrl: string; color: string }) {
   const year = form.footerCopyrightAno === "fixo" && form.footerCopyrightAnoFixo ? form.footerCopyrightAnoFixo : new Date().getFullYear();
-  return <div className="bg-[#080808] p-4"><div className="flex items-center gap-2 border-b border-white/[0.08] pb-3">{logoUrl ? <img src={logoUrl} alt="" className="h-7 max-w-24 object-contain" /> : <strong style={{ color }}>{nomeLoja}</strong>}<span className="ml-auto text-[8px] text-white/35">{mensagemFooter}</span></div><div className="grid grid-cols-2 gap-4 py-4">{form.footerColumns.filter((column) => column.ativo).slice(0, 4).map((column) => <div key={column.id}><strong className="text-[8px] uppercase tracking-wider text-white/70">{column.titulo}</strong><div className="mt-2 space-y-1.5 text-[8px] text-white/35">{column.tipo === "categorias" ? <><p>Categoria principal</p><p>Outra categoria</p></> : column.links.filter((link) => link.ativo).slice(0, 4).map((link) => <p key={link.id}>{link.label}</p>)}</div></div>)}</div><div className="flex flex-wrap gap-2 border-t border-white/[0.08] py-3">{form.instagramAtivo ? <Camera className="h-3.5 w-3.5" style={{ color }} /> : null}{form.facebookAtivo ? <Users className="h-3.5 w-3.5" style={{ color }} /> : null}{form.youtubeAtivo ? <Video className="h-3.5 w-3.5" style={{ color }} /> : null}{form.whatsappAtivo ? <MessageCircle className="h-3.5 w-3.5" style={{ color }} /> : null}{form.footerSeloSeguranca ? <span className="ml-auto inline-flex items-center gap-1 text-[8px] text-white/45"><BadgeCheck className="h-3.5 w-3.5" style={{ color }} /> Compra protegida</span> : null}</div><p className="border-t border-white/[0.08] pt-3 text-[7px] leading-3 text-white/30">© {year} {nomeLoja}. {form.footerCopyrightTexto}</p>{form.razaoSocial || form.cnpjLoja ? <p className="mt-1 text-[7px] text-white/25">{[form.razaoSocial, form.cnpjLoja].filter(Boolean).join(" · ")}</p> : null}</div>;
+  const columns = form.footerColumns
+    .filter((column) => column.ativo)
+    .sort((first, second) => Number(first.tipo === "categorias") - Number(second.tipo === "categorias"))
+    .slice(0, 2);
+  return (
+    <div className="overflow-hidden bg-[#050505] text-white">
+      <div className="grid grid-cols-4 gap-px border-b border-white/[0.08] bg-white/[0.08] p-px">
+        {form.footerBenefits.filter((item) => item.ativo).map((item) => (
+          <div key={item.id} className="bg-[#0A0A0A] p-2">
+            <BadgeCheck className="h-3.5 w-3.5" style={{ color }} />
+            <strong className="mt-1 block text-[6px] uppercase text-white/75">{item.titulo}</strong>
+            <p className="mt-0.5 line-clamp-2 text-[5px] leading-2 text-white/30">{item.descricao}</p>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-[1.2fr_repeat(4,minmax(0,1fr))] gap-2 p-3">
+        <div>
+          {logoUrl ? <img src={logoUrl} alt="" className="h-6 max-w-20 object-contain" /> : <strong className="text-[8px]" style={{ color }}>{nomeLoja}</strong>}
+          <p className="mt-2 line-clamp-3 text-[5px] leading-2 text-white/35">{form.descricaoFooter}</p>
+          {form.whatsappAtivo ? <p className="mt-2 text-[5px] text-white/45">WhatsApp</p> : null}
+        </div>
+        {columns.map((column) => (
+          <div key={column.id}>
+            <strong className="text-[6px] uppercase text-white/70">{column.titulo}</strong>
+            <span className="mt-1 block h-px w-4" style={{ backgroundColor: color }} />
+            <div className="mt-2 space-y-1 text-[5px] text-white/35">
+              {column.tipo === "categorias" ? <><p>Categoria principal</p><p>Outra categoria</p></> : column.links.filter((link) => link.ativo).slice(0, 4).map((link) => <p key={link.id}>{link.label}</p>)}
+            </div>
+          </div>
+        ))}
+        <div>
+          <strong className="text-[6px] uppercase text-white/70">Compra segura</strong>
+          <span className="mt-1 block h-px w-4" style={{ backgroundColor: color }} />
+          <div className="mt-2 space-y-1 text-[5px] text-white/35">{form.footerSecurityItems.filter((item) => item.ativo).slice(0, 5).map((item) => <p key={item.id}>{item.titulo}</p>)}</div>
+        </div>
+        <div>
+          <strong className="text-[6px] uppercase text-white/70">Pagamento</strong>
+          <span className="mt-1 block h-px w-4" style={{ backgroundColor: color }} />
+          <div className="mt-2 grid grid-cols-2 gap-1">{["Pix", "Visa", "Master", "Elo", "Amex", "Boleto"].map((method) => <span key={method} className="rounded border border-white/10 px-1 py-1 text-center text-[4px] text-white/55">{method}</span>)}</div>
+          <p className="mt-1.5 text-[4px] font-semibold text-sky-300">via Mercado Pago</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 border-y border-white/[0.08] px-3 py-2">
+        {form.footerSeloSeguranca ? <BadgeCheck className="h-3.5 w-3.5" style={{ color }} /> : null}
+        <p className="line-clamp-2 flex-1 text-[5px] text-white/35">{mensagemFooter}</p>
+        {form.instagramAtivo ? <Camera className="h-3 w-3" style={{ color }} /> : null}
+        {form.facebookAtivo ? <Users className="h-3 w-3" style={{ color }} /> : null}
+        {form.youtubeAtivo ? <Video className="h-3 w-3" style={{ color }} /> : null}
+      </div>
+      <div className="p-2 text-center text-[5px] leading-2 text-white/30">
+        <p>© {year} {nomeLoja}. {form.footerCopyrightTexto}</p>
+        {form.razaoSocial || form.cnpjLoja ? <p>{[form.razaoSocial, form.cnpjLoja].filter(Boolean).join(" · ")}</p> : null}
+      </div>
+    </div>
+  );
 }

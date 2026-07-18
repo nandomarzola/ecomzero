@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BRAZIL_UFS } from "@/lib/brazilStates";
+import { FOOTER_ICON_KEYS } from "@/lib/settingsConfigDomain";
 
 const optionalText = (max: number) => z.preprocess((value) => typeof value === "string" && value.trim() === "" ? undefined : value, z.string().trim().max(max).optional());
 const optionalUrl = z.preprocess((value) => typeof value === "string" && value.trim() === "" ? undefined : value, z.string().url("Informe uma URL válida").optional());
@@ -40,6 +41,14 @@ const footerColumnSchema = z.object({
   tipo: z.enum(["links", "categorias"]),
   ativo: z.boolean(),
   links: z.array(footerLinkSchema).max(10),
+});
+
+const footerContentItemSchema = z.object({
+  id: z.string().trim().min(1).max(100),
+  titulo: z.string().trim().min(2, "Informe o título").max(40),
+  descricao: z.string().trim().min(3, "Informe a descrição").max(100),
+  icone: z.enum(FOOTER_ICON_KEYS),
+  ativo: z.boolean(),
 });
 
 const businessHourSchema = z.object({
@@ -106,6 +115,8 @@ export const storeSettingsSchema = z.object({
   whatsappMensagem: z.string().trim().min(5).max(200),
   horariosAtendimento: z.array(businessHourSchema).length(7),
   footerColumns: z.array(footerColumnSchema).min(1).max(5),
+  footerBenefits: z.array(footerContentItemSchema).length(4),
+  footerSecurityItems: z.array(footerContentItemSchema).length(5),
   footerSeloSeguranca: z.boolean(),
   footerCopyrightTexto: z.string().trim().min(3).max(120),
   footerCopyrightAno: z.enum(["automatico", "fixo"]),

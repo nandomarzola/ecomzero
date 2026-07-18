@@ -14,6 +14,18 @@ export type FooterColumnConfig = {
   links: FooterLinkConfig[];
 };
 
+export const FOOTER_ICON_KEYS = ["truck", "shield", "receipt", "badge", "lock", "headset"] as const;
+
+export type FooterIconKey = (typeof FOOTER_ICON_KEYS)[number];
+
+export type FooterContentItemConfig = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  icone: FooterIconKey;
+  ativo: boolean;
+};
+
 export type BusinessHourConfig = {
   dia: string;
   label: string;
@@ -43,7 +55,7 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumnConfig[] = [
   },
   {
     id: "ajuda",
-    titulo: "Ajuda",
+    titulo: "Atendimento",
     tipo: "links",
     ativo: true,
     links: [
@@ -52,6 +64,21 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumnConfig[] = [
       { id: "entrega", label: "Entrega e segurança", href: "/#sobre", ativo: true, novaAba: false },
     ],
   },
+];
+
+export const DEFAULT_FOOTER_BENEFITS: FooterContentItemConfig[] = [
+  { id: "envio", titulo: "Envio rápido", descricao: "Enviamos para todo o Brasil", icone: "truck", ativo: true },
+  { id: "compra-segura", titulo: "Compra segura", descricao: "Ambiente 100% seguro e criptografado", icone: "shield", ativo: true },
+  { id: "nota-fiscal", titulo: "Nota fiscal", descricao: "Todos os pedidos com nota fiscal", icone: "receipt", ativo: true },
+  { id: "originais", titulo: "Produtos originais", descricao: "Trabalhamos apenas com produtos originais", icone: "badge", ativo: true },
+];
+
+export const DEFAULT_FOOTER_SECURITY_ITEMS: FooterContentItemConfig[] = [
+  { id: "protegida", titulo: "Compra protegida", descricao: "Checkout seguro", icone: "shield", ativo: true },
+  { id: "nota-fiscal", titulo: "Nota fiscal", descricao: "Em todos os pedidos", icone: "receipt", ativo: true },
+  { id: "ssl", titulo: "SSL - Conexão segura", descricao: "Dados criptografados", icone: "lock", ativo: true },
+  { id: "originais", titulo: "Produtos originais", descricao: "Compra com procedência", icone: "badge", ativo: true },
+  { id: "suporte", titulo: "Suporte rápido", descricao: "Via WhatsApp", icone: "headset", ativo: true },
 ];
 
 export const DEFAULT_BUSINESS_HOURS: BusinessHourConfig[] = [
@@ -66,6 +93,37 @@ export const DEFAULT_BUSINESS_HOURS: BusinessHourConfig[] = [
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeFixedFooterItems(
+  value: unknown,
+  defaults: FooterContentItemConfig[],
+): FooterContentItemConfig[] {
+  if (!Array.isArray(value)) return structuredClone(defaults);
+  const entries = new Map(
+    value.flatMap((entry) => isRecord(entry) && typeof entry.id === "string" ? [[entry.id, entry] as const] : []),
+  );
+  return defaults.map((fallback) => {
+    const entry = entries.get(fallback.id);
+    if (!entry) return { ...fallback };
+    return {
+      id: fallback.id,
+      titulo: typeof entry.titulo === "string" && entry.titulo.trim() ? entry.titulo : fallback.titulo,
+      descricao: typeof entry.descricao === "string" && entry.descricao.trim() ? entry.descricao : fallback.descricao,
+      icone: typeof entry.icone === "string" && FOOTER_ICON_KEYS.includes(entry.icone as FooterIconKey)
+        ? entry.icone as FooterIconKey
+        : fallback.icone,
+      ativo: entry.ativo !== false,
+    };
+  });
+}
+
+export function normalizeFooterBenefits(value: unknown): FooterContentItemConfig[] {
+  return normalizeFixedFooterItems(value, DEFAULT_FOOTER_BENEFITS);
+}
+
+export function normalizeFooterSecurityItems(value: unknown): FooterContentItemConfig[] {
+  return normalizeFixedFooterItems(value, DEFAULT_FOOTER_SECURITY_ITEMS);
 }
 
 export function normalizeFooterColumns(value: unknown): FooterColumnConfig[] {
@@ -85,7 +143,13 @@ export function normalizeFooterColumns(value: unknown): FooterColumnConfig[] {
           }];
         })
       : [];
-    return [{ id: entry.id, titulo: entry.titulo, tipo, ativo: entry.ativo !== false, links }];
+    return [{
+      id: entry.id,
+      titulo: entry.id === "ajuda" && entry.titulo === "Ajuda" ? "Atendimento" : entry.titulo,
+      tipo,
+      ativo: entry.ativo !== false,
+      links,
+    }];
   });
   return columns.length ? columns : structuredClone(DEFAULT_FOOTER_COLUMNS);
 }

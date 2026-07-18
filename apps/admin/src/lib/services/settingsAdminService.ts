@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/db";
-import { normalizeBusinessHours, normalizeFooterColumns } from "@/lib/settingsConfigDomain";
+import {
+  normalizeBusinessHours,
+  normalizeFooterBenefits,
+  normalizeFooterColumns,
+  normalizeFooterSecurityItems,
+} from "@/lib/settingsConfigDomain";
 import type { StoreSettingsInput } from "@/lib/validation/settings";
 
 const defaults = {
   id: "singleton", nomeLoja: "EcomZero", descricaoFooter: "Produtos inteligentes, úteis e de qualidade para transformar sua rotina.",
-  mensagemFooter: "Produtos úteis para facilitar o seu dia a dia.", barraAnuncioAtiva: false,
+  mensagemFooter: "Este site utiliza conexão segura e não armazena os dados do seu cartão.", barraAnuncioAtiva: false,
   barraAnuncioVelocidade: 5,
   logoUrl: "/images/logo2.png", corPrincipal: "#A9EC17", fusoHorario: "America/Sao_Paulo",
   lojaAtiva: true, plano: "Profissional", moeda: "BRL", idioma: "pt-BR",
@@ -18,6 +23,8 @@ export async function getStoreSettings() {
     ...settings,
     horariosAtendimento: normalizeBusinessHours(settings.horariosAtendimento),
     footerColumns: normalizeFooterColumns(settings.footerColumns),
+    footerBenefits: normalizeFooterBenefits(settings.footerBenefits),
+    footerSecurityItems: normalizeFooterSecurityItems(settings.footerSecurityItems),
     valorMinimoPedido: Number(settings.valorMinimoPedido),
   };
 }
@@ -38,12 +45,21 @@ export async function getAnnouncementBarItems() {
 }
 
 export async function updateStoreSettings(input: StoreSettingsInput) {
-  const { announcementItems, horariosAtendimento, footerColumns, ...settingsInput } = input;
+  const {
+    announcementItems,
+    horariosAtendimento,
+    footerColumns,
+    footerBenefits,
+    footerSecurityItems,
+    ...settingsInput
+  } = input;
   const firstActiveItem = announcementItems.find((item) => item.ativo);
   const data = {
     ...settingsInput,
     horariosAtendimento,
     footerColumns,
+    footerBenefits,
+    footerSecurityItems,
     barraAnuncioTexto: firstActiveItem?.texto ?? null,
     barraAnuncioLink: firstActiveItem?.link ?? null,
     barraAnuncioCor: settingsInput.barraAnuncioCor ?? null,

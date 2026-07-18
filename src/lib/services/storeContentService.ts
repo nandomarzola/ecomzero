@@ -33,6 +33,35 @@ export type StoreBanner = {
 
 export type StoreAnnouncementBarItem = StoreAnnouncementItem;
 
+const legacyFooterMessage = "Produtos úteis para facilitar o seu dia a dia.";
+const secureFooterMessage = "Este site utiliza conexão segura e não armazena os dados do seu cartão.";
+
+async function getFooterContentSettings() {
+  const columns = await prisma.$queryRaw<Array<{ columnName: string }>>`
+    SELECT "column_name" AS "columnName"
+    FROM "information_schema"."columns"
+    WHERE "table_schema" = current_schema()
+      AND "table_name" = 'StoreSettings'
+      AND "column_name" IN ('footerBenefits', 'footerSecurityItems')
+  `;
+
+  if (columns.length !== 2) {
+    return { footerBenefits: null, footerSecurityItems: null };
+  }
+
+  const [settings] = await prisma.$queryRaw<Array<{
+    footerBenefits: unknown;
+    footerSecurityItems: unknown;
+  }>>`
+    SELECT "footerBenefits", "footerSecurityItems"
+    FROM "StoreSettings"
+    WHERE "id" = 'singleton'
+    LIMIT 1
+  `;
+
+  return settings ?? { footerBenefits: null, footerSecurityItems: null };
+}
+
 export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
   const rows = await prisma.category.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
   const children = new Map<string | null, typeof rows>();
@@ -206,9 +235,19 @@ export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnoun
 });
 
 export const getStoreSettings = cache(async () => {
-  return prisma.storeSettings.upsert({
-    where: { id: "singleton" },
-    create: { id: "singleton" },
-    update: {},
-  });
+  const [settings, footerContent] = await Promise.all([
+    prisma.storeSettings.upsert({
+      where: { id: "singleton" },
+      create: { id: "singleton" },
+      update: {},
+      omit: { footerBenefits: true, footerSecurityItems: true },
+    }),
+    getFooterContentSettings(),
+  ]);
+
+  return {
+    ...settings,
+    mensagemFooter: settings.mensagemFooter === legacyFooterMessage ? secureFooterMessage : settings.mensagemFooter,
+    ...footerContent,
+  };
 });

@@ -358,7 +358,7 @@ model StoreSettings {
   id                            String   @id @default("singleton")
   nomeLoja                      String   @default("EcomZero")
   descricaoFooter               String   @default("Produtos inteligentes, úteis e de qualidade para transformar sua rotina.")
-  mensagemFooter                String   @default("Produtos úteis para facilitar o seu dia a dia.")
+  mensagemFooter                String   @default("Este site utiliza conexão segura e não armazena os dados do seu cartão.")
   barraAnuncioAtiva             Boolean  @default(false)
   barraAnuncioTexto             String?
   barraAnuncioLink              String?
@@ -391,6 +391,8 @@ model StoreSettings {
   whatsappMensagem              String   @default("Olá! Preciso de ajuda com a minha compra.")
   horariosAtendimento           Json?
   footerColumns                 Json?
+  footerBenefits                Json?
+  footerSecurityItems           Json?
   footerSeloSeguranca           Boolean  @default(true)
   footerCopyrightTexto          String   @default("Todos os direitos reservados.")
   footerCopyrightAno            String   @default("automatico")

@@ -14,6 +14,18 @@ export type StoreFooterColumn = {
   links: StoreFooterLink[];
 };
 
+export const STORE_FOOTER_ICON_KEYS = ["truck", "shield", "receipt", "badge", "lock", "headset"] as const;
+
+export type StoreFooterIconKey = (typeof STORE_FOOTER_ICON_KEYS)[number];
+
+export type StoreFooterContentItem = {
+  id: string;
+  titulo: string;
+  descricao: string;
+  icone: StoreFooterIconKey;
+  ativo: boolean;
+};
+
 export type StoreBusinessHour = {
   dia: string;
   label: string;
@@ -39,15 +51,61 @@ const defaultColumns: StoreFooterColumn[] = [
     { id: "produtos", label: "Todos os produtos", href: "/produtos", ativo: true, novaAba: false },
   ] },
   { id: "categorias", titulo: "Categorias", tipo: "categorias", ativo: true, links: [] },
-  { id: "ajuda", titulo: "Ajuda", tipo: "links", ativo: true, links: [
+  { id: "ajuda", titulo: "Atendimento", tipo: "links", ativo: true, links: [
     { id: "carrinho", label: "Meu carrinho", href: "/carrinho", ativo: true, novaAba: false },
     { id: "como-comprar", label: "Como comprar", href: "/como-comprar", ativo: true, novaAba: false },
     { id: "entrega", label: "Entrega e segurança", href: "/#sobre", ativo: true, novaAba: false },
   ] },
 ];
 
+const defaultFooterBenefits: StoreFooterContentItem[] = [
+  { id: "envio", titulo: "Envio rápido", descricao: "Enviamos para todo o Brasil", icone: "truck", ativo: true },
+  { id: "compra-segura", titulo: "Compra segura", descricao: "Ambiente 100% seguro e criptografado", icone: "shield", ativo: true },
+  { id: "nota-fiscal", titulo: "Nota fiscal", descricao: "Todos os pedidos com nota fiscal", icone: "receipt", ativo: true },
+  { id: "originais", titulo: "Produtos originais", descricao: "Trabalhamos apenas com produtos originais", icone: "badge", ativo: true },
+];
+
+const defaultFooterSecurityItems: StoreFooterContentItem[] = [
+  { id: "protegida", titulo: "Compra protegida", descricao: "Checkout seguro", icone: "shield", ativo: true },
+  { id: "nota-fiscal", titulo: "Nota fiscal", descricao: "Em todos os pedidos", icone: "receipt", ativo: true },
+  { id: "ssl", titulo: "SSL - Conexão segura", descricao: "Dados criptografados", icone: "lock", ativo: true },
+  { id: "originais", titulo: "Produtos originais", descricao: "Compra com procedência", icone: "badge", ativo: true },
+  { id: "suporte", titulo: "Suporte rápido", descricao: "Via WhatsApp", icone: "headset", ativo: true },
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeFixedFooterItems(
+  value: unknown,
+  defaults: StoreFooterContentItem[],
+): StoreFooterContentItem[] {
+  if (!Array.isArray(value)) return defaults.map((item) => ({ ...item }));
+  const entries = new Map(
+    value.flatMap((entry) => isRecord(entry) && typeof entry.id === "string" ? [[entry.id, entry] as const] : []),
+  );
+  return defaults.map((fallback) => {
+    const entry = entries.get(fallback.id);
+    if (!entry) return { ...fallback };
+    return {
+      id: fallback.id,
+      titulo: typeof entry.titulo === "string" && entry.titulo.trim() ? entry.titulo : fallback.titulo,
+      descricao: typeof entry.descricao === "string" && entry.descricao.trim() ? entry.descricao : fallback.descricao,
+      icone: typeof entry.icone === "string" && STORE_FOOTER_ICON_KEYS.includes(entry.icone as StoreFooterIconKey)
+        ? entry.icone as StoreFooterIconKey
+        : fallback.icone,
+      ativo: entry.ativo !== false,
+    };
+  });
+}
+
+export function storeFooterBenefits(value: unknown): StoreFooterContentItem[] {
+  return normalizeFixedFooterItems(value, defaultFooterBenefits);
+}
+
+export function storeFooterSecurityItems(value: unknown): StoreFooterContentItem[] {
+  return normalizeFixedFooterItems(value, defaultFooterSecurityItems);
 }
 
 export function storeFooterColumns(value: unknown): StoreFooterColumn[] {
@@ -59,7 +117,13 @@ export function storeFooterColumns(value: unknown): StoreFooterColumn[] {
       if (!isRecord(link) || typeof link.id !== "string" || typeof link.label !== "string" || typeof link.href !== "string") return [];
       return [{ id: link.id, label: link.label, href: link.href, ativo: link.ativo !== false, novaAba: link.novaAba === true }];
     }) : [];
-    return [{ id: entry.id, titulo: entry.titulo, tipo, ativo: entry.ativo !== false, links }];
+    return [{
+      id: entry.id,
+      titulo: entry.id === "ajuda" && entry.titulo === "Ajuda" ? "Atendimento" : entry.titulo,
+      tipo,
+      ativo: entry.ativo !== false,
+      links,
+    }];
   });
   return columns.length ? columns : defaultColumns;
 }

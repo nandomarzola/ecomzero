@@ -23,12 +23,10 @@ import {
   BadgePercent,
   CheckCircle2,
   ChevronDown,
-  Clock3,
   Code2,
   ExternalLink,
   Globe2,
   GripVertical,
-  Headphones,
   Image as ImageIcon,
   LayoutGrid,
   Loader2,
@@ -43,7 +41,6 @@ import {
   RotateCcw,
   Save,
   Settings2,
-  Share2,
   ShieldCheck,
   Star,
   Store,
@@ -56,16 +53,17 @@ import {
 } from "lucide-react";
 import { saveSettingsAction } from "@/lib/actions/settings";
 import type { CouponListItem } from "@/lib/services/couponAdminService";
-import type { BusinessHourConfig, FooterColumnConfig } from "@/lib/settingsConfigDomain";
+import type {
+  BusinessHourConfig,
+  FooterColumnConfig,
+  FooterContentItemConfig,
+} from "@/lib/settingsConfigDomain";
 import {
-  ContactSettingsSection,
   FooterPreview,
   FooterSettingsSection,
   GeneralSettingsSection,
-  HoursSettingsSection,
   MarketplaceSettingsSection,
   MessagesSettingsSection,
-  SocialSettingsSection,
   TrackingSettingsSection,
   type RemainingSettingsFields,
 } from "@/components/configuracoes/RemainingSettingsSections";
@@ -123,6 +121,8 @@ export type SettingsFormInitial = {
   whatsappMensagem: string;
   horariosAtendimento: BusinessHourConfig[];
   footerColumns: FooterColumnConfig[];
+  footerBenefits: FooterContentItemConfig[];
+  footerSecurityItems: FooterContentItemConfig[];
   footerSeloSeguranca: boolean;
   footerCopyrightTexto: string;
   footerCopyrightAno: "automatico" | "fixo";
@@ -205,16 +205,8 @@ const navigation: Array<{ label: string; items: NavItem[] }> = [
     ],
   },
   {
-    label: "Atendimento",
-    items: [
-      { id: "canais-atendimento", label: "Canais de atendimento", icon: Headphones },
-      { id: "horarios", label: "Horários de atendimento", icon: Clock3 },
-    ],
-  },
-  {
     label: "Canais e redes",
     items: [
-      { id: "redes", label: "Redes sociais", icon: Share2 },
       { id: "marketplaces", label: "Marketplaces", icon: Store },
     ],
   },
@@ -323,6 +315,8 @@ function normalize(initial: SettingsFormInitial): FormState {
     customHeadCode: initial.customHeadCode ?? "",
     horariosAtendimento: initial.horariosAtendimento.map((schedule) => ({ ...schedule })),
     footerColumns: initial.footerColumns.map((column) => ({ ...column, links: column.links.map((link) => ({ ...link })) })),
+    footerBenefits: initial.footerBenefits.map((item) => ({ ...item })),
+    footerSecurityItems: initial.footerSecurityItems.map((item) => ({ ...item })),
     faviconUrl: initial.faviconUrl ?? "",
   };
 }
@@ -801,22 +795,11 @@ export default function SettingsForm({
               </header>
 
               <section className="space-y-4 rounded-md border border-white/[0.07] bg-black/[0.08] p-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
-                    Nome da loja <span className="text-red-300">*</span>
-                    <input required minLength={2} maxLength={60} value={form.nomeLoja} onChange={(event) => set("nomeLoja", event.target.value)} className={inputClass} />
-                  </label>
-                  <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
-                    Mensagem curta do rodapé
-                    <input required minLength={5} maxLength={160} value={form.mensagemFooter} onChange={(event) => set("mensagemFooter", event.target.value)} className={inputClass} />
-                    <span className="text-[9px] text-white/30">Aparece no rodapé da loja.</span>
-                  </label>
-                </div>
-                <label className="flex flex-col gap-1.5 text-[10px] text-white/55">
-                  Descrição institucional
-                  <textarea required minLength={10} maxLength={160} value={form.descricaoFooter} onChange={(event) => set("descricaoFooter", event.target.value)} className={`${inputClass} min-h-24 resize-y py-3`} />
-                  <span className="flex justify-between gap-4 text-[9px] text-white/30"><span>Aparece em “Sobre a loja” e páginas institucionais.</span><span>{form.descricaoFooter.length}/160</span></span>
+                <label className="flex max-w-lg flex-col gap-1.5 text-[10px] text-white/55">
+                  Nome da loja <span className="text-red-300">*</span>
+                  <input required minLength={2} maxLength={60} value={form.nomeLoja} onChange={(event) => set("nomeLoja", event.target.value)} className={inputClass} />
                 </label>
+                <p className="text-[9px] leading-4 text-white/30">A descrição institucional e a mensagem de segurança ficam centralizadas em Configurações → Rodapé.</p>
               </section>
 
               <section className="grid gap-4 sm:grid-cols-2">
@@ -1025,26 +1008,17 @@ export default function SettingsForm({
               <div className="rounded-md border border-sky-400/15 bg-sky-400/[0.04] px-4 py-3 text-[9px] leading-4 text-sky-100/55">O agendamento individual por data ficará para a fase 2. Nesta versão, mensagens ativas participam da rotação imediatamente.</div>
             </div>
           ) : activeSection === "rodape" ? (
-            <FooterSettingsSection form={form} onChange={setRemaining} />
-          ) : activeSection === "canais-atendimento" ? (
-            <ContactSettingsSection
+            <FooterSettingsSection
               form={form}
               emailSuporte={form.emailSuporte}
               telefoneSuporte={form.telefoneSuporte}
               whatsapp={form.whatsapp}
-              onChange={setRemaining}
-              onContactChange={(key, value) => set(key, value)}
-            />
-          ) : activeSection === "horarios" ? (
-            <HoursSettingsSection form={form} onChange={setRemaining} />
-          ) : activeSection === "redes" ? (
-            <SocialSettingsSection
-              form={form}
               linkInstagram={form.linkInstagram}
               linkFacebook={form.linkFacebook}
               linkTiktok={form.linkTiktok}
               onChange={setRemaining}
-              onLegacyChange={(key, value) => set(key, value)}
+              onContactChange={(key, value) => set(key, value)}
+              onSocialChange={(key, value) => set(key, value)}
             />
           ) : activeSection === "marketplaces" ? (
             <MarketplaceSettingsSection form={form} linkShopee={form.linkShopee} onChange={setRemaining} onShopeeChange={(value) => set("linkShopee", value)} />
