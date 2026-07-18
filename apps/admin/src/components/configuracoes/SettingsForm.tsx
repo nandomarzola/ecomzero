@@ -67,7 +67,7 @@ import {
   TrackingSettingsSection,
   type RemainingSettingsFields,
 } from "@/components/configuracoes/RemainingSettingsSections";
-import SecuritySettingsSection from "@/components/configuracoes/SecuritySettingsSection";
+import SecuritySettingsSection, { type AdminSecurityStatus } from "@/components/configuracoes/SecuritySettingsSection";
 import {
   BRAZIL_UFS,
   REGIONS,
@@ -580,10 +580,12 @@ export default function SettingsForm({
   initial,
   coupons,
   storefrontUrl,
+  securityStatus,
 }: {
   initial: SettingsFormInitial;
   coupons: CouponListItem[];
   storefrontUrl: string;
+  securityStatus: AdminSecurityStatus;
 }) {
   const initialState = useMemo(() => normalize(initial), [initial]);
   const [savedForm, setSavedForm] = useState<FormState>(initialState);
@@ -1025,17 +1027,27 @@ export default function SettingsForm({
           ) : activeSection === "mensagens" ? (
             <MessagesSettingsSection form={form} onChange={setRemaining} />
           ) : activeSection === "pixel" ? (
-            <TrackingSettingsSection form={form} onChange={setRemaining} />
+            securityStatus.role === "owner" ? (
+              <TrackingSettingsSection form={form} onChange={setRemaining} />
+            ) : (
+              <div className="flex min-h-[420px] flex-col items-center justify-center px-6 text-center">
+                <ShieldCheck className="h-10 w-10 text-amber-300/40" strokeWidth={1.4} />
+                <h2 className="font-display mt-4 text-base font-bold text-white">Acesso do proprietário</h2>
+                <p className="mt-2 max-w-md text-xs leading-5 text-white/40">Pixels e JavaScript personalizado afetam toda a loja e só podem ser alterados pelo papel owner.</p>
+              </div>
+            )
           ) : activeSection === "geral" ? (
             <GeneralSettingsSection form={form} onChange={setRemaining} />
           ) : activeSection === "seguranca" ? (
-            <SecuritySettingsSection />
-          ) : activeSection === "usuarios" || activeSection === "sessoes" ? (
+            <SecuritySettingsSection initialStatus={securityStatus} />
+          ) : activeSection === "sessoes" ? (
+            <SecuritySettingsSection initialStatus={securityStatus} />
+          ) : activeSection === "usuarios" ? (
             <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">
-              {activeSection === "usuarios" ? <Users className="h-10 w-10 text-amber-300/35" strokeWidth={1.4} /> : <MonitorSmartphone className="h-10 w-10 text-amber-300/35" strokeWidth={1.4} />}
-              <h2 className="font-display mt-4 text-base font-bold text-white">{activeSection === "usuarios" ? "Usuários" : "Sessões"}</h2>
-              <p className="mt-2 max-w-md text-xs leading-5 text-white/40">Esta área exige a evolução do login administrativo para permissões, convites e sessões revogáveis. Ela foi mantida bloqueada para não apresentar controles sem efeito real.</p>
-              <span className="mt-4 rounded-full border border-amber-300/20 bg-amber-300/[0.06] px-3 py-1.5 text-[9px] font-semibold text-amber-200/70">Aguardando autorização da refatoração de autenticação</span>
+              <Users className="h-10 w-10 text-amber-300/35" strokeWidth={1.4} />
+              <h2 className="font-display mt-4 text-base font-bold text-white">Usuários</h2>
+              <p className="mt-2 max-w-md text-xs leading-5 text-white/40">A base de papéis owner e staff já está aplicada no servidor. Convites e gerenciamento de múltiplas contas entram junto com o fluxo de multiusuário.</p>
+              <span className="mt-4 rounded-full border border-[#A9EC17]/20 bg-[#A9EC17]/[0.06] px-3 py-1.5 text-[9px] font-semibold text-[#D9FF87]">Permissões preparadas</span>
             </div>
           ) : (
             <div className="flex min-h-[520px] flex-col items-center justify-center px-6 text-center">

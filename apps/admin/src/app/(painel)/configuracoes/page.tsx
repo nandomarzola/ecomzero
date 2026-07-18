@@ -2,14 +2,16 @@ import SettingsForm, { type SettingsFormInitial } from "@/components/configuraco
 import { config } from "@/lib/config";
 import { getAnnouncementBarItems, getStoreSettings } from "@/lib/services/settingsAdminService";
 import { listCoupons } from "@/lib/services/couponAdminService";
+import { getAdminSecurityStatus } from "@/lib/actions/adminSecurity";
 
 export const dynamic = "force-dynamic";
 
 export default async function ConfiguracoesPage() {
-  const [settings, announcementItems, coupons] = await Promise.all([
+  const [settings, announcementItems, coupons, securityStatus] = await Promise.all([
     getStoreSettings(),
     getAnnouncementBarItems(),
     listCoupons(),
+    getAdminSecurityStatus(),
   ]);
   const initial: SettingsFormInitial = {
     ...settings,
@@ -21,5 +23,6 @@ export default async function ConfiguracoesPage() {
     announcementItems,
     updatedAt: settings.updatedAt.toISOString(),
   };
-  return <SettingsForm initial={initial} coupons={coupons} storefrontUrl={config.storefrontUrl ?? "https://www.ecomzero.com.br"} />;
+  if (!securityStatus) return null;
+  return <SettingsForm initial={initial} coupons={coupons} storefrontUrl={config.storefrontUrl ?? "https://www.ecomzero.com.br"} securityStatus={securityStatus} />;
 }

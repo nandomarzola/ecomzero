@@ -4,12 +4,17 @@ import bcrypt from "bcryptjs";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/db";
 import {
+  getSessionIssuedAt,
+  isSessionValidForCutoff,
+} from "@/lib/security/sessionSecurity";
+import {
   clearAttempts,
   clientIp,
   isRateLimited,
   rateLimitKey,
   registerAttempt,
 } from "@/lib/security/authRateLimit";
+import { verifyAndConsumeAdminSecondFactor } from "@/lib/services/adminTwoFactorService";
 
 const LOGIN_MAX_FAILURES = 5; // por IP e por e-mail, em janela de 15 min
 
@@ -23,17 +28,58 @@ const DUMMY_PASSWORD_HASH =
 // nunca no middleware edge. AUTH_SECRET é lido automaticamente do ambiente.
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  callbacks: {
+    ...authConfig.callbacks,
+    async jwt({ token, user }) {
+      const sessionIssuedAt = user ? Date.now() : getSessionIssuedAt(token);
+      if (!token.sub || sessionIssuedAt === null) return null;
+
+      const securityState = await prisma.adminUser.findUnique({
+        where: { id: token.sub },
+        select: {
+          role: true,
+          sessionsValidAfter: true,
+          twoFactorEnabled: true,
+        },
+      });
+      if (
+        !securityState ||
+        !isSessionValidForCutoff(
+          sessionIssuedAt,
+          securityState.sessionsValidAfter,
+        )
+      ) {
+        return null;
+      }
+
+      token.sessionIssuedAt = sessionIssuedAt;
+      token.role = securityState.role;
+      token.twoFactorEnabled = securityState.twoFactorEnabled;
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+        session.user.role = token.role === "staff" ? "staff" : "owner";
+        session.user.twoFactorEnabled = token.twoFactorEnabled === true;
+      }
+      return session;
+    },
+  },
   providers: [
     Credentials({
       credentials: {
         email: { label: "E-mail", type: "email" },
         password: { label: "Senha", type: "password" },
+        code: { label: "Código 2FA", type: "text" },
       },
       async authorize(credentials) {
         const email =
           typeof credentials?.email === "string" ? credentials.email.trim().toLowerCase() : "";
         const password =
           typeof credentials?.password === "string" ? credentials.password : "";
+        const code =
+          typeof credentials?.code === "string" ? credentials.code.trim() : "";
         if (!email || !password) return null;
 
         const ipKey = rateLimitKey("login-admin-ip", await clientIp());
@@ -59,8 +105,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ]);
           return null;
         }
+
+        if (
+          admin.twoFactorEnabled &&
+          (!code || !(await verifyAndConsumeAdminSecondFactor(admin, code)))
+        ) {
+          await Promise.all([
+            registerAttempt(ipKey),
+            registerAttempt(emailKey),
+          ]);
+          return null;
+        }
+
         await Promise.all([clearAttempts(ipKey), clearAttempts(emailKey)]);
-        return { id: admin.id, email: admin.email };
+        return {
+          id: admin.id,
+          email: admin.email,
+          role: admin.role,
+          twoFactorEnabled: admin.twoFactorEnabled,
+        };
       },
     }),
   ],

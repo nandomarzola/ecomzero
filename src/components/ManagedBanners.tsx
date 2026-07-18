@@ -125,7 +125,7 @@ export function ManagedBannerSection({ banners, position }: { banners: StoreBann
   const items = isBottom ? banners.slice(0, 2) : banners;
   const bottomPair = isBottom && items.length >= 2;
   return (
-    <section className={`mx-auto grid max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-10 ${bottomPair ? "grid-cols-2 gap-3" : "gap-4"}`}>
+    <section className={`mx-auto grid max-w-[1440px] px-4 pb-6 sm:px-6 lg:px-10 ${bottomPair ? "grid-cols-2 max-md:grid-cols-1 gap-3" : "gap-4"}`}>
       {items.map((banner) => (
         <article
           key={banner.id}
@@ -135,7 +135,7 @@ export function ManagedBannerSection({ banners, position }: { banners: StoreBann
         >
           <BannerImage
             banner={banner}
-            sizes={bottomPair ? "(max-width: 1440px) 50vw, 720px" : "(max-width: 1440px) 100vw, 1440px"}
+            sizes={bottomPair ? "(max-width: 767px) 100vw, (max-width: 1440px) 50vw, 720px" : "(max-width: 1440px) 100vw, 1440px"}
           />
         </article>
       ))}

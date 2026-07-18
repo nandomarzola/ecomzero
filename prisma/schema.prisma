@@ -114,6 +114,11 @@ enum BannerPosition {
   home_bottom
 }
 
+enum AdminRole {
+  owner
+  staff
+}
+
 model User {
   id                 String    @id @default(uuid())
   name               String?   @map("nome")
@@ -800,9 +805,16 @@ model MelhorEnvioBalanceCache {
 // banco Postgres e NUNCA roda migração própria — toda mudança de schema nasce
 // aqui, no projeto raiz, e o admin só espelha o model + `prisma generate`.
 model AdminUser {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  senhaHash String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                          String    @id @default(uuid())
+  email                       String    @unique
+  senhaHash                   String
+  role                        AdminRole @default(owner)
+  sessionsValidAfter          DateTime?
+  twoFactorEnabled            Boolean   @default(false)
+  twoFactorSecretEncrypted    String?
+  twoFactorRecoveryCodeHashes String?   @db.Text
+  twoFactorLastUsedStep       Int?
+  twoFactorEnabledAt          DateTime?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 }

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { categoryInputSchema, categoryReorderSchema } from "@/lib/validation/category";
 import * as categoryService from "@/lib/services/categoryAdminService";
 
@@ -10,7 +10,7 @@ export type CategoryActionResult =
   | { ok: false; error: string };
 
 async function hasAdminSession() {
-  return Boolean((await auth())?.user);
+  return (await requireVerifiedAdmin()).ok;
 }
 
 export async function saveCategoryAction(

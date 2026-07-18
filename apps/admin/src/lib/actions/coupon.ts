@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import * as couponService from "@/lib/services/couponAdminService";
 import { couponDraftSchema, couponPublishSchema } from "@/lib/validation/coupon";
 
@@ -14,7 +14,7 @@ export async function saveCouponAction(
   input: unknown,
   mode: CouponSaveMode = "publish",
 ): Promise<CouponActionResult> {
-  if (!(await auth())?.user) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  if (!(await requireVerifiedAdmin()).ok) return { ok: false, error: "Sessão expirada ou 2FA obrigatório. Faça login novamente." };
   const schema = mode === "draft" ? couponDraftSchema : couponPublishSchema;
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos." };
@@ -30,7 +30,7 @@ export async function saveCouponAction(
 }
 
 export async function deleteCouponAction(id: string): Promise<CouponActionResult> {
-  if (!(await auth())?.user) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  if (!(await requireVerifiedAdmin()).ok) return { ok: false, error: "Sessão expirada ou 2FA obrigatório. Faça login novamente." };
   try {
     await couponService.deleteCoupon(id);
     revalidatePath("/cupons");

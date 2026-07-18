@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { getMelhorEnvioOAuthConfig } from "@/lib/services/melhorEnvioAdminService";
 
 const SCOPES = [
@@ -18,7 +18,7 @@ const SCOPES = [
 ].join(" ");
 
 export async function GET(request: NextRequest) {
-  if (!(await auth())?.user) {
+  if (!(await requireVerifiedAdmin({ owner: true })).ok) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

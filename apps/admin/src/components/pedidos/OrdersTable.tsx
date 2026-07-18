@@ -32,10 +32,12 @@ export default function OrdersTable({
   data,
   current,
   noun,
+  canManageFinancial,
 }: {
   data: OrdersPage;
   current: OrdersQuery;
   noun: string;
+  canManageFinancial: boolean;
 }) {
   if (data.rows.length === 0) {
     return (
@@ -133,13 +135,15 @@ export default function OrdersTable({
                                   ? "Rastrear"
                                   : "Ver detalhes"}
                       </Link>
-                      <CancelOrderButton
-                        orderId={order.id}
-                        orderStatus={order.status}
-                        total={order.total}
-                        hasMelhorEnvioLabel={order.hasMelhorEnvioLabel}
-                        compact
-                      />
+                      {canManageFinancial ? (
+                        <CancelOrderButton
+                          orderId={order.id}
+                          orderStatus={order.status}
+                          total={order.total}
+                          hasMelhorEnvioLabel={order.hasMelhorEnvioLabel}
+                          compact
+                        />
+                      ) : null}
                     </div>
                   </td>
                 </tr>

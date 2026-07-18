@@ -85,6 +85,7 @@ const freeShippingModes = new Set([
 
 export default function ShipmentActions({
   orderId,
+  canManageFinancial,
   shippingMode,
   shippingAmountCharged,
   senderStateRegister,
@@ -93,6 +94,7 @@ export default function ShipmentActions({
   shipment,
 }: {
   orderId: string;
+  canManageFinancial: boolean;
   shippingMode: string;
   shippingAmountCharged: number;
   senderStateRegister: string | null;
@@ -470,7 +472,7 @@ export default function ShipmentActions({
           ) : null}
 
           <div className="flex flex-wrap gap-2">
-            {fiscalDocumentConfirmed && !labelAlreadyGenerated && labelStatus !== "external" ? (
+            {canManageFinancial && fiscalDocumentConfirmed && !labelAlreadyGenerated && labelStatus !== "external" ? (
               <button type="button" disabled={pending || quotePending || !canGenerateLabel} onClick={purchase} className="inline-flex items-center gap-2 rounded-lg bg-[#A9EC17] px-4 py-2.5 text-sm font-semibold text-black disabled:opacity-45">
                 {operation === "purchase" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageCheck className="h-4 w-4" />}
                 {operation === "purchase" ? "Comprando e gerando..." : labelStatus === "insufficient_balance" ? "Tentar gerar etiqueta" : "Gerar etiqueta"}
@@ -485,13 +487,16 @@ export default function ShipmentActions({
             {shipment?.melhorEnvioId ? (
               <button type="button" disabled={pending} onClick={() => run("sync", () => syncShipmentStatusAction(orderId), "Status atualizado.")} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/70 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${operation === "sync" ? "animate-spin" : ""}`} /> Atualizar status</button>
             ) : null}
-            {shipment?.melhorEnvioId && ["purchased", "generated", "printed"].includes(labelStatus) ? (
+            {canManageFinancial && shipment?.melhorEnvioId && ["purchased", "generated", "printed"].includes(labelStatus) ? (
               <button type="button" disabled={pending} onClick={cancelLabel} className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 px-4 py-2.5 text-sm text-red-300 disabled:opacity-50"><Trash2 className="h-4 w-4" /> Cancelar etiqueta</button>
             ) : null}
             {!shipment?.melhorEnvioId && labelStatus !== "external" ? (
               <button type="button" disabled={pending} onClick={markExternal} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-4 py-2.5 text-sm text-white/60 disabled:opacity-50"><Truck className="h-4 w-4" /> Marcar como envio externo</button>
             ) : null}
           </div>
+          {!canManageFinancial && !labelAlreadyGenerated ? (
+            <p className="mt-3 rounded-lg border border-amber-300/15 bg-amber-300/[0.04] px-3 py-2 text-xs text-amber-100/55">A compra ou o cancelamento de etiquetas é restrito ao proprietário da loja.</p>
+          ) : null}
         </div>
 
         <aside className="rounded-xl border border-white/[0.08] bg-[#090909] p-4">

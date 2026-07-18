@@ -9,7 +9,7 @@ const features = [
 
 export default function FeatureBar() {
   return (
-    <section className="border-b border-white/[0.08] bg-[#0C0C0C]">
+    <section className="border-b border-white/[0.08] bg-[#0C0C0C] max-md:hidden">
       <div className="mx-auto grid max-w-[1440px] grid-cols-2 px-4 sm:px-6 lg:grid-cols-4 lg:px-8">
         {features.map(({ title, subtitle, icon: Icon }, index) => (
           <article

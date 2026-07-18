@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import {
   getMelhorEnvioLabelFile,
   markShipmentPrinted,
@@ -21,7 +21,7 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string; format: string }> },
 ) {
-  if (!(await auth())?.user) {
+  if (!(await requireVerifiedAdmin()).ok) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 

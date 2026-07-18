@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { cancelOrderInStorefront } from "@/lib/services/storefrontShippingAdminClient";
 import { orderCancellationFormSchema } from "@/lib/validation/orderCancellation";
 
@@ -13,10 +13,8 @@ export async function cancelOrderAction(
   orderId: string,
   input: unknown,
 ): Promise<ActionResult> {
-  const session = await auth();
-  if (!session?.user?.email) {
-    return { ok: false, error: "Sessão expirada. Faça login novamente." };
-  }
+  const authorization = await requireVerifiedAdmin({ owner: true });
+  if (!authorization.ok) return authorization;
 
   const parsed = orderCancellationFormSchema.safeParse(input);
   if (!parsed.success) {
@@ -31,7 +29,7 @@ export async function cancelOrderAction(
   try {
     const result = await cancelOrderInStorefront(orderId, {
       ...parsed.data,
-      requestedBy: session.user.email,
+      requestedBy: authorization.admin.email,
     });
     revalidatePath("/pedidos");
     revalidatePath(`/pedidos/${orderId}`);

@@ -38,6 +38,11 @@ enum BannerPosition {
   home_bottom
 }
 
+enum AdminRole {
+  owner
+  staff
+}
+
 enum OrderStatus {
   draft
   aguardando_pagamento
@@ -200,11 +205,18 @@ model ProductVariant {
 
 // Usuário do painel administrativo. Ver comentário no schema raiz.
 model AdminUser {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  senhaHash String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                          String    @id @default(uuid())
+  email                       String    @unique
+  senhaHash                   String
+  role                        AdminRole @default(owner)
+  sessionsValidAfter          DateTime?
+  twoFactorEnabled            Boolean   @default(false)
+  twoFactorSecretEncrypted    String?
+  twoFactorRecoveryCodeHashes String?   @db.Text
+  twoFactorLastUsedStep       Int?
+  twoFactorEnabledAt          DateTime?
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 }
 
 model User {

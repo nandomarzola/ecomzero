@@ -9,17 +9,38 @@ export const authConfig = {
   session: { strategy: "jwt" },
   providers: [], // Credentials é adicionado em auth.ts (precisa de Prisma).
   callbacks: {
-    // Guarda TODAS as rotas: sem sessão → /login. Já logado em /login → home.
+    session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+        session.user.role = token.role === "staff" ? "staff" : "owner";
+        session.user.twoFactorEnabled = token.twoFactorEnabled === true;
+      }
+      return session;
+    },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = Boolean(auth?.user);
       const isOnLogin = nextUrl.pathname === "/login";
+      const isOnTwoFactorSetup = nextUrl.pathname === "/ativar-2fa";
+      const hasTwoFactor = auth?.user?.twoFactorEnabled === true;
 
       if (isOnLogin) {
-        if (isLoggedIn) return Response.redirect(new URL("/", nextUrl));
+        if (isLoggedIn) {
+          return Response.redirect(
+            new URL(hasTwoFactor ? "/" : "/ativar-2fa", nextUrl),
+          );
+        }
         return true;
       }
 
-      return isLoggedIn;
+      if (!isLoggedIn) return false;
+      if (isOnTwoFactorSetup) {
+        return hasTwoFactor
+          ? Response.redirect(new URL("/", nextUrl))
+          : true;
+      }
+      return hasTwoFactor
+        ? true
+        : Response.redirect(new URL("/ativar-2fa", nextUrl));
     },
   },
 } satisfies NextAuthConfig;

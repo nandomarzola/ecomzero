@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { productInputSchema } from "@/lib/validation/product";
 import * as productAdminService from "@/lib/services/productAdminService";
 
@@ -14,8 +14,7 @@ export type ProductActionResult =
   | { ok: false; error: string };
 
 async function isAdmin(): Promise<boolean> {
-  const session = await auth();
-  return Boolean(session?.user);
+  return (await requireVerifiedAdmin()).ok;
 }
 
 export async function createProductAction(input: unknown): Promise<ProductActionResult> {

@@ -49,6 +49,7 @@ export default async function LoginPage({
       await signIn("credentials", {
         email: formData.get("email"),
         password: formData.get("password"),
+        code: formData.get("code"),
         redirectTo: "/",
       });
     } catch (err) {
@@ -81,7 +82,7 @@ export default async function LoginPage({
 
           {error ? (
             <p role="alert" className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-xs text-red-300">
-              E-mail ou senha inválidos.
+              Credenciais ou código de autenticação inválidos.
             </p>
           ) : null}
 
@@ -106,6 +107,25 @@ export default async function LoginPage({
             </label>
 
             <PasswordField />
+
+            <label className="flex flex-col gap-2 text-sm font-semibold text-white">
+              Código 2FA ou de recuperação
+              <span className="relative block">
+                <LockKeyhole
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#A9EC17]"
+                  strokeWidth={1.8}
+                />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  name="code"
+                  autoComplete="one-time-code"
+                  placeholder="Opcional até o 2FA ser ativado"
+                  className="h-[52px] w-full rounded-lg border border-white/[0.18] bg-[#080908] pl-12 pr-4 text-sm font-normal uppercase tracking-[0.16em] text-white outline-none transition placeholder:normal-case placeholder:tracking-normal placeholder:text-white/38 focus:border-[#A9EC17]/60 focus:ring-2 focus:ring-[#A9EC17]/10"
+                />
+              </span>
+            </label>
 
             <div className="flex justify-end">
               <span

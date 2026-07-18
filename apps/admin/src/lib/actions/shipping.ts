@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import {
   calculateOrderShipping,
   createMelhorEnvioShipment,
@@ -32,7 +32,7 @@ type ActionResult<T = undefined> =
   | { ok: false; error: string };
 
 async function isAuthenticated() {
-  return Boolean((await auth())?.user);
+  return (await requireVerifiedAdmin()).ok;
 }
 
 function errorMessage(error: unknown) {
@@ -90,8 +90,10 @@ export async function createShipmentAction(
 async function runShipmentAction(
   orderId: string,
   action: (id: string) => Promise<unknown>,
+  options: { owner?: boolean } = {},
 ): Promise<ActionResult> {
-  if (!(await isAuthenticated())) return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  const authorization = await requireVerifiedAdmin(options);
+  if (!authorization.ok) return { ok: false, error: authorization.error };
   try {
     await action(orderId);
     revalidatePath(`/pedidos/${orderId}`);
@@ -103,9 +105,8 @@ async function runShipmentAction(
 }
 
 export async function purchaseShipmentAction(orderId: string, serviceId?: string) {
-  if (!(await isAuthenticated())) {
-    return { ok: false as const, error: "Sessão expirada. Faça login novamente." };
-  }
+  const authorization = await requireVerifiedAdmin({ owner: true });
+  if (!authorization.ok) return { ok: false as const, error: authorization.error };
   try {
     const data = await purchaseShipmentInStorefront(orderId, serviceId);
     revalidatePath(`/pedidos/${orderId}`);
@@ -190,7 +191,7 @@ export async function syncShipmentStatusAction(orderId: string) {
 }
 
 export async function cancelShipmentAction(orderId: string) {
-  return runShipmentAction(orderId, cancelShipmentInStorefront);
+  return runShipmentAction(orderId, cancelShipmentInStorefront, { owner: true });
 }
 
 export async function generateLabelAction(orderId: string) {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { prisma } from "@/lib/db";
 import { getMelhorEnvioOAuthConfig } from "@/lib/services/melhorEnvioAdminService";
 
@@ -16,7 +16,7 @@ function redirectWithResult(request: NextRequest, result: string) {
 }
 
 export async function GET(request: NextRequest) {
-  if (!(await auth())?.user) return NextResponse.redirect(new URL("/login", request.url));
+  if (!(await requireVerifiedAdmin({ owner: true })).ok) return NextResponse.redirect(new URL("/login", request.url));
 
   const state = request.nextUrl.searchParams.get("state");
   const savedState = request.cookies.get("ecomzero_me_oauth_state")?.value;

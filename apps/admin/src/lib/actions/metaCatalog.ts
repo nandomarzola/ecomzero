@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import {
   fetchMetaCatalogReport,
   markMetaCatalogValidated,
@@ -10,7 +10,8 @@ import {
 import { metaCatalogSettingsSchema } from "@/lib/validation/metaCatalog";
 
 export async function saveMetaCatalogSettingsAction(input: unknown) {
-  if (!(await auth())?.user) return { ok: false as const, error: "Sessão expirada. Faça login novamente." };
+  const authorization = await requireVerifiedAdmin({ owner: true });
+  if (!authorization.ok) return { ok: false as const, error: authorization.error };
   const parsed = metaCatalogSettingsSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Configuração inválida." };
@@ -25,7 +26,8 @@ export async function saveMetaCatalogSettingsAction(input: unknown) {
 }
 
 export async function validateMetaCatalogAction() {
-  if (!(await auth())?.user) return { ok: false as const, error: "Sessão expirada. Faça login novamente." };
+  const authorization = await requireVerifiedAdmin({ owner: true });
+  if (!authorization.ok) return { ok: false as const, error: authorization.error };
   const result = await fetchMetaCatalogReport();
   if (!result.ok) return result;
   if (!result.report.xmlValid) {

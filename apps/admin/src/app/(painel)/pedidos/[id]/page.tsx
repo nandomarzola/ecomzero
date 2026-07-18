@@ -10,6 +10,7 @@ import {
   getShippingSettings,
 } from "@/lib/services/shippingFulfillmentAdminService";
 import { getMelhorEnvioBalance } from "@/lib/services/melhorEnvioAdminService";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 
 export const dynamic = "force-dynamic";
 
@@ -42,12 +43,14 @@ export default async function AdminOrderDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [order, shippingSettings, balance] = await Promise.all([
+  const [order, shippingSettings, balance, authorization] = await Promise.all([
     getAdminOrderDetails(id),
     getShippingSettings(),
     getMelhorEnvioBalance(),
+    requireVerifiedAdmin(),
   ]);
   if (!order || order.status === "draft") notFound();
+  const canManageFinancial = authorization.ok && authorization.admin.role === "owner";
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -64,12 +67,14 @@ export default async function AdminOrderDetailsPage({
           >
             {orderStatusLabel[order.status]}
           </span>
-          <CancelOrderButton
-            orderId={order.id}
-            orderStatus={order.status}
-            total={Number(order.total)}
-            hasMelhorEnvioLabel={Boolean(order.shipment?.melhorEnvioId)}
-          />
+          {canManageFinancial ? (
+            <CancelOrderButton
+              orderId={order.id}
+              orderStatus={order.status}
+              total={Number(order.total)}
+              hasMelhorEnvioLabel={Boolean(order.shipment?.melhorEnvioId)}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -163,6 +168,7 @@ export default async function AdminOrderDetailsPage({
       {order.status === "pago" ? (
         <ShipmentActions
           orderId={order.id}
+          canManageFinancial={canManageFinancial}
           shippingMode={order.shippingMode}
           shippingAmountCharged={Number(order.shippingAmountCharged)}
           senderStateRegister={shippingSettings?.inscricaoEstadual ?? null}

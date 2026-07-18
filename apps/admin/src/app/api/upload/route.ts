@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { uploadImage } from "@/lib/blob";
 import { assertRealImage, ImageValidationError } from "@/lib/imageValidation";
 
 // Upload de mídia do catálogo no Vercel Blob, protegido por sessão de admin.
 export async function POST(request: NextRequest) {
-  const session = await auth();
-  if (!session?.user) {
+  if (!(await requireVerifiedAdmin()).ok) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 

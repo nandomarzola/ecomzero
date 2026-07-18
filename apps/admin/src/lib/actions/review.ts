@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import { moderateProductReview } from "@/lib/services/reviewAdminService";
 import { moderateReviewSchema } from "@/lib/validation/review";
 
@@ -12,10 +12,8 @@ export type ReviewActionResult =
 export async function moderateReviewAction(
   input: unknown,
 ): Promise<ReviewActionResult> {
-  const session = await auth();
-  if (!session?.user?.email) {
-    return { ok: false, error: "Sessão expirada. Faça login novamente." };
-  }
+  const authorization = await requireVerifiedAdmin();
+  if (!authorization.ok) return authorization;
 
   const parsed = moderateReviewSchema.safeParse(input);
   if (!parsed.success) {
@@ -28,7 +26,7 @@ export async function moderateReviewAction(
   try {
     await moderateProductReview({
       ...parsed.data,
-      moderator: session.user.email,
+      moderator: authorization.admin.email,
     });
     revalidatePath("/avaliacoes");
     revalidatePath("/produtos");
