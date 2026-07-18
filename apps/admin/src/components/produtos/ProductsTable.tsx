@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
+  CopyPlus,
   ExternalLink,
   Eye,
   Loader2,
@@ -291,6 +292,12 @@ export default function ProductsTable({
                               className="flex items-center gap-2 px-3 py-2 text-[13px] text-white/75 transition hover:bg-white/[0.05] hover:text-white"
                             >
                               <Pencil className="h-4 w-4 text-white/45" /> Editar
+                            </Link>
+                            <Link
+                              href={`/produtos/novo?copiar=${product.id}`}
+                              className="flex items-center gap-2 px-3 py-2 text-[13px] text-white/75 transition hover:bg-white/[0.05] hover:text-white"
+                            >
+                              <CopyPlus className="h-4 w-4 text-white/45" /> Copiar
                             </Link>
                             <button
                               type="button"

@@ -33,7 +33,7 @@ const AUTO_CALC_DEBOUNCE_MS = 450;
 const formatPrice = (price: number) =>
   price.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Cotação de frete da página de produto. Com CEP salvo (header/modal), calcula
+// Cotação de frete da página de produto. Com CEP salvo no header, calcula
 // SOZINHO ao montar e recalcula ao trocar variante/quantidade — com debounce,
 // pra cliques repetidos em +/- virarem uma chamada só. O campo continua
 // editável e o botão "Calcular" continua existindo pra simular outro CEP;

@@ -80,7 +80,7 @@ export default function CartCheckoutPanel({
   const [autoLoading, setAutoLoading] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
-  // CEP salvo pelo visitante no header/modal — pré-preenche o campo e, se
+  // CEP salvo pelo visitante no header — pré-preenche o campo e, se
   // válido, dispara a cotação SOZINHO (ao abrir o carrinho e quando o
   // conteúdo/peso muda), com prioridade menor que o que o cliente digitou
   // aqui ou a cotação já selecionada.
@@ -173,7 +173,7 @@ export default function CartCheckoutPanel({
   const hasValidSelection = Boolean(selection && !isCheckoutShippingExpired(selection, now));
 
   // Auto-cotação: dispara ao abrir o carrinho com CEP preenchido (salvo no
-  // header/modal) e re-dispara quando o conteúdo muda (adicionar/remover item,
+  // header) e re-dispara quando o conteúdo muda (adicionar/remover item,
   // mudar quantidade → subtotal/productCount mudam e invalidam a seleção).
   // Debounce agrupa mudanças em sequência rápida numa chamada só. Nunca roda
   // por cima de uma seleção válida nem enquanto o cliente digita o CEP —

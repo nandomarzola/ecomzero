@@ -29,7 +29,7 @@ export default function AnnouncementBar({
   backgroundColor: string;
 }) {
   const { status } = useSession();
-  // UF resolvida do CEP (modal/header/checkout), lida reativamente do localStorage.
+  // UF resolvida do CEP (header/checkout), lida reativamente do localStorage.
   const storedUf = useSyncExternalStore(subscribeUserCep, getUserUfSnapshot, () => null);
   const [activeIndex, setActiveIndex] = useState(0);
 

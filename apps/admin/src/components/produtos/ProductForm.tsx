@@ -30,7 +30,13 @@ export type ProductFormInitial = {
 };
 
 type ProductFormProps =
-  | { mode: "create"; productId?: undefined; initial?: undefined; categories: CategoryListItem[] }
+  | {
+      mode: "create";
+      productId?: undefined;
+      initial?: ProductFormInitial;
+      copiedFrom?: string;
+      categories: CategoryListItem[];
+    }
   | { mode: "edit"; productId: string; initial: ProductFormInitial; categories: CategoryListItem[] };
 
 const inputClass =
@@ -61,7 +67,7 @@ export default function ProductForm(props: ProductFormProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  const start = props.mode === "edit" ? props.initial : blankInitial();
+  const start = props.mode === "edit" ? props.initial : props.initial ?? blankInitial();
   const [nome, setNome] = useState(start.nome);
   const [tipo, setTipo] = useState<"simples" | "variacoes">(start.tipo);
   const [categoryId, setCategoryId] = useState(start.categoryId);
@@ -137,6 +143,15 @@ export default function ProductForm(props: ProductFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex max-w-3xl flex-col gap-6">
+      {props.mode === "create" && props.copiedFrom ? (
+        <div
+          role="status"
+          className="rounded-xl border border-[#A9EC17]/25 bg-[#A9EC17]/[0.06] px-4 py-3 text-sm text-white/70"
+        >
+          Rascunho copiado de <strong className="text-white">{props.copiedFrom}</strong>.
+          As fotos e a descrição foram limpas para você preencher o novo produto.
+        </div>
+      ) : null}
       <section className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#111111] p-4">
         <h2 className="text-sm font-semibold text-white">Dados básicos</h2>
         <div className="grid grid-cols-2 gap-2 rounded-lg border border-white/[0.08] bg-[#090909] p-1">

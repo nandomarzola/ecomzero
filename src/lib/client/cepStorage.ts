@@ -1,11 +1,10 @@
-// CEP "solto" do visitante (header/modal) — conveniência de UX, persistido em
+// CEP "solto" do visitante (header) — conveniência de UX, persistido em
 // localStorage. NÃO é endereço de conta: cliente logado usa Address no
 // checkout. Mesmo padrão subscribe/snapshot do checkoutShippingStorage, para
 // leitura reativa via useSyncExternalStore (server snapshot = null, sem
 // hydration mismatch).
 
 const CEP_KEY = "ecomzero:cep-usuario";
-const MODAL_DISMISSED_KEY = "ecomzero:cep-modal-dispensado";
 // UF resolvida a partir do CEP (ex.: "SP"). Usada pela Barra de Anúncio para
 // segmentar mensagens por região sem reconsultar o CEP a cada página.
 const UF_KEY = "ecomzero:uf-usuario";
@@ -18,7 +17,7 @@ function emitChange(): void {
 
 export function subscribeUserCep(listener: () => void): () => void {
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === CEP_KEY || event.key === MODAL_DISMISSED_KEY || event.key === UF_KEY) listener();
+    if (event.key === CEP_KEY || event.key === UF_KEY) listener();
   };
   listeners.add(listener);
   window.addEventListener("storage", handleStorage);
@@ -30,10 +29,6 @@ export function subscribeUserCep(listener: () => void): () => void {
 
 export function getUserCepSnapshot(): string | null {
   return window.localStorage.getItem(CEP_KEY);
-}
-
-export function getCepModalDismissedSnapshot(): string | null {
-  return window.localStorage.getItem(MODAL_DISMISSED_KEY);
 }
 
 export function getUserUfSnapshot(): string | null {
@@ -59,11 +54,6 @@ export function saveUserCep(value: string): void {
   emitChange();
 }
 
-export function dismissCepModal(): void {
-  window.localStorage.setItem(MODAL_DISMISSED_KEY, "1");
-  emitChange();
-}
-
 export function saveUserUf(uf: string): void {
   window.localStorage.setItem(UF_KEY, uf.trim().toUpperCase());
   emitChange();
@@ -74,7 +64,7 @@ function clearUserUf(): void {
   emitChange();
 }
 
-// Ponto único de captura de CEP "solto" (modal/header): salva o CEP, descarta a
+// Ponto único de captura de CEP no header: salva o CEP, descarta a
 // UF anterior (evita região obsoleta) e resolve a nova UF reaproveitando a rota
 // de CEP já existente (/api/address/cep). Se a consulta falhar, a UF fica ausente
 // — de propósito: mensagens restritas por região não aparecem sem UF confiável.

@@ -10,8 +10,8 @@ import {
   subscribeUserCep,
 } from "@/lib/client/cepStorage";
 
-// Botão "Informe seu CEP" do header. Lê o CEP salvo reativamente (o modal da
-// home e outras abas atualizam na hora). No SSR renderiza o estado "sem CEP"
+// Botão "Informe seu CEP" do header. Lê o CEP salvo reativamente entre abas.
+// No SSR renderiza o estado "sem CEP"
 // (snapshot do server é null) — após a hidratação mostra o CEP salvo.
 // Estilo alinhado ao design system do header (ícone + principal bold + secundário
 // muted, igual "Minha conta"). `className` controla a visibilidade responsiva
