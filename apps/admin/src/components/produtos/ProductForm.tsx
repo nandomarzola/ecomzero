@@ -227,7 +227,7 @@ export default function ProductForm(props: ProductFormProps) {
       <section className="flex flex-col gap-4 rounded-xl border border-white/[0.08] bg-[#111111] p-4">
         <h2 className="text-sm font-semibold text-white">Imagens</h2>
         <ImageUploader label="Imagem de capa" value={cover} onChange={setCover} max={1} />
-        <ImageUploader label="Galeria (imagens adicionais)" value={galeria} onChange={setGaleria} />
+        <ImageUploader label="Galeria (imagens adicionais)" value={galeria} onChange={setGaleria} sortable />
       </section>
 
       <section className="flex flex-col gap-3 rounded-xl border border-white/[0.08] bg-[#111111] p-4">
