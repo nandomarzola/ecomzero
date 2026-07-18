@@ -17,9 +17,9 @@ export default async function HomePage() {
   const [categories, banners, novidades, promocoes, maisVendidos] = await Promise.all([
     getActiveCategories(),
     getActiveBanners(),
-    getNovidades(4),
-    getPromocoes(4),
-    getTopSellers(4),
+    getNovidades(10),
+    getPromocoes(10),
+    getTopSellers(10),
   ]);
   const hero = banners.filter((banner) => banner.posicao === "hero_slide");
   const middle = banners.filter((banner) => banner.posicao === "home_middle");
