@@ -34,16 +34,23 @@ const dimField = (label: string) => z.preprocess(
   z.number({ error: `${label}: informe um valor numérico válido` }).positive(`${label} deve ser maior que zero`),
 );
 
+const optionalSku = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z
+    .string()
+    .trim()
+    .max(100, "SKU interno deve ter no máximo 100 caracteres")
+    .transform((value) => value.toUpperCase())
+    .optional(),
+);
+
 export const variantSchema = z.object({
   // Presente ao editar uma variante existente; ausente ao criar uma nova.
   id: z.string().uuid().optional(),
   label: z.string().trim().min(1, "Informe o rótulo da variante"),
   precoDe: precoField("Preço de"),
   precoPor: precoField("Preço por"),
-  skuInterno: z.preprocess(
-    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().trim().optional(),
-  ),
+  skuInterno: optionalSku,
   pesoKg: dimField("Peso"),
   comprimentoCm: dimField("Comprimento"),
   larguraCm: dimField("Largura"),
@@ -73,6 +80,22 @@ export const productInputSchema = z.object({
   if (input.tipo === "variacoes" && input.variantes.length < 2) {
     context.addIssue({ code: "custom", path: ["variantes"], message: "Cadastre pelo menos duas variações" });
   }
+
+  const skuIndexes = new Map<string, number>();
+  input.variantes.forEach((variant, index) => {
+    if (!variant.skuInterno) return;
+    const previousIndex = skuIndexes.get(variant.skuInterno);
+    if (previousIndex === undefined) {
+      skuIndexes.set(variant.skuInterno, index);
+      return;
+    }
+
+    context.addIssue({
+      code: "custom",
+      path: ["variantes", index, "skuInterno"],
+      message: `O SKU interno "${variant.skuInterno}" está repetido neste produto`,
+    });
+  });
 });
 
 export type ProductInput = z.infer<typeof productInputSchema>;

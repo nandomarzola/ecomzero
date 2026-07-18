@@ -350,7 +350,9 @@ export async function syncProductsFromHub(produtos: SyncProductInput[]): Promise
         for (const variante of produto.variantes) {
           const existingVariant =
             (variante.skuInterno &&
-              existing.variantes.find((v) => v.skuInterno === variante.skuInterno)) ||
+              existing.variantes.find(
+                (v) => v.skuInterno?.trim().toUpperCase() === variante.skuInterno,
+              )) ||
             existing.variantes.find((v) => v.label === variante.label);
 
           const variantData = {

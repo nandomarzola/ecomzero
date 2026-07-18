@@ -54,6 +54,45 @@ function variantData(v: ProductInput["variantes"][number]) {
   };
 }
 
+async function assertUniqueSkus(input: ProductInput, currentProductId?: string): Promise<void> {
+  const skus = input.variantes.flatMap((variant) => variant.skuInterno ? [variant.skuInterno] : []);
+  if (skus.length === 0) return;
+
+  const conflict = await prisma.productVariant.findFirst({
+    where: {
+      skuInterno: { in: skus, mode: "insensitive" },
+      ...(currentProductId ? { NOT: { productId: currentProductId } } : {}),
+    },
+    select: {
+      skuInterno: true,
+      product: { select: { nome: true } },
+    },
+  });
+
+  if (conflict?.skuInterno) {
+    throw new Error(
+      `O SKU interno "${conflict.skuInterno}" já está cadastrado no produto "${conflict.product.nome}". Use outro SKU.`,
+    );
+  }
+}
+
+function isSkuUniqueConstraintError(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("code" in error) || error.code !== "P2002") return false;
+  if (!("meta" in error) || !error.meta || typeof error.meta !== "object" || !("target" in error.meta)) return false;
+
+  const target = error.meta.target;
+  return typeof target === "string"
+    ? target.includes("skuInterno")
+    : Array.isArray(target) && target.some((field) => field === "skuInterno");
+}
+
+function rethrowSkuConflict(error: unknown): never {
+  if (isSkuUniqueConstraintError(error)) {
+    throw new Error("Este SKU interno já está cadastrado em outra variante. Use outro SKU.");
+  }
+  throw error;
+}
+
 async function resolveCategory(categoryId: string): Promise<{ id: string; path: string }> {
   const names: string[] = [];
   let currentId: string | null = categoryId;
@@ -119,42 +158,11 @@ export async function getProductById(id: string) {
 }
 
 export async function createProduct(input: ProductInput): Promise<{ id: string }> {
+  await assertUniqueSkus(input);
   const slug = await uniqueSlug(input.nome);
   const category = await resolveCategory(input.categoryId);
-  const product = await prisma.product.create({
-    data: {
-      slug,
-      tipo: input.tipo,
-      categoryId: category.id,
-      nome: input.nome,
-      categoria: category.path,
-      subtitulo: input.subtitulo,
-      descricao: input.descricao,
-      ativo: input.ativo,
-      isNovidade: input.isNovidade,
-      isPromocao: input.isPromocao,
-      imagem: input.imagem,
-      imagens: input.imagens,
-      caracteristicas: [],
-      linkShopee: input.linkShopee ?? null,
-      linkMercadoLivre: input.linkMercadoLivre ?? null,
-      linkTiktokShop: input.linkTiktokShop ?? null,
-      linkShein: input.linkShein ?? null,
-      variantes: { create: input.variantes.map(variantData) },
-    },
-    select: { id: true },
-  });
-  return product;
-}
-
-export async function updateProduct(id: string, input: ProductInput): Promise<{ id: string }> {
-  const slug = await uniqueSlug(input.nome, id);
-  const category = await resolveCategory(input.categoryId);
-  const keepIds = input.variantes.map((v) => v.id).filter((v): v is string => Boolean(v));
-
-  await prisma.$transaction(async (tx) => {
-    await tx.product.update({
-      where: { id },
+  try {
+    const product = await prisma.product.create({
       data: {
         slug,
         tipo: input.tipo,
@@ -168,27 +176,68 @@ export async function updateProduct(id: string, input: ProductInput): Promise<{ 
         isPromocao: input.isPromocao,
         imagem: input.imagem,
         imagens: input.imagens,
+        caracteristicas: [],
         linkShopee: input.linkShopee ?? null,
         linkMercadoLivre: input.linkMercadoLivre ?? null,
         linkTiktokShop: input.linkTiktokShop ?? null,
         linkShein: input.linkShein ?? null,
+        variantes: { create: input.variantes.map(variantData) },
       },
+      select: { id: true },
     });
+    return product;
+  } catch (error) {
+    rethrowSkuConflict(error);
+  }
+}
 
-    // Remove variantes que saíram do formulário. Se alguma tiver pedido antigo
-    // (FK), o delete falha e o erro sobe pra action (não silencia).
-    await tx.productVariant.deleteMany({
-      where: { productId: id, id: { notIn: keepIds } },
-    });
+export async function updateProduct(id: string, input: ProductInput): Promise<{ id: string }> {
+  await assertUniqueSkus(input, id);
+  const slug = await uniqueSlug(input.nome, id);
+  const category = await resolveCategory(input.categoryId);
+  const keepIds = input.variantes.map((v) => v.id).filter((v): v is string => Boolean(v));
 
-    for (const v of input.variantes) {
-      if (v.id) {
-        await tx.productVariant.update({ where: { id: v.id }, data: variantData(v) });
-      } else {
-        await tx.productVariant.create({ data: { productId: id, ...variantData(v) } });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id },
+        data: {
+          slug,
+          tipo: input.tipo,
+          categoryId: category.id,
+          nome: input.nome,
+          categoria: category.path,
+          subtitulo: input.subtitulo,
+          descricao: input.descricao,
+          ativo: input.ativo,
+          isNovidade: input.isNovidade,
+          isPromocao: input.isPromocao,
+          imagem: input.imagem,
+          imagens: input.imagens,
+          linkShopee: input.linkShopee ?? null,
+          linkMercadoLivre: input.linkMercadoLivre ?? null,
+          linkTiktokShop: input.linkTiktokShop ?? null,
+          linkShein: input.linkShein ?? null,
+        },
+      });
+
+      // Remove variantes que saíram do formulário. Se alguma tiver pedido antigo
+      // (FK), o delete falha e o erro sobe pra action (não silencia).
+      await tx.productVariant.deleteMany({
+        where: { productId: id, id: { notIn: keepIds } },
+      });
+
+      for (const v of input.variantes) {
+        if (v.id) {
+          await tx.productVariant.update({ where: { id: v.id }, data: variantData(v) });
+        } else {
+          await tx.productVariant.create({ data: { productId: id, ...variantData(v) } });
+        }
       }
-    }
-  });
+    });
+  } catch (error) {
+    rethrowSkuConflict(error);
+  }
 
   return { id };
 }

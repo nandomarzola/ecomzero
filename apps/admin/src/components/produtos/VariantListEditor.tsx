@@ -39,6 +39,12 @@ const inputClass =
   "rounded-md border border-white/10 bg-[#0a0a0a] px-2.5 py-1.5 text-sm text-white outline-none focus:border-[#A9EC17]/40";
 
 export default function VariantListEditor({ value, onChange, mode }: Props) {
+  const skuCounts = new Map<string, number>();
+  value.forEach((row) => {
+    const sku = row.skuInterno.trim().toUpperCase();
+    if (sku) skuCounts.set(sku, (skuCounts.get(sku) ?? 0) + 1);
+  });
+
   function update(index: number, patch: Partial<VariantFormRow>) {
     onChange(value.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
@@ -99,10 +105,21 @@ export default function VariantListEditor({ value, onChange, mode }: Props) {
             <label className="flex flex-col gap-1 text-[11px] text-white/50">
               SKU interno
               <input
-                className={inputClass}
+                className={`${inputClass} ${
+                  row.skuInterno.trim() && (skuCounts.get(row.skuInterno.trim().toUpperCase()) ?? 0) > 1
+                    ? "border-red-400/60 focus:border-red-400"
+                    : ""
+                }`}
+                autoCapitalize="characters"
+                maxLength={100}
+                placeholder="Ex.: EZ-0012"
+                spellCheck={false}
                 value={row.skuInterno}
-                onChange={(e) => update(index, { skuInterno: e.target.value })}
+                onChange={(e) => update(index, { skuInterno: e.target.value.toUpperCase() })}
               />
+              {row.skuInterno.trim() && (skuCounts.get(row.skuInterno.trim().toUpperCase()) ?? 0) > 1 ? (
+                <span className="text-red-300">Este SKU está repetido nas variações.</span>
+              ) : null}
             </label>
             <label className="flex flex-col gap-1 text-[11px] text-white/50">
               Peso (kg)

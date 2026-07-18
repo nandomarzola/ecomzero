@@ -59,7 +59,7 @@ async function main() {
             label: variante.label,
             precoDe: variante.precoDe,
             precoPor: variante.precoPor,
-            skuInterno: variante.id,
+            skuInterno: `${produto.slug}-${variante.id}`.toUpperCase(),
             // Sem link Shopee por variante na fonte original — fica null até
             // ser preenchido manualmente (ver TODO em ProductPurchase.tsx).
             linkShopee: null,

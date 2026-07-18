@@ -10,7 +10,10 @@ const syncVariantSchema = z.object({
   precoDe: z.number().nonnegative(),
   precoPor: z.number().nonnegative(),
   linkShopee: z.string().nullable().optional(),
-  skuInterno: z.string().nullable().optional(),
+  skuInterno: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? null : value),
+    z.string().trim().max(100).transform((value) => value.toUpperCase()).nullable().optional(),
+  ),
 });
 
 const syncProductSchema = z.object({

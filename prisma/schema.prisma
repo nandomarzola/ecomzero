@@ -290,7 +290,7 @@ model ProductVariant {
   label      String
   precoDe    Decimal @db.Decimal(10, 2)
   precoPor   Decimal @db.Decimal(10, 2)
-  skuInterno String?
+  skuInterno String? @unique
   linkShopee String?
 
   // Frete (Melhor Envio) — sem peso/dimensão cadastrado por produto ainda;
