@@ -83,8 +83,11 @@ export function whatsappUrl(phone: string, message: string) {
   return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(message)}` : null;
 }
 
-export function renderCustomerMessage(template: string, data: { customerName: string; orderId: string }) {
+export function renderCustomerMessage(template: string, data: { customerName: string; orderId?: string }) {
   return template
     .replaceAll("{nome_cliente}", data.customerName)
-    .replaceAll("{numero_pedido}", `#${data.orderId.slice(0, 8)}`);
+    .replaceAll(
+      "{numero_pedido}",
+      data.orderId ? `#${data.orderId.slice(0, 8)}` : "",
+    );
 }

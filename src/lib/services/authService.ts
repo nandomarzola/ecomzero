@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { hashPassword, verifyPassword } from "@/lib/security/password";
+import { sendWelcomeEmail } from "@/lib/services/transactionalEmailService";
 import type { RegisterInput } from "@/lib/validation/auth";
 
 const DUMMY_PASSWORD_HASH =
@@ -47,7 +48,13 @@ export async function registerUser(input: RegisterInput): Promise<SafeUser> {
       select: { id: true, name: true, email: true },
     });
 
-    return { id: user.id, name: user.name ?? input.nome, email: user.email };
+    const safeUser = {
+      id: user.id,
+      name: user.name ?? input.nome,
+      email: user.email,
+    };
+    await sendWelcomeEmail(safeUser);
+    return safeUser;
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

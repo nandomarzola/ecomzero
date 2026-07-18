@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
+import { safeCompare } from "@/lib/security/safeCompare";
 import {
   cancelOrder,
   OrderCancellationError,
@@ -12,8 +13,10 @@ const orderIdSchema = z.string().uuid();
 function authorized(request: NextRequest) {
   return Boolean(
     config.storefrontSyncApiKey &&
-      request.headers.get("authorization") ===
+      safeCompare(
+        request.headers.get("authorization"),
         `Bearer ${config.storefrontSyncApiKey}`,
+      ),
   );
 }
 

@@ -4,6 +4,10 @@ import {
   PROVIDER_LABEL_STATUS,
 } from "@/lib/shipping/shippingDomain";
 import { createCustomerNotificationFromShipmentEvent } from "@/lib/services/customerNotificationService";
+import {
+  sendOrderLifecycleEmail,
+  type OrderEmailType,
+} from "@/lib/services/transactionalEmailService";
 
 export type ProviderShipmentUpdate = {
   melhorEnvioId: string;
@@ -18,6 +22,16 @@ export type ProviderShipmentUpdate = {
   deliveredAt?: Date | null;
   canceledAt?: Date | null;
 };
+
+function emailTypeForShipmentStatus(
+  status: string | undefined,
+): OrderEmailType | null {
+  if (status === "delivered") return "order_delivered";
+  if (status === "posted" || status === "in_transit") {
+    return "order_in_transit";
+  }
+  return null;
+}
 
 export async function applyProviderShipmentUpdate(
   update: ProviderShipmentUpdate,
@@ -45,7 +59,13 @@ export async function applyProviderShipmentUpdate(
       (update.trackingUrl && update.trackingUrl !== shipment.urlRastreio) ||
       (update.protocol && update.protocol !== shipment.melhorEnvioProtocol),
   );
-  if (!changed) return { matched: true, changed: false };
+  const emailType = emailTypeForShipmentStatus(incomingLabelStatus);
+  if (!changed) {
+    if (emailType) {
+      await sendOrderLifecycleEmail(shipment.orderId, emailType);
+    }
+    return { matched: true, changed: false };
+  }
 
   await prisma.$transaction(async (transaction) => {
     await transaction.shipment.update({
@@ -93,5 +113,9 @@ export async function applyProviderShipmentUpdate(
       createdAt: event.createdAt,
     });
   });
+
+  if (emailType) {
+    await sendOrderLifecycleEmail(shipment.orderId, emailType);
+  }
   return { matched: true, changed: true };
 }

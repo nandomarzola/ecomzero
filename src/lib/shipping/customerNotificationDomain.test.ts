@@ -4,6 +4,7 @@ import {
   customerNotificationContent,
   notificationTypeFromShipmentEvent,
 } from "./customerNotificationDomain";
+import { renderCustomerMessage } from "../storeSettingsDomain";
 
 test("mapeia os eventos relevantes do ciclo do pedido", () => {
   assert.equal(
@@ -42,5 +43,24 @@ test("gera a mensagem de entrega com a referência curta do pedido", () => {
       title: "Pedido entregue",
       message: "Seu pedido #03730a23 foi entregue!",
     },
+  );
+});
+
+test("substitui as variáveis reais dos templates transacionais", () => {
+  assert.equal(
+    renderCustomerMessage(
+      "Olá, {nome_cliente}. Pedido {numero_pedido} confirmado.",
+      {
+        customerName: "Maria da Silva",
+        orderId: "03730a23-aaaa-bbbb-cccc-dddddddddddd",
+      },
+    ),
+    "Olá, Maria da Silva. Pedido #03730a23 confirmado.",
+  );
+  assert.equal(
+    renderCustomerMessage("Boas-vindas, {nome_cliente}!", {
+      customerName: "Maria da Silva",
+    }),
+    "Boas-vindas, Maria da Silva!",
   );
 });

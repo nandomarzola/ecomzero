@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { config } from "@/lib/config";
+import { safeCompare } from "@/lib/security/safeCompare";
 import { syncCatalogPayloadSchema } from "@/lib/validation/sync";
 import { syncProductsFromHub } from "@/lib/services/productService";
 
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
   }
 
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${config.storefrontSyncApiKey}`) {
+  if (!safeCompare(authHeader, `Bearer ${config.storefrontSyncApiKey}`)) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
 

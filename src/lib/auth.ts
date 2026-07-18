@@ -3,8 +3,21 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { config } from "@/lib/config";
 import { prisma } from "@/lib/db";
+import {
+  getSessionIssuedAt,
+  isSessionValidForCutoff,
+} from "@/lib/security/sessionSecurity";
 import { validateCredentials } from "@/lib/services/authService";
 import { loginSchema } from "@/lib/validation/auth";
+import {
+  clearAttempts,
+  clientIp,
+  isRateLimited,
+  rateLimitKey,
+  registerAttempt,
+} from "@/lib/security/authRateLimit";
+
+const LOGIN_MAX_FAILURES = 5; // por IP e por e-mail, em janela de 15 min
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -12,6 +25,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   callbacks: {
+    async jwt({ token, user }) {
+      const sessionIssuedAt = user ? Date.now() : getSessionIssuedAt(token);
+      if (!token.sub || sessionIssuedAt === null) return null;
+
+      const securityState = await prisma.user.findUnique({
+        where: { id: token.sub },
+        select: { sessionsValidAfter: true },
+      });
+
+      if (
+        !securityState ||
+        !isSessionValidForCutoff(
+          sessionIssuedAt,
+          securityState.sessionsValidAfter,
+        )
+      ) {
+        return null;
+      }
+
+      token.sessionIssuedAt = sessionIssuedAt;
+      return token;
+    },
     session({ session, token }) {
       if (session.user && token.sub) {
         session.user.id = token.sub;
@@ -31,7 +66,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           senha: credentials.senha,
         });
         if (!parsed.success) return null;
-        return validateCredentials(parsed.data.email, parsed.data.senha);
+
+        const ipKey = rateLimitKey("login-cliente-ip", await clientIp());
+        const emailKey = rateLimitKey("login-cliente-email", parsed.data.email);
+        if (
+          (await isRateLimited(ipKey, LOGIN_MAX_FAILURES)) ||
+          (await isRateLimited(emailKey, LOGIN_MAX_FAILURES))
+        ) {
+          return null; // bloqueado — credenciais nem são checadas
+        }
+
+        const user = await validateCredentials(
+          parsed.data.email,
+          parsed.data.senha,
+        );
+        if (!user) {
+          await Promise.all([
+            registerAttempt(ipKey),
+            registerAttempt(emailKey),
+          ]);
+          return null;
+        }
+        await Promise.all([clearAttempts(ipKey), clearAttempts(emailKey)]);
+        return user;
       },
     }),
   ],

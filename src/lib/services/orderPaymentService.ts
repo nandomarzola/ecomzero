@@ -6,6 +6,7 @@ import { recordCouponUsage } from "@/lib/services/couponService";
 import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentService";
 import { refundLatePaymentForCanceledOrder } from "@/lib/services/orderCancellationService";
 import { createCustomerNotificationFromShipmentEvent } from "@/lib/services/customerNotificationService";
+import { sendOrderLifecycleEmail } from "@/lib/services/transactionalEmailService";
 import {
   createMercadoPagoPayment,
   createPaymentPreference,
@@ -676,6 +677,10 @@ async function reconcilePayment(
     }
     preparationPending = current.shipment?.status === "payment_confirmed";
   }
+
+  after(async () => {
+    await sendOrderLifecycleEmail(order.id, "payment_confirmed");
+  });
 
   if (preparationPending) {
     after(async () => {

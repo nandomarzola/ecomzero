@@ -199,13 +199,21 @@ async function assertCustomerEligibility(
   coupon: CouponRow,
   params: { orderId: string; userId: string | null; email: string | null },
 ): Promise<void> {
-  const customerKey = customerKeyFrom(params.userId, params.email);
-  const orConditions: Prisma.CouponRedemptionWhereInput[] = [];
-  if (params.userId) orConditions.push({ userId: params.userId });
-  if (customerKey) orConditions.push({ customerKey });
-  if (orConditions.length > 0) {
-    const used = await db.couponRedemption.count({
-      where: { couponId: coupon.id, orderId: { not: params.orderId }, OR: orConditions },
+  // Conta PEDIDOS em voo (aguardando_pagamento) + pagos, não só redemptions
+  // (que só existem após o pagamento). Fecha a janela em que o cliente cria
+  // vários pedidos com o cupom antes de pagar qualquer um. Rodando na transação
+  // Serializable do checkout, o SSI do Postgres serializa checkouts concorrentes.
+  const customerOr: Prisma.OrderWhereInput[] = [];
+  if (params.userId) customerOr.push({ userId: params.userId });
+  if (params.email) customerOr.push({ emailCliente: params.email.trim().toLowerCase() });
+  if (customerOr.length > 0) {
+    const used = await db.order.count({
+      where: {
+        couponId: coupon.id,
+        id: { not: params.orderId },
+        status: { in: ["aguardando_pagamento", "pago"] },
+        OR: customerOr,
+      },
     });
     if (used >= coupon.limiteUsoPorCliente) {
       throw new CouponError("Você já atingiu o limite de uso deste cupom.", "CUSTOMER_LIMIT");
@@ -270,6 +278,21 @@ export async function validateForCheckout(
   assertApplicable(coupon, eligibleSubtotal);
 
   await assertCustomerEligibility(db, coupon, params);
+
+  // Limite total autoritativo: conta pedidos em voo + pagos (não `coupon.usos`,
+  // que só incrementa na confirmação do pagamento e deixa janela de corrida).
+  if (coupon.limiteUsoTotal !== null) {
+    const totalUsed = await db.order.count({
+      where: {
+        couponId: coupon.id,
+        id: { not: params.orderId },
+        status: { in: ["aguardando_pagamento", "pago"] },
+      },
+    });
+    if (totalUsed >= coupon.limiteUsoTotal) {
+      throw new CouponError("Este cupom atingiu o limite total de usos.", "TOTAL_LIMIT");
+    }
+  }
 
   const { productDiscount, shippingDiscount, freeShipping } = computeDiscount(
     coupon,

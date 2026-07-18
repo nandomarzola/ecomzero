@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
     await changePassword(session.user.id, parsed.data);
     return NextResponse.json({
       success: true,
-      sessionInvalidated: false,
-      message: "Senha alterada com sucesso",
+      sessionInvalidated: true,
+      message: "Senha alterada. Entre novamente em todos os dispositivos.",
     });
   } catch (error) {
     if (

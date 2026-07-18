@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { uploadReviewImage } from "@/lib/services/reviewImageService";
+import {
+  ReviewImageError,
+  uploadReviewImage,
+} from "@/lib/services/reviewImageService";
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -18,8 +21,15 @@ export async function POST(request: NextRequest) {
     const url = await uploadReviewImage(file);
     return NextResponse.json({ url }, { status: 201 });
   } catch (error) {
+    if (error instanceof ReviewImageError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error("Falha no upload de foto de avaliação", {
+      userId: session.user.id,
+      message: error instanceof Error ? error.message.slice(0, 300) : "erro desconhecido",
+    });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Falha no upload." },
+      { error: "Não foi possível enviar a foto." },
       { status: 400 },
     );
   }

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Eye, EyeOff, LoaderCircle, LockKeyhole, Save, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -79,7 +80,8 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast.success("Senha alterada com sucesso.");
+      toast.success("Senha alterada. Entre novamente para continuar.");
+      await signOut({ redirectTo: "/login" });
     } catch (error) {
       setPasswordError(error instanceof Error ? error.message : "Não foi possível alterar a senha.");
     } finally {

@@ -23,7 +23,10 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
   STOREFRONT_SYNC_API_KEY: z.preprocess(
     normalizeSingleLineSecret,
-    z.string().min(1).optional(),
+    z
+      .string()
+      .min(32, "STOREFRONT_SYNC_API_KEY precisa ter pelo menos 32 caracteres")
+      .optional(),
   ),
   NEXT_PUBLIC_STOREFRONT_URL: z.string().url().optional(),
   NEXT_PUBLIC_ADMIN_LOGO_URL: z.string().min(1).optional(),

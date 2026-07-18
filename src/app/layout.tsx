@@ -15,6 +15,7 @@ import TrackingScripts from "@/components/TrackingScripts";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import { getActiveAnnouncementBarItems, getStoreSettings } from "@/lib/services/storeContentService";
 import { ProductFiltersProvider } from "@/components/ProductFiltersProvider";
+import { serializeJsonLd } from "@/lib/jsonLd";
 import "./globals.css";
 
 const geist = Geist({
@@ -108,13 +109,13 @@ export default async function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd),
+            __html: serializeJsonLd(organizationJsonLd),
           }}
         />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(webSiteJsonLd),
+            __html: serializeJsonLd(webSiteJsonLd),
           }}
         />
 

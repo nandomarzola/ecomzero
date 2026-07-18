@@ -617,3 +617,13 @@ model MelhorEnvioBalanceCache {
   ultimoErro   String?
   updatedAt    DateTime  @updatedAt
 }
+
+// Espelho de ../../prisma/schema.prisma (dono). Migração nasce na raiz.
+model AuthRateLimit {
+  id          String   @id @default(uuid())
+  identifier  String   @unique // "escopo:ip" ou "escopo:email"
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+
+  @@index([windowStart])
+}

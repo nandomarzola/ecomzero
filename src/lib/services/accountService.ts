@@ -238,10 +238,32 @@ export async function changePassword(
   }
 
   const senhaHash = await hashPassword(input.senhaNova);
-  await prisma.user.update({
-    where: { id: userId },
-    data: { senhaHash },
+  const sessionsValidAfter = new Date();
+  const result = await prisma.$transaction(async (transaction) => {
+    const updateResult = await transaction.user.updateMany({
+      where: { id: userId, senhaHash: user.senhaHash },
+      data: {
+        senhaHash,
+        sessionsValidAfter,
+      },
+    });
+
+    if (updateResult.count === 1) {
+      await transaction.passwordResetToken.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: sessionsValidAfter },
+      });
+    }
+
+    return updateResult;
   });
+
+  if (result.count !== 1) {
+    throw new AccountServiceError(
+      "A senha foi alterada em outra sessão. Entre novamente e tente de novo.",
+      "CURRENT_PASSWORD_INCORRECT",
+    );
+  }
 }
 
 export async function getAddressesByUser(userId: string) {

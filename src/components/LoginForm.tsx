@@ -199,13 +199,12 @@ export default function LoginForm() {
               />
               <span>Lembrar meus dados</span>
             </label>
-            <button
-              type="button"
-              onClick={() => showUnavailableMessage("A recuperação de senha")}
+            <Link
+              href="/recuperar-senha"
               className="shrink-0 rounded-sm text-xs font-semibold text-[var(--brand-color)] transition hover:text-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
             >
               Esqueci minha senha
-            </button>
+            </Link>
           </div>
 
           {statusMessage && (

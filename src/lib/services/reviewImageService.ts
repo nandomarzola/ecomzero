@@ -3,6 +3,9 @@ import { config } from "@/lib/config";
 
 const allowedMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+/** Erro de validação com mensagem segura para exibir ao cliente. */
+export class ReviewImageError extends Error {}
+
 function hasValidSignature(bytes: Uint8Array, mimeType: string) {
   if (mimeType === "image/jpeg") {
     return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
@@ -29,18 +32,20 @@ function hasValidSignature(bytes: Uint8Array, mimeType: string) {
 
 export async function uploadReviewImage(file: File): Promise<string> {
   if (!config.blobReadWriteToken) {
-    throw new Error("Upload de fotos indisponível no momento.");
+    throw new ReviewImageError("Upload de fotos indisponível no momento.");
   }
   if (!allowedMimeTypes.has(file.type)) {
-    throw new Error("Envie uma imagem JPG, PNG ou WebP.");
+    throw new ReviewImageError("Envie uma imagem JPG, PNG ou WebP.");
   }
   if (file.size === 0 || file.size > 5 * 1024 * 1024) {
-    throw new Error("Cada foto deve ter no máximo 5 MB.");
+    throw new ReviewImageError("Cada foto deve ter no máximo 5 MB.");
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (!hasValidSignature(bytes, file.type)) {
-    throw new Error("O conteúdo do arquivo não corresponde a uma imagem válida.");
+    throw new ReviewImageError(
+      "O conteúdo do arquivo não corresponde a uma imagem válida.",
+    );
   }
 
   const extension = file.type === "image/jpeg" ? "jpg" : file.type.split("/")[1];

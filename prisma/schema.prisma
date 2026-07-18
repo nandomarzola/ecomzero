@@ -115,25 +115,27 @@ enum BannerPosition {
 }
 
 model User {
-  id              String    @id @default(uuid())
-  name            String?   @map("nome")
-  email           String    @unique
-  emailVerified   DateTime?
-  image           String?
-  senhaHash       String?
-  telefone        String?
-  aceitaMarketing Boolean   @default(false)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  name               String?   @map("nome")
+  email              String    @unique
+  emailVerified      DateTime?
+  image              String?
+  senhaHash          String?
+  telefone           String?
+  aceitaMarketing    Boolean   @default(false)
+  sessionsValidAfter DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  accounts          Account[]
-  sessions          Session[]
-  orders            Order[]
-  addresses         Address[]
-  couponRedemptions CouponRedemption[]
-  favorites         ProductFavorite[]
-  notifications     Notification[]
-  productReviews    ProductReview[]
+  accounts           Account[]
+  sessions           Session[]
+  passwordResetToken PasswordResetToken?
+  orders             Order[]
+  addresses          Address[]
+  couponRedemptions  CouponRedemption[]
+  favorites          ProductFavorite[]
+  notifications      Notification[]
+  productReviews     ProductReview[]
 }
 
 model Account {
@@ -173,6 +175,18 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([expiresAt])
 }
 
 model Address {
@@ -342,6 +356,7 @@ model Order {
   cancellation          OrderCancellation?
   events                OrderEvent[]
   notifications         Notification[]
+  emailLogs             OrderEmailLog[]
   reviews               ProductReview[]
 
   @@index([userId])
@@ -613,6 +628,15 @@ model ShippingRateLimit {
   @@index([windowStart])
 }
 
+model AuthRateLimit {
+  id          String   @id @default(uuid())
+  identifier  String   @unique // "escopo:ip" ou "escopo:email"
+  count       Int      @default(1)
+  windowStart DateTime @default(now())
+
+  @@index([windowStart])
+}
+
 model CheckoutShippingQuote {
   id              String   @id @default(uuid())
   orderId         String   @unique
@@ -732,6 +756,24 @@ model Notification {
   @@unique([userId, orderId, type])
   @@index([userId, lida, createdAt])
   @@index([orderId])
+}
+
+model OrderEmailLog {
+  id                String                   @id @default(uuid())
+  orderId           String
+  order             Order                    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type              CustomerNotificationType
+  status            String                   @default("processing")
+  attempts          Int                      @default(1)
+  processingToken   String?
+  providerMessageId String?
+  lastError         String?
+  sentAt            DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@unique([orderId, type])
+  @@index([status, updatedAt])
 }
 
 model MelhorEnvioBalanceCache {

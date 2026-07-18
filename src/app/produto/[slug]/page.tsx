@@ -31,6 +31,7 @@ import {
 import type { Product } from "@/types/product";
 import { getActiveCategories } from "@/lib/services/storeContentService";
 import { getApprovedProductReviews } from "@/lib/services/productReviewService";
+import { serializeJsonLd } from "@/lib/jsonLd";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -205,14 +206,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildProductJsonLd(product)),
+          __html: serializeJsonLd(buildProductJsonLd(product)),
         }}
       />
 
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(buildBreadcrumbJsonLd(product)),
+          __html: serializeJsonLd(buildBreadcrumbJsonLd(product)),
         }}
       />
 

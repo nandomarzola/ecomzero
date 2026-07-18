@@ -206,13 +206,12 @@ export default function CheckoutIdentification() {
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => showUnavailableMessage("A recuperação de senha")}
+              <Link
+                href="/recuperar-senha"
                 className="mt-3 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] max-md:mt-2 max-md:inline-flex max-md:min-h-11 max-md:items-center max-md:text-sm"
               >
                 Esqueci minha senha
-              </button>
+              </Link>
 
               {loginError && (
                 <p

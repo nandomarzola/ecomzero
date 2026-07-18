@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { uploadImage } from "@/lib/blob";
+import { assertRealImage, ImageValidationError } from "@/lib/imageValidation";
 
 // Upload de mídia do catálogo no Vercel Blob, protegido por sessão de admin.
 export async function POST(request: NextRequest) {
@@ -23,15 +24,18 @@ export async function POST(request: NextRequest) {
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: "O arquivo deve ter no máximo 5 MB" }, { status: 400 });
     }
-    const isIcon = file.name.toLowerCase().endsWith(".ico");
-    if (!file.type.startsWith("image/") && !(scope === "branding" && isIcon)) {
-      return NextResponse.json({ error: "Formato de imagem inválido" }, { status: 400 });
-    }
+    await assertRealImage(file, { allowIco: scope === "branding" });
     const url = await uploadImage(file, scope);
     return NextResponse.json({ url });
   } catch (error) {
+    if (error instanceof ImageValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error("Falha no upload de mídia do catálogo", {
+      message: error instanceof Error ? error.message.slice(0, 300) : "erro desconhecido",
+    });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Falha no upload" },
+      { error: "Não foi possível enviar o arquivo." },
       { status: 500 },
     );
   }

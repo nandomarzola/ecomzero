@@ -5,15 +5,34 @@ function normalizeSingleLineSecret(value: unknown) {
   return value.trim().split(/\s+/)[0] ?? "";
 }
 
+function emptyStringToUndefined(value: unknown) {
+  return typeof value === "string" && value.trim() === "" ? undefined : value;
+}
+
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL não configurada"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa ter pelo menos 32 caracteres"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  NEXT_PUBLIC_STOREFRONT_URL: z.preprocess(
+    emptyStringToUndefined,
+    z.string().url().optional(),
+  ),
+  RESEND_API_KEY: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).optional(),
+  ),
+  PASSWORD_RESET_EMAIL_FROM: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(3).optional(),
+  ),
   // Opcional: sem ela, o endpoint /api/admin/sync-catalog recusa todo request
   // em vez de derrubar o app inteiro (integração opcional, não é o core do site).
   STOREFRONT_SYNC_API_KEY: z.preprocess(
     normalizeSingleLineSecret,
-    z.string().min(1).optional(),
+    z
+      .string()
+      .min(32, "STOREFRONT_SYNC_API_KEY precisa ter pelo menos 32 caracteres")
+      .optional(),
   ),
   // Vercel Blob (fotos/vídeos de produto) — criado via `vercel blob create-store`.
   // Também opcional pelo mesmo motivo: sem ela, só o upload fica indisponível.
@@ -67,6 +86,15 @@ export const config = {
   databaseUrl: parsed.data.DATABASE_URL,
   authSecret: parsed.data.AUTH_SECRET,
   nodeEnv: parsed.data.NODE_ENV,
+  storefrontUrl:
+    parsed.data.NEXT_PUBLIC_STOREFRONT_URL ??
+    (parsed.data.NODE_ENV === "production"
+      ? "https://www.ecomzero.com.br"
+      : "http://localhost:3000"),
+  email: {
+    resendApiKey: parsed.data.RESEND_API_KEY,
+    transactionalFrom: parsed.data.PASSWORD_RESET_EMAIL_FROM,
+  },
   storefrontSyncApiKey: parsed.data.STOREFRONT_SYNC_API_KEY,
   blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,
   melhorEnvio: {
