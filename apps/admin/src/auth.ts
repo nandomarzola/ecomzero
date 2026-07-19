@@ -1,6 +1,6 @@
+import { createHash } from "node:crypto";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import { authConfig } from "@/auth.config";
 import { prisma } from "@/lib/db";
 import {
@@ -14,14 +14,14 @@ import {
   rateLimitKey,
   registerAttempt,
 } from "@/lib/security/authRateLimit";
-import { verifyAndConsumeAdminSecondFactor } from "@/lib/services/adminTwoFactorService";
+import {
+  challengeRateLimitIdentity,
+  consumeAdminEmailChallenge,
+  consumeAdminRecoveryChallenge,
+  validateAdminPassword,
+} from "@/lib/services/adminLoginChallengeService";
 
 const LOGIN_MAX_FAILURES = 5; // por IP e por e-mail, em janela de 15 min
-
-// Hash descartável para gastar o mesmo tempo de bcrypt quando o e-mail não
-// existe — evita enumeração de admin por timing.
-const DUMMY_PASSWORD_HASH =
-  "$2b$12$4j/YCPB6oHNSBBpPVnk2L.fpJSP1wy39KKX3Cd5.D1lPOdBTqTG3G";
 
 // Config completa do NextAuth v5 — inclui o provider Credentials que valida o
 // AdminUser no banco com bcrypt. Só é carregada no route handler (Node runtime),
@@ -71,15 +71,74 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "E-mail", type: "email" },
         password: { label: "Senha", type: "password" },
-        code: { label: "Código 2FA", type: "text" },
+        challengeToken: { label: "Desafio", type: "text" },
+        verificationCode: { label: "Código por e-mail", type: "text" },
+        recoveryCode: { label: "Código de recuperação", type: "text" },
       },
       async authorize(credentials) {
+        const challengeToken =
+          typeof credentials?.challengeToken === "string"
+            ? credentials.challengeToken.trim()
+            : "";
+        const verificationCode =
+          typeof credentials?.verificationCode === "string"
+            ? credentials.verificationCode.trim()
+            : "";
+        const recoveryCode =
+          typeof credentials?.recoveryCode === "string"
+            ? credentials.recoveryCode.trim()
+            : "";
+
+        if (challengeToken && (verificationCode || recoveryCode)) {
+          const identity = await challengeRateLimitIdentity(challengeToken);
+          if (!identity) return null;
+
+          const ipKey = rateLimitKey("admin-login-code-ip", await clientIp());
+          const tokenFingerprint = createHash("sha256")
+            .update(challengeToken)
+            .digest("hex")
+            .slice(0, 32);
+          const challengeKey = rateLimitKey(
+            "admin-login-code-challenge",
+            tokenFingerprint,
+          );
+          const adminKey = rateLimitKey("admin-login-code-admin", identity);
+          const keys = [ipKey, challengeKey, adminKey];
+          if (
+            (await Promise.all(
+              keys.map((key) => isRateLimited(key, LOGIN_MAX_FAILURES)),
+            )).some(Boolean)
+          ) {
+            return null;
+          }
+
+          const admin = verificationCode
+            ? await consumeAdminEmailChallenge(
+                challengeToken,
+                verificationCode,
+              )
+            : await consumeAdminRecoveryChallenge(
+                challengeToken,
+                recoveryCode,
+              );
+          if (!admin) {
+            await Promise.all(keys.map(registerAttempt));
+            return null;
+          }
+
+          await Promise.all(keys.map(clearAttempts));
+          return {
+            id: admin.id,
+            email: admin.email,
+            role: admin.role,
+            twoFactorEnabled: admin.twoFactorEnabled,
+          };
+        }
+
         const email =
           typeof credentials?.email === "string" ? credentials.email.trim().toLowerCase() : "";
         const password =
           typeof credentials?.password === "string" ? credentials.password : "";
-        const code =
-          typeof credentials?.code === "string" ? credentials.code.trim() : "";
         if (!email || !password) return null;
 
         const ipKey = rateLimitKey("login-admin-ip", await clientIp());
@@ -91,14 +150,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        const admin = await prisma.adminUser.findUnique({ where: { email } });
-        // Compara sempre (contra o hash real ou o dummy) para não vazar a
-        // existência do e-mail por timing.
-        const ok = await bcrypt.compare(
-          password,
-          admin?.senhaHash ?? DUMMY_PASSWORD_HASH,
-        );
-        if (!admin || !ok) {
+        const admin = await validateAdminPassword(email, password);
+        if (!admin) {
           await Promise.all([
             registerAttempt(ipKey),
             registerAttempt(emailKey),
@@ -106,16 +159,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        if (
-          admin.twoFactorEnabled &&
-          (!code || !(await verifyAndConsumeAdminSecondFactor(admin, code)))
-        ) {
-          await Promise.all([
-            registerAttempt(ipKey),
-            registerAttempt(emailKey),
-          ]);
-          return null;
-        }
+        if (admin.twoFactorEnabled) return null;
 
         await Promise.all([clearAttempts(ipKey), clearAttempts(emailKey)]);
         return {

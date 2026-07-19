@@ -37,7 +37,7 @@ export default function ProductShelf({ products }: { products: Product[] }) {
         {products.map((product) => (
           <div
             key={product.id}
-            className="w-[72%] shrink-0 snap-start sm:w-[47%] md:w-[31%] lg:w-full"
+            className="w-[82%] shrink-0 snap-start sm:w-[47%] md:w-[31%] lg:w-full"
           >
             <ProductCard product={product} />
           </div>

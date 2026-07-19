@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 
 export type TransactionalEmailKind =
   | "password_reset"
+  | "admin_login_code"
   | "welcome"
   | "payment_confirmed"
   | "order_in_transit"
@@ -32,6 +33,7 @@ type BrandedEmailContent = {
   branding: EmailBranding;
   heading: string;
   message: string;
+  highlight?: string;
   action?: { label: string; url: string };
 };
 
@@ -100,6 +102,9 @@ export function renderBrandedEmail(content: BrandedEmailContent): {
   const logoUrl = escapeHtml(content.branding.logoUrl);
   const heading = escapeHtml(content.heading);
   const message = escapeHtml(content.message).replace(/\r?\n/g, "<br>");
+  const highlight = content.highlight
+    ? `<tr><td style="padding:4px 32px 20px"><div style="padding:18px 20px;border:1px solid #dddddd;border-radius:8px;background:#fafafa;text-align:center;font-size:30px;font-weight:800;letter-spacing:0.25em;color:#111111">${escapeHtml(content.highlight)}</div></td></tr>`
+    : "";
   const brandColor = content.branding.brandColor;
   const action = content.action
     ? `<tr><td style="padding:8px 32px 32px"><a href="${escapeHtml(content.action.url)}" style="display:inline-block;background:${brandColor};color:#050505;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:6px">${escapeHtml(content.action.label)}</a></td></tr>`
@@ -109,8 +114,8 @@ export function renderBrandedEmail(content: BrandedEmailContent): {
     : "";
 
   return {
-    html: `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#171717"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f4;padding:24px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden"><tr><td style="background:#0b0b0b;padding:22px 32px;border-bottom:4px solid ${brandColor}"><img src="${logoUrl}" alt="${storeName}" style="display:block;max-height:46px;max-width:190px;width:auto;height:auto"></td></tr><tr><td style="padding:32px 32px 12px"><h1 style="margin:0;font-size:24px;line-height:1.3;color:#111111">${heading}</h1></td></tr><tr><td style="padding:8px 32px 24px;font-size:16px;line-height:1.65;color:#444444">${message}</td></tr>${action}<tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #eeeeee;font-size:12px;line-height:1.5;color:#777777">Este é um e-mail automático de ${storeName}.</td></tr></table></td></tr></table></body></html>`,
-    text: `${content.heading}\n\n${content.message}${actionText}\n\n${content.branding.storeName}`,
+    html: `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#f4f4f4;font-family:Arial,sans-serif;color:#171717"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f4;padding:24px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden"><tr><td style="background:#0b0b0b;padding:22px 32px;border-bottom:4px solid ${brandColor}"><img src="${logoUrl}" alt="${storeName}" style="display:block;max-height:46px;max-width:190px;width:auto;height:auto"></td></tr><tr><td style="padding:32px 32px 12px"><h1 style="margin:0;font-size:24px;line-height:1.3;color:#111111">${heading}</h1></td></tr><tr><td style="padding:8px 32px 24px;font-size:16px;line-height:1.65;color:#444444">${message}</td></tr>${highlight}${action}<tr><td style="padding:20px 32px;background:#fafafa;border-top:1px solid #eeeeee;font-size:12px;line-height:1.5;color:#777777">Este é um e-mail automático de ${storeName}.</td></tr></table></td></tr></table></body></html>`,
+    text: `${content.heading}\n\n${content.message}${content.highlight ? `\n\n${content.highlight}` : ""}${actionText}\n\n${content.branding.storeName}`,
   };
 }
 
@@ -204,6 +209,42 @@ export async function sendPasswordResetEmail(input: {
     console.error("[email] falha ao preparar recuperação de senha", {
       kind: "password_reset",
       to: maskedEmail(input.to),
+      reason,
+    });
+    return { status: "failed", reason };
+  }
+}
+
+export async function sendAdminLoginCodeEmail(input: {
+  to: string;
+  code: string;
+  challengeId: string;
+  requestId: string;
+  expiresInMinutes: number;
+}): Promise<EmailSendResult> {
+  try {
+    const branding = await getEmailBranding();
+    const content = renderBrandedEmail({
+      branding,
+      heading: "Código de acesso ao Admin",
+      message: `Use o código abaixo para confirmar seu acesso ao painel administrativo. Ele expira em ${input.expiresInMinutes} minutos e só pode ser usado uma vez. Se você não tentou entrar, ignore este e-mail.`,
+      highlight: input.code,
+    });
+
+    return sendTransactionalEmail({
+      kind: "admin_login_code",
+      to: input.to,
+      subject: `Seu código de acesso ao Admin ${branding.storeName}`,
+      html: content.html,
+      text: content.text,
+      idempotencyKey: `admin-login-code/${input.challengeId}/${input.requestId}`,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.name : "unknown_error";
+    console.error("[email] falha ao preparar código de acesso do admin", {
+      kind: "admin_login_code",
+      to: maskedEmail(input.to),
+      challengeId: input.challengeId,
       reason,
     });
     return { status: "failed", reason };

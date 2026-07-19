@@ -205,18 +205,37 @@ model ProductVariant {
 
 // Usuário do painel administrativo. Ver comentário no schema raiz.
 model AdminUser {
-  id                          String    @id @default(uuid())
-  email                       String    @unique
+  id                          String               @id @default(uuid())
+  email                       String               @unique
   senhaHash                   String
-  role                        AdminRole @default(owner)
+  role                        AdminRole            @default(owner)
   sessionsValidAfter          DateTime?
-  twoFactorEnabled            Boolean   @default(false)
+  twoFactorEnabled            Boolean              @default(false)
   twoFactorSecretEncrypted    String?
-  twoFactorRecoveryCodeHashes String?   @db.Text
+  twoFactorRecoveryCodeHashes String?              @db.Text
   twoFactorLastUsedStep       Int?
   twoFactorEnabledAt          DateTime?
-  createdAt                   DateTime  @default(now())
-  updatedAt                   DateTime  @updatedAt
+  createdAt                   DateTime             @default(now())
+  updatedAt                   DateTime             @updatedAt
+  loginChallenge              AdminLoginChallenge?
+}
+
+model AdminLoginChallenge {
+  id          String    @id @default(uuid())
+  adminUserId String    @unique
+  tokenHash   String    @unique
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int       @default(0)
+  sendCount   Int       @default(1)
+  lastSentAt  DateTime  @default(now())
+  consumedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([consumedAt])
 }
 
 model User {

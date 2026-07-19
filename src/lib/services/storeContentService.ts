@@ -1,6 +1,17 @@
 import { cache } from "react";
 import { prisma } from "@/lib/db";
+import { Prisma } from "@/generated/prisma/client";
 import type { StoreAnnouncementItem } from "@/types/storePromotion";
+
+// ── Resiliência de build/prerender ──────────────────────────────────────────
+// Durante `next build`, o layout raiz (e o Footer, em TODA página estática
+// prerenderizada) lê StoreSettings / categorias / anúncios. Se o banco estiver
+// indisponível no build (ex.: limite de plano do Prisma), toleramos com um
+// fallback sensato — SÓ no build. Em runtime real (request de usuário) o erro
+// sobe normalmente: não mascaramos queda de banco em produção.
+const isBuildPhase = () => process.env.NEXT_PHASE === "phase-production-build";
+const failureReason = (error: unknown) =>
+  error instanceof Error ? error.message : "erro desconhecido";
 
 export type StoreCategory = {
   id: string;
@@ -63,7 +74,14 @@ async function getFooterContentSettings() {
 }
 
 export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
-  const rows = await prisma.category.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
+  let rows;
+  try {
+    rows = await prisma.category.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
+  } catch (error) {
+    console.warn("[storeContent] categorias indisponíveis", { reason: failureReason(error) });
+    if (isBuildPhase()) return [];
+    throw error;
+  }
   const children = new Map<string | null, typeof rows>();
   for (const row of rows) children.set(row.parentId, [...(children.get(row.parentId) ?? []), row]);
   const result: StoreCategory[] = [];
@@ -134,7 +152,9 @@ export const getActiveBanners = cache(async (): Promise<StoreBanner[]> => {
 
 export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnouncementBarItem[]> => {
   const now = new Date();
-  const rows = await prisma.announcementBarItem.findMany({
+  let rows;
+  try {
+    rows = await prisma.announcementBarItem.findMany({
     where: { ativo: true },
     orderBy: [{ ordem: "asc" }, { createdAt: "asc" }],
     select: {
@@ -164,6 +184,11 @@ export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnoun
       },
     },
   });
+  } catch (error) {
+    console.warn("[storeContent] barra de anúncios indisponível", { reason: failureReason(error) });
+    if (isBuildPhase()) return [];
+    throw error;
+  }
 
   const categoryCouponIds = [...new Set(rows.map((row) => row.coupon?.categoriaId).filter((id): id is string => Boolean(id)))];
   const productCouponIds = [...new Set(rows.map((row) => row.coupon?.produtoId).filter((id): id is string => Boolean(id)))];
@@ -234,7 +259,7 @@ export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnoun
   });
 });
 
-export const getStoreSettings = cache(async () => {
+async function fetchStoreSettings() {
   const [settings, footerContent] = await Promise.all([
     prisma.storeSettings.upsert({
       where: { id: "singleton" },
@@ -260,4 +285,109 @@ export const getStoreSettings = cache(async () => {
     mensagemFooter: settings.mensagemFooter === legacyFooterMessage ? secureFooterMessage : settings.mensagemFooter,
     ...footerContent,
   };
+}
+
+type StoreSettingsView = Awaited<ReturnType<typeof fetchStoreSettings>>;
+
+// Fallback usado APENAS no build/prerender quando o banco está indisponível.
+// Espelha os @default do schema StoreSettings (as colunas omitidas no select
+// acima não entram aqui). Tipado como `StoreSettingsView`: o tsc quebra o build
+// se o schema mudar e este default ficar desatualizado — nunca fica errado em
+// silêncio. Em runtime real, nunca é usado (o erro sobe).
+const DEFAULT_STORE_SETTINGS: StoreSettingsView = {
+  id: "singleton",
+  nomeLoja: "EcomZero",
+  descricaoFooter:
+    "Produtos inteligentes, úteis e de qualidade para transformar sua rotina.",
+  mensagemFooter: secureFooterMessage,
+  barraAnuncioAtiva: false,
+  barraAnuncioTexto: null,
+  barraAnuncioLink: null,
+  barraAnuncioCor: null,
+  barraAnuncioVelocidade: 5,
+  emailSuporte: null,
+  telefoneSuporte: null,
+  whatsapp: null,
+  linkShopee: null,
+  linkInstagram: null,
+  linkFacebook: null,
+  linkTiktok: null,
+  linkYoutube: null,
+  linkTwitter: null,
+  instagramAtivo: false,
+  facebookAtivo: false,
+  tiktokAtivo: false,
+  youtubeAtivo: false,
+  twitterAtivo: false,
+  shopeeAtivo: false,
+  linkMercadoLivre: null,
+  mercadoLivreAtivo: false,
+  linkTiktokShop: null,
+  tiktokShopAtivo: false,
+  linkShein: null,
+  sheinAtivo: false,
+  emailSuporteAtivo: false,
+  telefoneSuporteAtivo: false,
+  whatsappAtivo: false,
+  whatsappMensagem: "Olá! Preciso de ajuda com a minha compra.",
+  horariosAtendimento: null,
+  footerColumns: null,
+  footerSeloSeguranca: true,
+  footerCopyrightTexto: "Todos os direitos reservados.",
+  footerCopyrightAno: "automatico",
+  footerCopyrightAnoFixo: null,
+  razaoSocial: null,
+  cnpjLoja: null,
+  enderecoEmpresa: null,
+  mensagemBoasVindasAtiva: false,
+  mensagemBoasVindas: "Olá, {nome_cliente}! Sua conta foi criada com sucesso.",
+  mensagemPedidoConfirmadoAtiva: true,
+  mensagemPedidoConfirmado: "O pagamento do pedido {numero_pedido} foi confirmado.",
+  mensagemPedidoEnviadoAtiva: true,
+  mensagemPedidoEnviado: "Seu pedido {numero_pedido} está a caminho!",
+  mensagemPedidoEntregueAtiva: true,
+  mensagemPedidoEntregue: "Seu pedido {numero_pedido} foi entregue!",
+  metaPixelAtivo: false,
+  metaPixelId: null,
+  googleAnalyticsAtivo: false,
+  googleAnalyticsId: null,
+  googleTagManagerAtivo: false,
+  googleTagManagerId: null,
+  tiktokPixelAtivo: false,
+  tiktokPixelId: null,
+  customHeadCodeAtivo: false,
+  customHeadCode: null,
+  modoManutencao: false,
+  mensagemManutencao: "Estamos preparando novidades. Voltamos em breve!",
+  valorMinimoPedido: new Prisma.Decimal(0),
+  logoUrl: "/images/logo2.png",
+  faviconUrl: null,
+  corPrincipal: "#A9EC17",
+  fusoHorario: "America/Sao_Paulo",
+  lojaAtiva: true,
+  plano: "Profissional",
+  moeda: "BRL",
+  idioma: "pt-BR",
+  fontFamily: "geist",
+  productCardStyle: "standard",
+  cardCornerStyle: "rounded",
+  showRating: true,
+  showBuyNowButton: true,
+  buttonStyle: "filled",
+  updatedAt: new Date(0),
+  footerBenefits: null,
+  footerSecurityItems: null,
+};
+
+export const getStoreSettings = cache(async (): Promise<StoreSettingsView> => {
+  try {
+    return await fetchStoreSettings();
+  } catch (error) {
+    console.warn(
+      "[storeContent] StoreSettings indisponível; usando defaults de build",
+      { reason: failureReason(error) },
+    );
+    if (isBuildPhase()) return DEFAULT_STORE_SETTINGS;
+    throw error;
+  }
 });
