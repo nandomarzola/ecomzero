@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type FormEvent,
@@ -92,6 +93,20 @@ const emptyForm: FormValues = {
   uf: "",
 };
 
+const formFieldOrder: FormField[] = [
+  "nome",
+  "email",
+  "telefone",
+  "cep",
+  "logradouro",
+  "numero",
+  "complemento",
+  "bairro",
+  "cidade",
+  "uf",
+  "cpfCnpj",
+];
+
 const inputClassName =
   "h-12 w-full rounded-md border border-white/[0.14] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/28 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60 max-md:h-[52px] max-md:text-base";
 
@@ -132,6 +147,7 @@ function Field({
   label,
   value,
   error,
+  highlighted,
   onChange,
   onBlur,
   ...inputProps
@@ -140,6 +156,7 @@ function Field({
   label: string;
   value: string;
   error?: string;
+  highlighted?: boolean;
   onChange: (value: string) => void;
   onBlur: () => void;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange" | "onBlur">) {
@@ -158,10 +175,11 @@ function Field({
         onBlur={onBlur}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
+        data-checkout-validation-highlight={highlighted ? "true" : undefined}
         className={inputClassName}
       />
       {error && (
-        <p id={errorId} className="mt-1.5 text-[11px] text-red-300 max-md:text-sm">
+        <p id={errorId} className="mt-1.5 text-[11px] text-red-300 max-md:text-sm max-md:font-semibold max-md:leading-5 max-md:text-red-200">
           {error}
         </p>
       )}
@@ -207,6 +225,9 @@ export default function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  const [highlightedField, setHighlightedField] = useState<FormField | null>(null);
+  const [mobileValidationMessage, setMobileValidationMessage] = useState("");
+  const mobileValidationTimers = useRef<number[]>([]);
   const [cepLookupStatus, setCepLookupStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
@@ -334,6 +355,44 @@ export default function CheckoutForm({
   );
   const total = cartSubtotal - cartDiscount + (freeShipping ? 0 : selection?.preco ?? 0);
 
+  const clearMobileValidationTimers = useCallback(() => {
+    for (const timer of mobileValidationTimers.current) {
+      window.clearTimeout(timer);
+    }
+    mobileValidationTimers.current = [];
+  }, []);
+
+  useEffect(() => clearMobileValidationTimers, [clearMobileValidationTimers]);
+
+  const showMobileValidationFeedback = useCallback(
+    (field: FormField) => {
+      if (!window.matchMedia("(width < 48rem)").matches) return;
+
+      clearMobileValidationTimers();
+      setHighlightedField(null);
+      setMobileValidationMessage("Verifique o campo destacado para continuar.");
+
+      const activateTimer = window.setTimeout(() => {
+        setHighlightedField(field);
+        const input = document.getElementById(field);
+        if (!(input instanceof HTMLInputElement)) return;
+
+        input.focus({ preventScroll: true });
+        const scrollTimer = window.setTimeout(() => {
+          const rect = input.getBoundingClientRect();
+          const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+          const targetTop = window.scrollY + rect.top - (viewportHeight - rect.height) / 2;
+          window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+        }, 50);
+        mobileValidationTimers.current.push(scrollTimer);
+      }, 16);
+      const highlightTimer = window.setTimeout(() => setHighlightedField(null), 1800);
+      const messageTimer = window.setTimeout(() => setMobileValidationMessage(""), 3200);
+      mobileValidationTimers.current.push(activateTimer, highlightTimer, messageTimer);
+    },
+    [clearMobileValidationTimers],
+  );
+
   useEffect(() => {
     if (cepDigits.length !== 8 || selectedAddressId) {
       return;
@@ -398,6 +457,7 @@ export default function CheckoutForm({
   }, [cepDigits, selectedAddressId]);
 
   const updateField = (field: FormField, value: string) => {
+    clearMobileValidationTimers();
     setValues((current) => ({ ...current, [field]: value }));
     if (
       field === "logradouro" ||
@@ -415,6 +475,8 @@ export default function CheckoutForm({
       delete next[field];
       return next;
     });
+    setHighlightedField((current) => (current === field ? null : current));
+    setMobileValidationMessage("");
     setStatusMessage("");
   };
 
@@ -476,8 +538,14 @@ export default function CheckoutForm({
       }
       setErrors(nextErrors);
       setStatusMessage("Revise os campos destacados para continuar.");
+      const firstInvalidField = formFieldOrder.find((field) => nextErrors[field]);
+      if (firstInvalidField) showMobileValidationFeedback(firstInvalidField);
       return;
     }
+
+    clearMobileValidationTimers();
+    setHighlightedField(null);
+    setMobileValidationMessage("");
 
     if (!freeShipping && (!selection || selectionExpired || !cepMatchesShipping)) {
       setStatusMessage("Volte ao carrinho e recalcule o frete para este CEP.");
@@ -531,6 +599,17 @@ export default function CheckoutForm({
 
   return (
     <div className="mx-auto max-w-[1240px] px-4 pb-20 pt-8 sm:px-6 lg:px-8 max-md:pb-32 max-md:pt-6">
+      {mobileValidationMessage && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="hidden max-md:fixed max-md:left-4 max-md:right-4 max-md:top-[calc(5rem+env(safe-area-inset-top))] max-md:z-[60] max-md:flex max-md:items-center max-md:gap-2 max-md:rounded-lg max-md:border max-md:border-red-300/40 max-md:bg-[#260D0D]/95 max-md:px-4 max-md:py-3 max-md:text-sm max-md:font-semibold max-md:leading-5 max-md:text-red-200 max-md:shadow-[0_12px_32px_rgba(0,0,0,0.55)] max-md:backdrop-blur"
+        >
+          <AlertCircle className="max-md:h-5 max-md:w-5 max-md:shrink-0 max-md:text-red-300" />
+          {mobileValidationMessage}
+        </div>
+      )}
+
       <Link
         href="/carrinho"
         className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--brand-color)] transition hover:text-white max-md:min-h-11 max-md:text-sm"
@@ -616,9 +695,9 @@ export default function CheckoutForm({
               </div>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field id="nome" label="Nome completo" value={values.nome} error={errors.nome} autoComplete="name" placeholder="Digite seu nome completo" onChange={(value) => updateField("nome", value)} onBlur={() => validateField("nome")} />
-              <Field id="email" label="E-mail" value={values.email} error={errors.email} type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" onChange={(value) => updateField("email", value)} onBlur={() => validateField("email")} />
-              <Field id="telefone" label="Telefone / WhatsApp" value={values.telefone} error={errors.telefone} type="tel" inputMode="numeric" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={15} onChange={(value) => updateField("telefone", formatPhone(value))} onBlur={() => validateField("telefone")} />
+              <Field id="nome" label="Nome completo" value={values.nome} error={errors.nome} highlighted={highlightedField === "nome"} autoComplete="name" placeholder="Digite seu nome completo" onChange={(value) => updateField("nome", value)} onBlur={() => validateField("nome")} />
+              <Field id="email" label="E-mail" value={values.email} error={errors.email} highlighted={highlightedField === "email"} type="email" inputMode="email" autoComplete="email" placeholder="voce@email.com" onChange={(value) => updateField("email", value)} onBlur={() => validateField("email")} />
+              <Field id="telefone" label="Telefone / WhatsApp" value={values.telefone} error={errors.telefone} highlighted={highlightedField === "telefone"} type="tel" inputMode="numeric" autoComplete="tel" placeholder="(11) 99999-9999" maxLength={15} onChange={(value) => updateField("telefone", formatPhone(value))} onBlur={() => validateField("telefone")} />
             </div>
           </section>
 
@@ -666,25 +745,25 @@ export default function CheckoutForm({
 
             <div className="mt-5 grid gap-4 md:grid-cols-6">
               <div className="md:col-span-2">
-                <Field id="cep" label="CEP" value={effectiveCep} error={errors.cep} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} onChange={(value) => { setCepOverride(formatCep(value)); setValues((current) => ({ ...current, logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" })); setErrors((current) => ({ ...current, cep: undefined })); setStatusMessage(""); setSelectedAddressId(""); setCepLookupStatus("idle"); setCepLookupMessage(""); }} onBlur={() => validateField("cep")} />
+                <Field id="cep" label="CEP" value={effectiveCep} error={errors.cep} highlighted={highlightedField === "cep"} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} onChange={(value) => { clearMobileValidationTimers(); setCepOverride(formatCep(value)); setValues((current) => ({ ...current, logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" })); setErrors((current) => ({ ...current, cep: undefined })); setHighlightedField((current) => (current === "cep" ? null : current)); setMobileValidationMessage(""); setStatusMessage(""); setSelectedAddressId(""); setCepLookupStatus("idle"); setCepLookupMessage(""); }} onBlur={() => validateField("cep")} />
               </div>
               <div className="md:col-span-4">
-                <Field id="logradouro" label="Logradouro" value={values.logradouro} error={errors.logradouro} autoComplete="address-line1" placeholder="Rua, avenida..." onChange={(value) => updateField("logradouro", value)} onBlur={() => validateField("logradouro")} />
+                <Field id="logradouro" label="Logradouro" value={values.logradouro} error={errors.logradouro} highlighted={highlightedField === "logradouro"} autoComplete="address-line1" placeholder="Rua, avenida..." onChange={(value) => updateField("logradouro", value)} onBlur={() => validateField("logradouro")} />
               </div>
               <div className="md:col-span-2">
-                <Field id="numero" label="Número" value={values.numero} error={errors.numero} autoComplete="address-line2" placeholder="123" onChange={(value) => updateField("numero", value)} onBlur={() => validateField("numero")} />
+                <Field id="numero" label="Número" value={values.numero} error={errors.numero} highlighted={highlightedField === "numero"} autoComplete="address-line2" placeholder="123" onChange={(value) => updateField("numero", value)} onBlur={() => validateField("numero")} />
               </div>
               <div className="md:col-span-4">
-                <Field id="complemento" label="Complemento (opcional)" value={values.complemento} error={errors.complemento} autoComplete="address-line3" placeholder="Apartamento, bloco, referência" onChange={(value) => updateField("complemento", value)} onBlur={() => validateField("complemento")} />
+                <Field id="complemento" label="Complemento (opcional)" value={values.complemento} error={errors.complemento} highlighted={highlightedField === "complemento"} autoComplete="address-line3" placeholder="Apartamento, bloco, referência" onChange={(value) => updateField("complemento", value)} onBlur={() => validateField("complemento")} />
               </div>
               <div className="md:col-span-3">
-                <Field id="bairro" label="Bairro" value={values.bairro} error={errors.bairro} placeholder="Seu bairro" onChange={(value) => updateField("bairro", value)} onBlur={() => validateField("bairro")} />
+                <Field id="bairro" label="Bairro" value={values.bairro} error={errors.bairro} highlighted={highlightedField === "bairro"} placeholder="Seu bairro" onChange={(value) => updateField("bairro", value)} onBlur={() => validateField("bairro")} />
               </div>
               <div className="md:col-span-2">
-                <Field id="cidade" label="Cidade" value={values.cidade} error={errors.cidade} autoComplete="address-level2" placeholder="Sua cidade" onChange={(value) => updateField("cidade", value)} onBlur={() => validateField("cidade")} />
+                <Field id="cidade" label="Cidade" value={values.cidade} error={errors.cidade} highlighted={highlightedField === "cidade"} autoComplete="address-level2" placeholder="Sua cidade" onChange={(value) => updateField("cidade", value)} onBlur={() => validateField("cidade")} />
               </div>
               <div className="md:col-span-1">
-                <Field id="uf" label="UF" value={values.uf} error={errors.uf} autoComplete="address-level1" placeholder="SP" maxLength={2} onChange={(value) => updateField("uf", value.replace(/[^A-Za-z]/g, "").toUpperCase())} onBlur={() => validateField("uf")} />
+                <Field id="uf" label="UF" value={values.uf} error={errors.uf} highlighted={highlightedField === "uf"} autoComplete="address-level1" placeholder="SP" maxLength={2} onChange={(value) => updateField("uf", value.replace(/[^A-Za-z]/g, "").toUpperCase())} onBlur={() => validateField("uf")} />
               </div>
             </div>
 
@@ -731,7 +810,7 @@ export default function CheckoutForm({
               </div>
             </div>
             <div className="mt-5 max-w-[420px]">
-              <Field id="cpfCnpj" label="CPF ou CNPJ" value={values.cpfCnpj} error={errors.cpfCnpj} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" maxLength={18} onChange={(value) => updateField("cpfCnpj", formatDocument(value))} onBlur={() => validateField("cpfCnpj")} />
+              <Field id="cpfCnpj" label="CPF ou CNPJ" value={values.cpfCnpj} error={errors.cpfCnpj} highlighted={highlightedField === "cpfCnpj"} inputMode="numeric" autoComplete="off" placeholder="000.000.000-00" maxLength={18} onChange={(value) => updateField("cpfCnpj", formatDocument(value))} onBlur={() => validateField("cpfCnpj")} />
             </div>
           </section>
         </div>

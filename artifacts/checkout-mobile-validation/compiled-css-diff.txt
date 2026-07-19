@@ -1,0 +1,29 @@
+Compiled CSS breakpoint audit
+================================
+Desktop CSS before SHA-256: 2f9315258e778efb9e445e55c0debd0bd16a6134034f7256e6168ecb55349a63
+Desktop CSS after  SHA-256: 2f9315258e778efb9e445e55c0debd0bd16a6134034f7256e6168ecb55349a63
+Desktop CSS identical: YES
+Desktop rules changed: 0
+Desktop entries added/changed: 0
+Desktop entries removed/changed: 0
+Mobile entries added/changed: 21
+Mobile entries removed/changed: 0
+
+Mobile-only additions/changes:
++ max-md:fixed, max-md:left-4, max-md:right-4, max-md:top-[calc(5rem+env(safe-area-inset-top))]
++ max-md:z-[60], max-md:flex, max-md:shrink-0, max-md:rounded-lg
++ max-md:border, max-md:border-red-300/40, max-md:bg-[#260D0D]/95
++ max-md:px-4, max-md:py-3, max-md:font-semibold
++ max-md:text-red-200, max-md:text-red-300
++ max-md:shadow-[0_12px_32px_rgba(0,0,0,0.55)], max-md:backdrop-blur
++ @keyframes checkout-mobile-validation-highlight inside @media (width < 48rem)
++ [data-checkout-validation-highlight="true"] inside @media (width < 48rem)
+
+Mobile-only removals/previous forms:
+(none)
+
+Desktop additions/changes:
+(none)
+
+Desktop removals/previous forms:
+(none)

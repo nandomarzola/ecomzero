@@ -1,0 +1,63 @@
+{
+  "cpfMobile": {
+    "before": {
+      "scrollY": 0,
+      "activeElement": ""
+    },
+    "after": {
+      "scrollY": 1681,
+      "activeElement": "cpfCnpj",
+      "errorText": "CPF ou CNPJ inválido",
+      "highlighted": "true",
+      "toastText": "Verifique o campo destacado para continuar.",
+      "toastVisible": true,
+      "inputRect": {
+        "top": 395.5,
+        "bottom": 447.5,
+        "left": 33,
+        "right": 327
+      },
+      "viewport": {
+        "width": 375,
+        "height": 844
+      }
+    }
+  },
+  "firstRequiredFieldMobile": {
+    "before": {
+      "scrollY": 3439,
+      "activeElement": "cpfCnpj"
+    },
+    "after": {
+      "scrollY": 358,
+      "activeElement": "nome",
+      "errorText": "Nome deve ter pelo menos 3 caracteres",
+      "highlighted": "true",
+      "scrollCalls": [
+        [
+          {
+            "top": 357.5,
+            "behavior": "smooth"
+          }
+        ]
+      ],
+      "inputRect": {
+        "top": 395.5,
+        "bottom": 447.5
+      }
+    }
+  },
+  "desktop": {
+    "before": {
+      "scrollY": 0,
+      "activeElement": "nome"
+    },
+    "after": {
+      "scrollY": 0,
+      "activeElement": "nome",
+      "highlighted": null,
+      "mobileToastPresent": false,
+      "errorText": "CPF ou CNPJ inválido"
+    }
+  }
+}
