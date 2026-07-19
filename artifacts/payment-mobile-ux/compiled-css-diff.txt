@@ -1,0 +1,146 @@
+diff --git a/artifacts/payment-mobile-ux/compiled-before.css b/artifacts/payment-mobile-ux/compiled-after.css
+index b418151..f2c3a5b 100644
+--- a/artifacts/payment-mobile-ux/compiled-before.css
++++ b/artifacts/payment-mobile-ux/compiled-after.css
+@@ -4001,6 +4001,11 @@
+       grid-column: span 2 / span 2;
+     }
+   }
++  .max-md\:mt-0 {
++    @media (width < 48rem) {
++      margin-top: calc(var(--spacing) * 0);
++    }
++  }
+   .max-md\:mt-1 {
+     @media (width < 48rem) {
+       margin-top: calc(var(--spacing) * 1);
+@@ -4016,6 +4021,11 @@
+       margin-top: calc(var(--spacing) * 4);
+     }
+   }
++  .max-md\:block {
++    @media (width < 48rem) {
++      display: block;
++    }
++  }
+   .max-md\:flex {
+     @media (width < 48rem) {
+       display: flex;
+@@ -4031,6 +4041,11 @@
+       display: none;
+     }
+   }
++  .max-md\:inline {
++    @media (width < 48rem) {
++      display: inline;
++    }
++  }
+   .max-md\:inline-flex {
+     @media (width < 48rem) {
+       display: inline-flex;
+@@ -4066,14 +4081,14 @@
+       height: 52px;
+     }
+   }
+-  .max-md\:min-h-0 {
++  .max-md\:min-h-11 {
+     @media (width < 48rem) {
+-      min-height: calc(var(--spacing) * 0);
++      min-height: calc(var(--spacing) * 11);
+     }
+   }
+-  .max-md\:min-h-11 {
++  .max-md\:min-h-14 {
+     @media (width < 48rem) {
+-      min-height: calc(var(--spacing) * 11);
++      min-height: calc(var(--spacing) * 14);
+     }
+   }
+   .max-md\:min-h-\[52px\] {
+@@ -4191,6 +4206,11 @@
+       gap: calc(var(--spacing) * 2);
+     }
+   }
++  .max-md\:gap-2\.5 {
++    @media (width < 48rem) {
++      gap: calc(var(--spacing) * 2.5);
++    }
++  }
+   .max-md\:gap-3 {
+     @media (width < 48rem) {
+       gap: calc(var(--spacing) * 3);
+@@ -4290,6 +4310,11 @@
+       padding-inline: calc(var(--spacing) * 2);
+     }
+   }
++  .max-md\:px-3 {
++    @media (width < 48rem) {
++      padding-inline: calc(var(--spacing) * 3);
++    }
++  }
+   .max-md\:px-4 {
+     @media (width < 48rem) {
+       padding-inline: calc(var(--spacing) * 4);
+@@ -4300,6 +4325,11 @@
+       padding-block: calc(var(--spacing) * 1);
+     }
+   }
++  .max-md\:py-2\.5 {
++    @media (width < 48rem) {
++      padding-block: calc(var(--spacing) * 2.5);
++    }
++  }
+   .max-md\:py-3 {
+     @media (width < 48rem) {
+       padding-block: calc(var(--spacing) * 3);
+@@ -4379,6 +4409,12 @@
+       font-size: 28px;
+     }
+   }
++  .max-md\:leading-4 {
++    @media (width < 48rem) {
++      --tw-leading: calc(var(--spacing) * 4);
++      line-height: calc(var(--spacing) * 4);
++    }
++  }
+   .max-md\:leading-5 {
+     @media (width < 48rem) {
+       --tw-leading: calc(var(--spacing) * 5);
+@@ -4391,6 +4427,12 @@
+       line-height: calc(var(--spacing) * 6);
+     }
+   }
++  .max-md\:font-normal {
++    @media (width < 48rem) {
++      --tw-font-weight: var(--font-weight-normal);
++      font-weight: var(--font-weight-normal);
++    }
++  }
+   .max-md\:font-semibold {
+     @media (width < 48rem) {
+       --tw-font-weight: var(--font-weight-semibold);
+@@ -5888,6 +5930,24 @@ body:has(.payment-checkout-page) .site-bottom-nav {
+   body:has([data-checkout-sticky-action]) [data-floating-whatsapp] {
+     bottom: calc(6rem + env(safe-area-inset-bottom));
+   }
++  body:has(.payment-checkout-page) [data-floating-whatsapp] {
++    display: none;
++  }
++  .payment-checkout-brick {
++    max-width: 100%;
++    overflow-x: clip;
++  }
++  .payment-checkout-brick [data-payment-installment-badge="true"] {
++    position: static !important;
++    inset: auto !important;
++    display: inline-flex !important;
++    width: fit-content !important;
++    max-width: 100% !important;
++    margin: 0.375rem 0 0 !important;
++    transform: none !important;
++    white-space: normal !important;
++    line-height: 1.25rem !important;
++  }
+ }
+ @property --tw-translate-x {
+   syntax: "*";

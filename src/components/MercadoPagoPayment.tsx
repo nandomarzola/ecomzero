@@ -102,6 +102,7 @@ export default function MercadoPagoPayment({
   const router = useRouter();
   const { clearCart } = useCart();
   const attemptIdRef = useRef<string | null>(null);
+  const paymentBrickContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activePayment, setActivePayment] = useState<PaymentDetails | null>(
@@ -182,6 +183,51 @@ export default function MercadoPagoPayment({
   useEffect(() => {
     initMercadoPago(publicKey, { locale: "pt-BR" });
   }, [publicKey]);
+
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+
+    const brickRoot = paymentBrickContainerRef.current;
+    if (!brickRoot) return;
+
+    const normalizedText = (element: HTMLElement) =>
+      element.textContent
+        ?.replace(/\s+/g, " ")
+        .trim()
+        .toLocaleLowerCase("pt-BR") ?? "";
+    const installmentBadgeText = "parcelamento disponível";
+    const markInstallmentBadge = () => {
+      brickRoot.querySelectorAll<HTMLElement>("*").forEach((element) => {
+        if (
+          element.children.length > 0 ||
+          normalizedText(element) !== installmentBadgeText
+        ) {
+          return;
+        }
+
+        let badge = element;
+        let parent = badge.parentElement;
+        while (
+          parent &&
+          parent !== brickRoot &&
+          normalizedText(parent) === installmentBadgeText
+        ) {
+          badge = parent;
+          parent = badge.parentElement;
+        }
+        badge.dataset.paymentInstallmentBadge = "true";
+      });
+    };
+
+    markInstallmentBadge();
+    const observer = new MutationObserver(markInstallmentBadge);
+    observer.observe(brickRoot, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+    return () => observer.disconnect();
+  }, [activePayment, isCheckingPayment]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -376,7 +422,7 @@ export default function MercadoPagoPayment({
           </h1>
           <p className="mt-2 text-[13px] leading-5 text-white/65 max-md:text-sm max-md:leading-6">
             Finalize sem sair da EcomZero.
-            <span className="block">Seus dados financeiros são protegidos e processados pelo Mercado Pago.</span>
+            <span className="block max-md:hidden">Seus dados financeiros são protegidos e processados pelo Mercado Pago.</span>
           </p>
         </header>
 
@@ -430,20 +476,24 @@ export default function MercadoPagoPayment({
           <div className="min-w-0 space-y-4">
             <section
               aria-label="Pagamento processado pelo Mercado Pago"
-              className="flex min-h-[102px] items-center justify-between gap-5 rounded-[10px] border border-[#009EE3]/35 bg-[linear-gradient(100deg,rgba(0,158,227,0.15),rgba(0,91,128,0.08))] px-5 py-4 sm:px-8 max-md:min-h-0 max-md:items-start max-md:gap-3 max-md:p-4"
+              className="flex min-h-[102px] items-center justify-between gap-5 rounded-[10px] border border-[#009EE3]/35 bg-[linear-gradient(100deg,rgba(0,158,227,0.15),rgba(0,91,128,0.08))] px-5 py-4 sm:px-8 max-md:min-h-14 max-md:items-center max-md:gap-3 max-md:px-3 max-md:py-2.5"
             >
-              <div className="flex min-w-0 items-center gap-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#169EE7] to-[#075DBB] text-white shadow-[0_0_24px_rgba(0,158,227,0.25)]">
-                  <ShieldCheck className="h-6 w-6" strokeWidth={1.8} />
+              <div className="flex min-w-0 items-center gap-4 max-md:gap-2.5">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#169EE7] to-[#075DBB] text-white shadow-[0_0_24px_rgba(0,158,227,0.25)] max-md:h-9 max-md:w-9">
+                  <ShieldCheck className="h-6 w-6 max-md:h-5 max-md:w-5" strokeWidth={1.8} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#75D7FF] max-md:text-xs max-md:leading-5">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#75D7FF] max-md:hidden">
                     Ambiente de pagamento seguro
                   </p>
-                  <p className="font-display mt-1 text-[15px] font-bold text-white sm:text-[16px] max-md:text-base max-md:leading-5">
-                    Pagamento processado pelo Mercado Pago
+                  <p className="font-display mt-1 text-[15px] font-bold text-white sm:text-[16px] max-md:mt-0 max-md:text-sm max-md:leading-5">
+                    <span className="max-md:hidden">Pagamento processado pelo Mercado Pago</span>
+                    <span className="hidden max-md:inline">Pagamento seguro via Mercado Pago</span>
+                    <span className="hidden max-md:block max-md:text-[11px] max-md:font-normal max-md:leading-4 max-md:text-white/55">
+                      Pix: QR na tela e e-mail já preenchido.
+                    </span>
                   </p>
-                  <p className="mt-1 text-[10px] leading-4 text-white/50 sm:text-[11px] max-md:text-xs max-md:leading-5">
+                  <p className="mt-1 text-[10px] leading-4 text-white/50 sm:text-[11px] max-md:hidden">
                     Seus dados são protegidos com criptografia de ponta a ponta e nunca são armazenados pela EcomZero.
                   </p>
                 </div>
@@ -451,7 +501,7 @@ export default function MercadoPagoPayment({
               <MercadoPagoBrand className="hidden shrink-0 sm:inline-flex" />
             </section>
 
-            <main className="min-w-0 rounded-[10px] border border-white/[0.13] bg-[linear-gradient(145deg,#111111,#0B0B0B)] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.22)] sm:p-4 max-md:p-4">
+            <main className="min-w-0 rounded-[10px] border border-white/[0.13] bg-[linear-gradient(145deg,#111111,#0B0B0B)] p-3 shadow-[0_18px_55px_rgba(0,0,0,0.22)] sm:p-4 max-md:overflow-hidden max-md:p-4">
               {isCheckingPayment ? (
                 <div className="flex min-h-[420px] items-center justify-center gap-3 text-sm text-white/50 max-md:min-h-[320px]">
                   <LoaderCircle className="h-5 w-5 animate-spin text-[var(--brand-color)]" />
@@ -573,7 +623,11 @@ export default function MercadoPagoPayment({
                       {errorMessage}
                     </p>
                   )}
-                  <div className={isSubmitting ? "pointer-events-none opacity-70" : ""}>
+                  <div
+                    ref={paymentBrickContainerRef}
+                    data-payment-brick-container
+                    className={`payment-checkout-brick min-w-0 ${isSubmitting ? "pointer-events-none opacity-70" : ""}`}
+                  >
                     <Payment
                       initialization={initialization}
                       customization={customization}

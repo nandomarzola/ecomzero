@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR" data-state="options">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validação visual do pagamento mobile</title>
+    <link rel="stylesheet" href="./compiled-after.css" />
+    <script>
+      document.documentElement.dataset.state =
+        new URLSearchParams(window.location.search).get("state") || "options";
+    </script>
+    <style>
+      :root { --brand-color: #a9ec17; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #050505; color: #fff; font-family: Inter, Arial, sans-serif; }
+      .preview-header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid rgb(255 255 255 / 0.1); background: #030303; }
+      .preview-logo { font-size: 19px; font-weight: 900; letter-spacing: -0.04em; }
+      .preview-logo strong { color: var(--brand-color); }
+      .preview-icons { display: flex; gap: 12px; }
+      .preview-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.12); color: #ddd; }
+      .payment-shell { width: min(1332px, calc(100% - 32px)); margin: 0 auto; padding: 20px 0 40px; }
+      .payment-title { margin: 0; font-size: 28px; line-height: 1.15; letter-spacing: -0.03em; }
+      .payment-subtitle { margin: 8px 0 0; color: rgb(255 255 255 / 0.65); font-size: 14px; }
+      .steps { display: grid; grid-template-columns: repeat(3, 1fr); margin: 18px 0; padding: 0; list-style: none; }
+      .steps li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; color: rgb(255 255 255 / 0.5); font-size: 13px; font-weight: 700; }
+      .steps li::before { content: ""; position: absolute; top: 16px; left: calc(50% + 16px); width: calc(100% - 32px); height: 1px; background: rgb(255 255 255 / 0.15); }
+      .steps li:last-child::before { display: none; }
+      .steps li:first-child::before { background: rgb(169 236 23 / 0.55); }
+      .step-dot { position: relative; z-index: 1; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgb(255 255 255 / 0.2); background: #050505; }
+      .steps .done .step-dot { border: 0; background: rgb(169 236 23 / 0.2); color: var(--brand-color); }
+      .steps .active { color: #fff; }
+      .steps .active .step-dot { border: 0; background: var(--brand-color); color: #050505; }
+      .order-summary { min-height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border: 1px solid rgb(255 255 255 / 0.12); border-radius: 12px; background: #0d0d0d; font-weight: 700; }
+      .order-total { color: var(--brand-color); font-size: 18px; font-weight: 900; }
+      .payment-grid { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 36px; margin-top: 24px; }
+      .payment-column { min-width: 0; display: grid; gap: 16px; }
+      .security-card { min-height: 102px; display: flex; align-items: center; padding: 16px 32px; border: 1px solid rgb(0 158 227 / 0.35); border-radius: 10px; background: linear-gradient(100deg, rgb(0 158 227 / 0.15), rgb(0 91 128 / 0.08)); }
+      .security-icon { width: 48px; height: 48px; flex: 0 0 auto; display: grid; place-items: center; margin-right: 16px; border-radius: 50%; background: linear-gradient(135deg, #169ee7, #075dbb); font-size: 24px; }
+      .security-eyebrow { margin: 0; color: #75d7ff; font-size: 10px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; }
+      .security-title { margin: 5px 0 0; font-size: 16px; font-weight: 800; }
+      .security-copy { margin: 4px 0 0; color: rgb(255 255 255 / 0.5); font-size: 11px; line-height: 16px; }
+      .security-title-mobile { display: none; }
+      .payment-card, .desktop-summary { border: 1px solid rgb(255 255 255 / 0.13); border-radius: 10px; background: linear-gradient(145deg, #111, #0b0b0b); box-shadow: 0 18px 55px rgb(0 0 0 / 0.22); }
+      .payment-card { min-width: 0; padding: 16px; }
+      .brick-heading { margin: 0 0 12px; font-size: 18px; font-weight: 800; }
+      .mp-option-list { display: grid; gap: 10px; }
+      .mp-option { min-height: 70px; display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid rgb(255 255 255 / 0.13); border-radius: 9px; background: #0a0a0a; }
+      .mp-option.selected { border-color: rgb(169 236 23 / 0.65); background: rgb(169 236 23 / 0.05); }
+      .mp-option-icon { width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 8px; background: rgb(255 255 255 / 0.06); color: var(--brand-color); font-size: 19px; }
+      .mp-option-copy { min-width: 0; flex: 1; }
+      .mp-option-title { display: block; font-size: 14px; font-weight: 800; }
+      .mp-option-detail { display: block; margin-top: 4px; color: rgb(255 255 255 / 0.48); font-size: 12px; }
+      [data-payment-installment-badge="true"] { padding: 3px 8px; border-radius: 999px; background: rgb(169 236 23 / 0.13); color: var(--brand-color); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+      .desktop-summary { min-height: 430px; padding: 24px; }
+      .desktop-summary h2 { margin: 0; font-size: 18px; }
+      .desktop-row { display: flex; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid rgb(255 255 255 / 0.09); color: rgb(255 255 255 / 0.6); }
+      .desktop-row strong { color: #fff; }
+      .desktop-total { display: flex; align-items: end; justify-content: space-between; padding-top: 24px; }
+      .desktop-total strong { color: var(--brand-color); font-size: 28px; }
+      .pix-state { display: none; text-align: center; }
+      html[data-state="pix"] .options-state { display: none; }
+      html[data-state="pix"] .pix-state { display: block; }
+      .pix-clock { width: 56px; height: 56px; display: grid; place-items: center; margin: 8px auto 0; border-radius: 50%; border: 1px solid rgb(169 236 23 / 0.2); background: rgb(169 236 23 / 0.1); color: var(--brand-color); font-size: 25px; }
+      .pix-state h2 { margin: 20px 0 0; font-size: 24px; }
+      .pix-description { max-width: 480px; margin: 8px auto 0; color: rgb(255 255 255 / 0.52); font-size: 14px; line-height: 22px; }
+      .qr { width: 236px; height: 236px; margin: 22px auto 0; padding: 14px; border-radius: 12px; background: #fff; }
+      .qr svg { display: block; width: 100%; height: 100%; }
+      .pix-field { margin-top: 20px; text-align: left; }
+      .pix-field label { color: rgb(255 255 255 / 0.7); font-size: 12px; font-weight: 700; }
+      .pix-field-row { display: flex; gap: 8px; margin-top: 8px; }
+      .pix-code { min-width: 0; height: 52px; flex: 1; padding: 0 12px; border: 1px solid rgb(255 255 255 / 0.14); border-radius: 6px; background: #080808; color: rgb(255 255 255 / 0.66); font-size: 14px; }
+      .copy-button { min-width: 96px; min-height: 52px; border: 1px solid var(--brand-color); border-radius: 8px; background: var(--brand-color); color: #050505; font-size: 13px; font-weight: 900; text-transform: uppercase; }
+      .waiting { margin-top: 18px; padding: 12px; border: 1px solid rgb(169 236 23 / 0.15); border-radius: 8px; background: rgb(169 236 23 / 0.05); color: rgb(255 255 255 / 0.56); font-size: 13px; }
+      [data-floating-whatsapp] { position: fixed; right: 16px; bottom: 24px; z-index: 40; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: #25d366; color: #fff; font-size: 24px; }
+      @media (width < 48rem) {
+        .payment-shell { width: calc(100% - 32px); }
+        .payment-grid { display: block; margin-top: 16px; }
+        .desktop-summary { display: none; }
+        .security-card { min-height: 56px; padding: 10px 12px; }
+        .security-icon { width: 36px; height: 36px; margin-right: 10px; font-size: 18px; }
+        .security-eyebrow, .security-title-desktop, .security-copy { display: none; }
+        .security-title-mobile { display: block; margin: 0; font-size: 14px; line-height: 18px; }
+        .security-title-mobile small { display: block; color: rgb(255 255 255 / 0.55); font-size: 11px; font-weight: 400; line-height: 16px; }
+        .payment-card { margin-top: 16px; overflow: hidden; }
+        .brick-heading { margin-bottom: 10px; font-size: 16px; }
+        .mp-option { align-items: flex-start; }
+        [data-payment-installment-badge="true"] { position: static !important; display: inline-flex !important; width: fit-content !important; max-width: 100% !important; margin: 6px 0 0 !important; white-space: normal !important; line-height: 16px !important; }
+        .qr { width: 224px; height: 224px; }
+        .pix-field-row { align-items: stretch; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="preview-header">
+      <div class="preview-logo"><strong>ECOM</strong>ZERO</div>
+      <div class="preview-icons"><span class="preview-icon">🛒</span><span class="preview-icon">☰</span></div>
+    </header>
+    <main class="payment-checkout-page">
+      <div class="payment-shell">
+        <h1 class="payment-title">Escolha como pagar</h1>
+        <p class="payment-subtitle">Finalize sem sair da EcomZero.</p>
+        <ol class="steps">
+          <li class="done"><span class="step-dot">✓</span><span>Dados</span></li>
+          <li class="active"><span class="step-dot">2</span><span>Pagamento</span></li>
+          <li><span class="step-dot">3</span><span>Confirmação</span></li>
+        </ol>
+        <div class="order-summary"><span>Resumo do pedido</span><span class="order-total">R$ 102,80⌄</span></div>
+        <div class="payment-grid">
+          <div class="payment-column">
+            <section class="security-card">
+              <span class="security-icon">✓</span>
+              <div>
+                <p class="security-eyebrow">Ambiente de pagamento seguro</p>
+                <p class="security-title security-title-desktop">Pagamento processado pelo Mercado Pago</p>
+                <p class="security-title security-title-mobile">Pagamento seguro via Mercado Pago<small>Pix: QR na tela e e-mail já preenchido.</small></p>
+                <p class="security-copy">Seus dados são protegidos com criptografia de ponta a ponta e nunca são armazenados pela EcomZero.</p>
+              </div>
+            </section>
+            <section class="payment-card payment-checkout-brick">
+              <div class="options-state">
+                <h2 class="brick-heading">Meios de pagamento</h2>
+                <div class="mp-option-list">
+                  <div class="mp-option selected">
+                    <span class="mp-option-icon">▣</span>
+                    <span class="mp-option-copy"><span class="mp-option-title">Cartão de crédito</span><span data-payment-installment-badge="true">Parcelamento disponível</span></span>
+                    <span>›</span>
+                  </div>
+                  <div class="mp-option"><span class="mp-option-icon">▤</span><span class="mp-option-copy"><span class="mp-option-title">Cartão de débito</span><span class="mp-option-detail">Pagamento à vista</span></span><span>›</span></div>
+                  <div class="mp-option"><span class="mp-option-icon">⌁</span><span class="mp-option-copy"><span class="mp-option-title">Pix</span><span class="mp-option-detail">Aprovação imediata</span></span><span>›</span></div>
+                </div>
+              </div>
+              <div class="pix-state">
+                <div class="pix-clock">◷</div>
+                <h2>Pix gerado</h2>
+                <p class="pix-description">Pague pelo aplicativo do seu banco. Esta página confirmará automaticamente quando o Pix for aprovado.</p>
+                <div class="qr" aria-label="QR Code Pix de demonstração">
+                  <svg viewBox="0 0 100 100" aria-hidden="true">
+                    <rect width="100" height="100" fill="#fff" />
+                    <path fill="#050505" d="M4 4h28v28H4zm5 5v18h18V9zm3 3h12v12H12zM68 4h28v28H68zm5 5v18h18V9zm3 3h12v12H76zM4 68h28v28H4zm5 5v18h18V73zm3 3h12v12H12zM40 4h8v8h-8zm12 0h8v16h-8zM40 16h8v8h-8zm8 8h12v8H48zM36 36h12v8H36zm16 0h8v16h-8zm12 0h8v8h-8zm12 0h20v8H76zM36 48h8v12h-8zm12 8h16v8H48zm20-8h8v20h-8zm12 0h16v8H80zM36 68h8v12h-8zm12 0h12v8H48zm16 4h8v8h-8zm12-12h8v20h-8zm12 0h8v12h-8zM36 84h16v8H36zm20-4h8v16h-8zm12 4h12v12H68zm16-4h12v16H84z" />
+                  </svg>
+                </div>
+                <div class="pix-field">
+                  <label for="pix-code-preview">Pix copia e cola</label>
+                  <div class="pix-field-row"><input id="pix-code-preview" class="pix-code" value="00020126580014BR.GOV.BCB.PIX..." readonly /><button class="copy-button">Copiar</button></div>
+                </div>
+                <div class="waiting">◌ &nbsp; Aguardando confirmação automática do pagamento</div>
+              </div>
+            </section>
+          </div>
+          <aside class="desktop-summary">
+            <h2>Resumo do pedido</h2>
+            <div class="desktop-row"><span>Produtos</span><strong>R$ 99,90</strong></div>
+            <div class="desktop-row"><span>Desconto</span><strong style="color:var(--brand-color)">− R$ 10,00</strong></div>
+            <div class="desktop-row"><span>Frete</span><strong>R$ 12,90</strong></div>
+            <div class="desktop-total"><span>Total</span><strong>R$ 102,80</strong></div>
+          </aside>
+        </div>
+      </div>
+      <a data-floating-whatsapp aria-label="WhatsApp">☎</a>
+    </main>
+  </body>
+</html>
