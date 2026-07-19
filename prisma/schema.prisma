@@ -129,6 +129,7 @@ model User {
   telefone           String?
   aceitaMarketing    Boolean   @default(false)
   sessionsValidAfter DateTime?
+  mustChangePassword Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 

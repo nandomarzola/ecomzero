@@ -33,6 +33,14 @@ export const registerSchema = z
   })
   .strict();
 
+export const checkoutRegisterSchema = z
+  .object({
+    nome: z.string().trim().min(2, "Informe seu nome completo").max(120),
+    email: emailSchema,
+    telefone: telefoneSchema,
+  })
+  .strict();
+
 export const loginSchema = z
   .object({
     email: emailSchema,
@@ -54,6 +62,7 @@ export const passwordResetConfirmSchema = z
   .strict();
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type CheckoutRegisterInput = z.infer<typeof checkoutRegisterSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type PasswordResetRequestInput = z.infer<typeof passwordResetRequestSchema>;
 export type PasswordResetConfirmInput = z.infer<typeof passwordResetConfirmSchema>;

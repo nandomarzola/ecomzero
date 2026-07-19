@@ -128,6 +128,7 @@ export async function resetPassword(
       data: {
         senhaHash,
         sessionsValidAfter: now,
+        mustChangePassword: false,
       },
     });
   });

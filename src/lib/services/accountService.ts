@@ -199,6 +199,14 @@ export async function getProfile(userId: string) {
   };
 }
 
+export async function getMustChangePassword(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { mustChangePassword: true },
+  });
+  return user?.mustChangePassword ?? false;
+}
+
 export async function updateProfile(
   userId: string,
   input: UpdateProfileInput,
@@ -245,6 +253,7 @@ export async function changePassword(
       data: {
         senhaHash,
         sessionsValidAfter,
+        mustChangePassword: false,
       },
     });
 

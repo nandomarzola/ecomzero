@@ -143,7 +143,7 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
         </button>
       </form>
 
-      <form onSubmit={savePassword} className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
+      <form id="account-change-password" onSubmit={savePassword} className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
         <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
             <LockKeyhole className="h-5 w-5" />

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 
 export type TransactionalEmailKind =
   | "password_reset"
+  | "checkout_temporary_password"
   | "admin_login_code"
   | "welcome"
   | "payment_confirmed"
@@ -210,6 +211,45 @@ export async function sendPasswordResetEmail(input: {
     console.error("[email] falha ao preparar recuperação de senha", {
       kind: "password_reset",
       to: maskedEmail(input.to),
+      reason,
+    });
+    return { status: "failed", reason };
+  }
+}
+
+export async function sendCheckoutTemporaryPasswordEmail(input: {
+  userId: string;
+  to: string;
+  name: string;
+  temporaryPassword: string;
+}): Promise<EmailSendResult> {
+  try {
+    const branding = await getEmailBranding();
+    const content = renderBrandedEmail({
+      branding,
+      heading: "Sua conta foi criada",
+      message: `Olá, ${input.name}. Criamos sua conta durante o checkout. Use a senha temporária abaixo em seus próximos acessos. Você pode alterá-la a qualquer momento em Minha Conta. Não compartilhe esta senha.`,
+      highlight: input.temporaryPassword,
+      action: {
+        label: "Acessar Minha Conta",
+        url: absoluteStoreUrl("/conta/dados"),
+      },
+    });
+
+    return sendTransactionalEmail({
+      kind: "checkout_temporary_password",
+      from: config.email.securityFrom,
+      to: input.to,
+      subject: `Sua senha temporária da ${branding.storeName}`,
+      html: content.html,
+      text: content.text,
+      idempotencyKey: `checkout-temporary-password/${input.userId}`,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.name : "unknown_error";
+    console.error("[email] falha ao preparar senha temporária do checkout", {
+      kind: "checkout_temporary_password",
+      userId: input.userId,
       reason,
     });
     return { status: "failed", reason };

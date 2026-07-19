@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AccountNavigation from "@/components/AccountNavigation";
+import TemporaryPasswordReminder from "@/components/TemporaryPasswordReminder";
 import { auth } from "@/lib/auth";
+import { getMustChangePassword } from "@/lib/services/accountService";
 
 export const metadata: Metadata = {
   title: "Minha conta",
@@ -16,6 +18,7 @@ export default async function AccountLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
+  const mustChangePassword = await getMustChangePassword(session.user.id);
 
   return (
     <div className="min-h-[70vh] bg-[#050505]">
@@ -39,6 +42,8 @@ export default async function AccountLayout({
             Consulte seus pedidos e mantenha seus dados atualizados.
           </p>
         </header>
+
+        {mustChangePassword ? <TemporaryPasswordReminder /> : null}
 
         <div className="mt-7 grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)] lg:items-start">
           <AccountNavigation />
