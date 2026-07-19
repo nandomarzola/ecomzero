@@ -1,0 +1,422 @@
+{
+  "mobile-375": {
+    "viewport": {
+      "width": 375,
+      "height": 844
+    },
+    "documentWidth": 414,
+    "bodyWidth": 414,
+    "card": {
+      "left": 16,
+      "top": 317,
+      "right": 414.13,
+      "bottom": 580.28,
+      "width": 398.13,
+      "height": 263.28
+    },
+    "subtotal": {
+      "left": 219.06,
+      "top": 477.78,
+      "right": 401.13,
+      "bottom": 511.28,
+      "width": 182.06,
+      "height": 33.5
+    },
+    "remove": {
+      "left": 357.13,
+      "top": 330,
+      "right": 401.13,
+      "bottom": 374,
+      "width": 44,
+      "height": 44
+    },
+    "whatsapp": {
+      "left": 288,
+      "top": 708,
+      "right": 344,
+      "bottom": 764,
+      "width": 56,
+      "height": 56
+    },
+    "stickyButton": {
+      "left": 169,
+      "top": 716,
+      "right": 344,
+      "bottom": 768,
+      "width": 175,
+      "height": 52
+    },
+    "whatsappOverlapsStickyButton": true,
+    "cartButton": {
+      "left": 240,
+      "top": 14,
+      "right": 284,
+      "bottom": 58,
+      "width": 44,
+      "height": 44
+    },
+    "menuButton": {
+      "left": 300,
+      "top": 14,
+      "right": 344,
+      "bottom": 58,
+      "width": 44,
+      "height": 44
+    },
+    "cartMenuGap": 16,
+    "overflowing": [
+      {
+        "tag": "SECTION",
+        "className": "min-w-0",
+        "left": 16,
+        "right": 414.13
+      },
+      {
+        "tag": "DIV",
+        "className": "space-y-1.5",
+        "left": 16,
+        "right": 414.13
+      },
+      {
+        "tag": "ARTICLE",
+        "className": "relative rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-3 transition duration-[250ms] hover:border-white/20 motion-reduce:transition-no",
+        "left": 16,
+        "right": 414.13
+      },
+      {
+        "tag": "DIV",
+        "className": "flex min-w-0 items-center gap-3 pr-10 xl:contents xl:pr-0",
+        "left": 29,
+        "right": 401.13
+      },
+      {
+        "tag": "DIV",
+        "className": "mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2 border-t border-white/[0.07] pt-3 max-md:grid-cols-2 xl:contents",
+        "left": 29,
+        "right": 401.13
+      },
+      {
+        "tag": "DIV",
+        "className": "flex h-10 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-[#090909] px-1 max-md:order-3 max-md:col-span-2 max-md:h",
+        "left": 29,
+        "right": 401.13
+      },
+      {
+        "tag": "BUTTON",
+        "className": "flex h-8 w-8 items-center justify-center rounded-md text-white/65 transition hover:bg-white/5 hover:text-[var(--brand-color)] focus-visible:",
+        "left": 229.06,
+        "right": 396.13
+      },
+      {
+        "tag": "DIV",
+        "className": "min-w-0 text-right max-md:order-2 xl:text-left",
+        "left": 219.06,
+        "right": 401.13
+      },
+      {
+        "tag": "P",
+        "className": "text-[9px] text-white/42 sm:text-[10px]",
+        "left": 219.06,
+        "right": 401.13
+      },
+      {
+        "tag": "STRONG",
+        "className": "font-display block whitespace-nowrap text-sm font-extrabold text-[var(--brand-color)] sm:text-base",
+        "left": 219.06,
+        "right": 401.13
+      },
+      {
+        "tag": "BUTTON",
+        "className": "absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-md text-white/42 transition hover:bg-red-500/10 hover:text-red-400 f",
+        "left": 357.13,
+        "right": 401.13
+      },
+      {
+        "tag": "svg",
+        "className": "",
+        "left": 370.13,
+        "right": 388.13
+      }
+    ]
+  },
+  "mobile-414": {
+    "viewport": {
+      "width": 414,
+      "height": 896
+    },
+    "documentWidth": 414,
+    "bodyWidth": 414,
+    "card": {
+      "left": 16,
+      "top": 317,
+      "right": 414.13,
+      "bottom": 580.28,
+      "width": 398.13,
+      "height": 263.28
+    },
+    "subtotal": {
+      "left": 219.06,
+      "top": 477.78,
+      "right": 401.13,
+      "bottom": 511.28,
+      "width": 182.06,
+      "height": 33.5
+    },
+    "remove": {
+      "left": 357.13,
+      "top": 330,
+      "right": 401.13,
+      "bottom": 374,
+      "width": 44,
+      "height": 44
+    },
+    "whatsapp": {
+      "left": 327,
+      "top": 760,
+      "right": 383,
+      "bottom": 816,
+      "width": 56,
+      "height": 56
+    },
+    "stickyButton": {
+      "left": 188.5,
+      "top": 768,
+      "right": 383,
+      "bottom": 820,
+      "width": 194.5,
+      "height": 52
+    },
+    "whatsappOverlapsStickyButton": true,
+    "cartButton": {
+      "left": 279,
+      "top": 14,
+      "right": 323,
+      "bottom": 58,
+      "width": 44,
+      "height": 44
+    },
+    "menuButton": {
+      "left": 339,
+      "top": 14,
+      "right": 383,
+      "bottom": 58,
+      "width": 44,
+      "height": 44
+    },
+    "cartMenuGap": 16,
+    "overflowing": [
+      {
+        "tag": "DIV",
+        "className": "w-[84%] shrink-0 snap-start sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]",
+        "left": 336.27,
+        "right": 644.53
+      },
+      {
+        "tag": "ARTICLE",
+        "className": "store-product-card group flex h-full min-w-0 flex-col overflow-hidden border border-white/[0.13] bg-[linear-gradient(145deg,#111_0%,#080808_",
+        "left": 336.27,
+        "right": 644.53
+      },
+      {
+        "tag": "DIV",
+        "className": "store-product-card-media relative aspect-[1.04/1] overflow-hidden bg-[radial-gradient(circle_at_52%_48%,#292929_0%,#171717_48%,#0C0C0C_82%)]",
+        "left": 337.27,
+        "right": 643.53
+      },
+      {
+        "tag": "A",
+        "className": "absolute inset-0 z-[1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] focus-visible:ring-inset",
+        "left": 337.27,
+        "right": 643.53
+      },
+      {
+        "tag": "IMG",
+        "className": "store-product-card-image object-contain p-4 transition duration-500 motion-reduce:transition-none group-hover:scale-[1.035] sm:p-5",
+        "left": 337.27,
+        "right": 643.53
+      },
+      {
+        "tag": "DIV",
+        "className": "store-product-card-content flex flex-1 flex-col border-t border-white/[0.06] p-4 sm:p-5",
+        "left": 337.27,
+        "right": 643.53
+      },
+      {
+        "tag": "P",
+        "className": "font-display text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand-color)] sm:text-[11px]",
+        "left": 353.27,
+        "right": 627.53
+      },
+      {
+        "tag": "A",
+        "className": "store-product-card-title font-display mt-2 line-clamp-2 min-h-12 text-lg font-extrabold leading-6 text-white outline-none transition hover:t",
+        "left": 353.27,
+        "right": 627.53
+      },
+      {
+        "tag": "P",
+        "className": "store-product-card-subtitle mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-white/53 sm:text-sm",
+        "left": 353.27,
+        "right": 627.53
+      },
+      {
+        "tag": "DIV",
+        "className": "store-product-card-social-proof mt-3 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/52 sm:text-xs",
+        "left": 353.27,
+        "right": 627.53
+      },
+      {
+        "tag": "SPAN",
+        "className": "store-product-card-rating inline-flex items-center gap-1.5",
+        "left": 353.27,
+        "right": 468.2
+      },
+      {
+        "tag": "SPAN",
+        "className": "",
+        "left": 390.27,
+        "right": 459.25
+      }
+    ]
+  },
+  "desktop-1440": {
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "documentWidth": 1425,
+    "bodyWidth": 1425,
+    "card": {
+      "left": 84.5,
+      "top": 346.5,
+      "right": 956.5,
+      "bottom": 479.25,
+      "width": 872,
+      "height": 132.75
+    },
+    "subtotal": {
+      "left": 773.5,
+      "top": 393.38,
+      "right": 885.5,
+      "bottom": 432.38,
+      "width": 112,
+      "height": 39
+    },
+    "remove": {
+      "left": 901.5,
+      "top": 392.88,
+      "right": 941.5,
+      "bottom": 432.88,
+      "width": 40,
+      "height": 40
+    },
+    "whatsapp": {
+      "left": 1345,
+      "top": 920,
+      "right": 1401,
+      "bottom": 976,
+      "width": 56,
+      "height": 56
+    },
+    "stickyButton": {
+      "left": 1001.5,
+      "top": 641,
+      "right": 1319.5,
+      "bottom": 695,
+      "width": 318,
+      "height": 54
+    },
+    "whatsappOverlapsStickyButton": false,
+    "cartButton": {
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0
+    },
+    "menuButton": {
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "width": 0,
+      "height": 0
+    },
+    "cartMenuGap": 0,
+    "overflowing": [
+      {
+        "tag": "DIV",
+        "className": "w-[84%] shrink-0 snap-start sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]",
+        "left": 1356.5,
+        "right": 1658.5
+      },
+      {
+        "tag": "ARTICLE",
+        "className": "store-product-card group flex h-full min-w-0 flex-col overflow-hidden border border-white/[0.13] bg-[linear-gradient(145deg,#111_0%,#080808_",
+        "left": 1356.5,
+        "right": 1658.5
+      },
+      {
+        "tag": "DIV",
+        "className": "store-product-card-media relative aspect-[1.04/1] overflow-hidden bg-[radial-gradient(circle_at_52%_48%,#292929_0%,#171717_48%,#0C0C0C_82%)]",
+        "left": 1357.5,
+        "right": 1657.5
+      },
+      {
+        "tag": "A",
+        "className": "absolute inset-0 z-[1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)] focus-visible:ring-inset",
+        "left": 1357.5,
+        "right": 1657.5
+      },
+      {
+        "tag": "IMG",
+        "className": "store-product-card-image object-contain p-4 transition duration-500 motion-reduce:transition-none group-hover:scale-[1.035] sm:p-5",
+        "left": 1357.5,
+        "right": 1657.5
+      },
+      {
+        "tag": "DIV",
+        "className": "store-product-card-content flex flex-1 flex-col border-t border-white/[0.06] p-4 sm:p-5",
+        "left": 1357.5,
+        "right": 1657.5
+      },
+      {
+        "tag": "P",
+        "className": "font-display text-[10px] font-bold uppercase tracking-[0.22em] text-[var(--brand-color)] sm:text-[11px]",
+        "left": 1377.5,
+        "right": 1637.5
+      },
+      {
+        "tag": "A",
+        "className": "store-product-card-title font-display mt-2 line-clamp-2 min-h-12 text-lg font-extrabold leading-6 text-white outline-none transition hover:t",
+        "left": 1377.5,
+        "right": 1637.5
+      },
+      {
+        "tag": "P",
+        "className": "store-product-card-subtitle mt-2 line-clamp-2 min-h-10 text-xs leading-5 text-white/53 sm:text-sm",
+        "left": 1377.5,
+        "right": 1637.5
+      },
+      {
+        "tag": "DIV",
+        "className": "store-product-card-social-proof mt-3 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-white/52 sm:text-xs",
+        "left": 1377.5,
+        "right": 1637.5
+      },
+      {
+        "tag": "SPAN",
+        "className": "store-product-card-rating inline-flex items-center gap-1.5",
+        "left": 1377.5,
+        "right": 1499.98
+      },
+      {
+        "tag": "SPAN",
+        "className": "",
+        "left": 1415.52,
+        "right": 1490.77
+      }
+    ]
+  }
+}

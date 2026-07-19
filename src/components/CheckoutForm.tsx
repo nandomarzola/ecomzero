@@ -815,7 +815,10 @@ export default function CheckoutForm({
           </section>
         </aside>
 
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080808]/98 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] backdrop-blur md:hidden">
+        <div
+          data-checkout-sticky-action
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#080808]/98 px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-16px_40px_rgba(0,0,0,0.5)] backdrop-blur md:hidden"
+        >
           <button
             type="submit"
             disabled={isSubmitting}

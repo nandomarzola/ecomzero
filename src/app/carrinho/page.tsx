@@ -119,7 +119,7 @@ export default async function CartPage() {
           </section>
         ) : (
           <>
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+            <div className="grid gap-6 max-md:min-w-0 max-md:grid-cols-[minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
               <section aria-label="Produtos no carrinho" className="min-w-0">
                 <div className="space-y-1.5">
                   {cart.items.map((item) => (

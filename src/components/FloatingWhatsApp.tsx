@@ -10,6 +10,7 @@ export default function FloatingWhatsApp({ phone, message }: { phone: string; me
       rel="noreferrer"
       aria-label="Falar com a loja pelo WhatsApp"
       title="Falar pelo WhatsApp"
+      data-floating-whatsapp
       className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_24px_rgba(0,0,0,0.38)] transition duration-200 hover:scale-105 hover:bg-[#20BD5A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2 focus-visible:ring-offset-black motion-reduce:transform-none md:bottom-6 md:right-6"
     >
       <svg viewBox="0 0 24 24" aria-hidden="true" className="h-8 w-8 fill-current">

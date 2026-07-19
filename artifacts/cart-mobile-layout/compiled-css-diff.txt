@@ -1,0 +1,35 @@
+Compiled CSS breakpoint audit
+================================
+Desktop CSS before SHA-256: 2f9315258e778efb9e445e55c0debd0bd16a6134034f7256e6168ecb55349a63
+Desktop CSS after  SHA-256: 2f9315258e778efb9e445e55c0debd0bd16a6134034f7256e6168ecb55349a63
+Desktop CSS identical: YES
+Desktop rules changed: 0
+Desktop entries added/changed: 0
+Desktop entries removed/changed: 0
+Mobile rules added/changed: 14
+Mobile rules removed/changed: 0
+
+Mobile-only additions/changes:
++ .max-md\:top-2 { @media (width < 48rem) { top: calc(var(--spacing) * 2); } }
++ .max-md\:right-2 { @media (width < 48rem) { right: calc(var(--spacing) * 2); } }
++ .max-md\:max-w-full { @media (width < 48rem) { max-width: 100%; } }
++ .max-md\:min-w-0 { @media (width < 48rem) { min-width: calc(var(--spacing) * 0); } }
++ .max-md\:grid-cols-\[minmax\(0\,1fr\)\] { @media (width < 48rem) { grid-template-columns: minmax(0,1fr); } }
++ .max-md\:grid-cols-\[minmax\(0\,1fr\)_minmax\(0\,1fr\)\] { @media (width < 48rem) { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } }
++ .max-md\:gap-x-3 { @media (width < 48rem) { column-gap: calc(var(--spacing) * 3); } }
++ .max-md\:justify-self-end { @media (width < 48rem) { justify-self: flex-end; } }
++ .max-md\:overflow-hidden { @media (width < 48rem) { overflow: hidden; } }
++ .max-md\:pr-12 { @media (width < 48rem) { padding-right: calc(var(--spacing) * 12); } }
++ .max-md\:break-words { @media (width < 48rem) { overflow-wrap: break-word; } }
++ .max-md\:whitespace-normal { @media (width < 48rem) { white-space: normal; } }
++ body:has([data-cart-sticky-action]) [data-floating-whatsapp] { bottom: calc(10rem + env(safe-area-inset-bottom)); }
++ body:has([data-checkout-sticky-action]) [data-floating-whatsapp] { bottom: calc(6rem + env(safe-area-inset-bottom)); }
+
+Mobile-only removals/previous forms:
+(none)
+
+Desktop additions/changes:
+(none)
+
+Desktop removals/previous forms:
+(none)

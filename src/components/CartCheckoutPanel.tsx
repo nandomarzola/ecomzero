@@ -261,7 +261,7 @@ export default function CartCheckoutPanel({
 
   return (
     <>
-      <aside className="space-y-3 xl:sticky xl:top-24">
+      <aside className="space-y-3 max-md:min-w-0 xl:sticky xl:top-24">
         <section
           aria-labelledby="order-summary-title"
           className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5"
@@ -478,7 +478,10 @@ export default function CartCheckoutPanel({
         </section>
       </aside>
 
-      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-white/10 bg-black/95 px-4 py-3 backdrop-blur md:hidden">
+      <div
+        data-cart-sticky-action
+        className="fixed inset-x-0 bottom-16 z-40 border-t border-white/10 bg-black/95 px-4 py-3 backdrop-blur md:hidden"
+      >
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase text-white/45">Total</p>

@@ -147,3 +147,13 @@ body:has(.payment-checkout-page) .site-footer,
 body:has(.payment-checkout-page) .site-bottom-nav {
   display: none;
 }
+
+@media (width < 48rem) {
+  body:has([data-cart-sticky-action]) [data-floating-whatsapp] {
+    bottom: calc(10rem + env(safe-area-inset-bottom));
+  }
+
+  body:has([data-checkout-sticky-action]) [data-floating-whatsapp] {
+    bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+}
