@@ -118,12 +118,19 @@ export default async function LoginPage({
                 />
                 <input
                   type="text"
-                  inputMode="numeric"
+                  inputMode="text"
                   name="code"
                   autoComplete="one-time-code"
-                  placeholder="Opcional até o 2FA ser ativado"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  aria-describedby="admin-2fa-help"
+                  placeholder="Código de 6 dígitos"
                   className="h-[52px] w-full rounded-lg border border-white/[0.18] bg-[#080908] pl-12 pr-4 text-sm font-normal uppercase tracking-[0.16em] text-white outline-none transition placeholder:normal-case placeholder:tracking-normal placeholder:text-white/38 focus:border-[#A9EC17]/60 focus:ring-2 focus:ring-[#A9EC17]/10"
                 />
+              </span>
+              <span id="admin-2fa-help" className="text-[11px] font-normal leading-4 text-white/40">
+                Ainda não ativou o 2FA? Deixe em branco.
               </span>
             </label>
 
