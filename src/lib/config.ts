@@ -25,6 +25,14 @@ const envSchema = z.object({
     emptyStringToUndefined,
     z.string().min(3).optional(),
   ),
+  TRANSACTIONAL_EMAIL_FROM_CONTATO: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(3).optional(),
+  ),
+  TRANSACTIONAL_EMAIL_FROM_SEGURANCA: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(3).optional(),
+  ),
   // Opcional: sem ela, o endpoint /api/admin/sync-catalog recusa todo request
   // em vez de derrubar o app inteiro (integração opcional, não é o core do site).
   STOREFRONT_SYNC_API_KEY: z.preprocess(
@@ -93,7 +101,12 @@ export const config = {
       : "http://localhost:3000"),
   email: {
     resendApiKey: parsed.data.RESEND_API_KEY,
-    transactionalFrom: parsed.data.PASSWORD_RESET_EMAIL_FROM,
+    contactFrom:
+      parsed.data.TRANSACTIONAL_EMAIL_FROM_CONTATO ??
+      parsed.data.PASSWORD_RESET_EMAIL_FROM,
+    securityFrom:
+      parsed.data.TRANSACTIONAL_EMAIL_FROM_SEGURANCA ??
+      parsed.data.PASSWORD_RESET_EMAIL_FROM,
   },
   storefrontSyncApiKey: parsed.data.STOREFRONT_SYNC_API_KEY,
   blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,

@@ -22,6 +22,7 @@ export type EmailSendResult =
 
 type SendTransactionalEmailInput = {
   kind: TransactionalEmailKind;
+  from: string | undefined;
   to: string;
   subject: string;
   html: string;
@@ -123,14 +124,13 @@ export async function sendTransactionalEmail(
   input: SendTransactionalEmailInput,
 ): Promise<EmailSendResult> {
   const apiKey = config.email.resendApiKey;
-  const from = config.email.transactionalFrom;
   const logContext = {
     kind: input.kind,
     to: maskedEmail(input.to),
     idempotencyKey: input.idempotencyKey ?? null,
   };
 
-  if (!apiKey || !from) {
+  if (!apiKey || !input.from) {
     console.warn("[email] envio ignorado: Resend não configurado", logContext);
     return { status: "skipped", reason: "not_configured" };
   }
@@ -146,7 +146,7 @@ export async function sendTransactionalEmail(
           : {}),
       },
       body: JSON.stringify({
-        from,
+        from: input.from,
         to: [input.to],
         subject: input.subject,
         html: input.html,
@@ -198,6 +198,7 @@ export async function sendPasswordResetEmail(input: {
 
     return sendTransactionalEmail({
       kind: "password_reset",
+      from: config.email.securityFrom,
       to: input.to,
       subject: `Redefina sua senha da ${branding.storeName}`,
       html: content.html,
@@ -233,6 +234,7 @@ export async function sendAdminLoginCodeEmail(input: {
 
     return sendTransactionalEmail({
       kind: "admin_login_code",
+      from: config.email.securityFrom,
       to: input.to,
       subject: `Seu código de acesso ao Admin ${branding.storeName}`,
       html: content.html,

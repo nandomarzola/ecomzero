@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
+import { config } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import {
   CUSTOMER_NOTIFICATION_TYPES,
@@ -163,6 +164,7 @@ export async function sendWelcomeEmail(user: {
 
     await sendTransactionalEmail({
       kind: "welcome",
+      from: config.email.contactFrom,
       to: user.email,
       subject: `Boas-vindas à ${branding.storeName}`,
       html: content.html,
@@ -265,6 +267,7 @@ export async function sendOrderLifecycleEmail(
 
     const result = await sendTransactionalEmail({
       kind: type,
+      from: config.email.contactFrom,
       to: recipient,
       subject: `${emailSubjects[type]} — pedido ${reference}`,
       html: content.html,
