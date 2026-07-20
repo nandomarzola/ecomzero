@@ -25,6 +25,7 @@ import {
   Truck,
 } from "lucide-react";
 import PaymentBadges from "@/components/PaymentBadges";
+import { useCart } from "@/components/CartProvider";
 import CheckoutSteps from "@/components/checkout/CheckoutSteps";
 import {
   clearCheckoutShippingSelection,
@@ -196,6 +197,7 @@ export default function CheckoutForm({
   freeShipping,
 }: CheckoutFormProps) {
   const router = useRouter();
+  const { refreshCart } = useCart();
   const [values, setValues] = useState<FormValues>({
     ...emptyForm,
     nome: sessionName,
@@ -560,8 +562,21 @@ export default function CheckoutForm({
         body: JSON.stringify(parsed.data),
       });
       const orderData = (await orderResponse.json().catch(() => null)) as
-        | { orderId?: string; error?: string }
+        | {
+            orderId?: string;
+            error?: string;
+            code?: "COUPON_REMOVED";
+            cart?: { subtotal: number; discount: number; total: number };
+          }
         | null;
+
+      if (orderData?.code === "COUPON_REMOVED" && orderData.cart) {
+        setStatusMessage(orderData.error ?? "O cupom foi removido. Confira o novo total antes de continuar.");
+        void refreshCart().catch(() => {});
+        router.refresh();
+        setIsSubmitting(false);
+        return;
+      }
 
       if (!orderResponse.ok || !orderData?.orderId) {
         const message = orderData?.error ?? "Não foi possível criar seu pedido.";

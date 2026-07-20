@@ -2,12 +2,9 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 
 // Validação e cálculo de cupom da loja. ÚNICA camada que toca Prisma para cupom
-// no carrinho/checkout. Duas etapas de validação:
-//   - `validateForCart`: tudo que NÃO depende da identidade do cliente (o
-//     carrinho é anônimo). Usada ao aplicar o cupom no carrinho — é um preview.
-//   - `validateForCheckout`: validação AUTORITATIVA no momento do checkout, com
-//     identidade (limite por cliente, primeira compra). É o que decide o valor
-//     realmente cobrado, então roda dentro da transação de criação do pedido.
+// no carrinho/checkout. A aplicação manual, a automática e a reconciliação usam
+// `validateForCustomerCart`, sempre recebendo a identidade disponível. O
+// checkout repete a validação de forma autoritativa dentro da transação.
 
 export type CouponErrorCode =
   | "NOT_FOUND"
@@ -18,7 +15,8 @@ export type CouponErrorCode =
   | "NOT_APPLICABLE"
   | "TOTAL_LIMIT"
   | "CUSTOMER_LIMIT"
-  | "FIRST_PURCHASE_ONLY";
+  | "FIRST_PURCHASE_ONLY"
+  | "IDENTITY_REQUIRED";
 
 export class CouponError extends Error {
   constructor(
@@ -161,18 +159,6 @@ function assertApplicable(coupon: CouponRow, eligibleSubtotal: number): void {
   }
 }
 
-// ── Carrinho (preview, sem identidade) ──────────────────────────────────────
-export async function validateForCart(code: string, lines: CouponCartLine[]): Promise<AppliedCoupon> {
-  const coupon = await findCoupon(prisma, code);
-  if (!coupon) throw new CouponError("Cupom não encontrado.", "NOT_FOUND");
-  const subtotal = subtotalFromLines(lines);
-  assertUsableNow(coupon, subtotal);
-  const eligibleSubtotal = await eligibleSubtotalForCoupon(prisma, coupon, lines);
-  assertApplicable(coupon, eligibleSubtotal);
-  const { productDiscount, freeShipping } = computeDiscount(coupon, eligibleSubtotal, 0);
-  return { couponId: coupon.id, code: coupon.codigo, tipo: coupon.tipo, productDiscount, freeShipping };
-}
-
 // Revalida um cupom JÁ aplicado quando o carrinho muda. Retorna null se ele
 // deixou de ser válido (ex.: subtotal caiu abaixo do mínimo) — o carrinho então
 // remove o cupom silenciosamente.
@@ -235,7 +221,7 @@ async function assertCustomerEligibility(
   }
 }
 
-export async function validateForAutomaticCampaign(
+export async function validateForCustomerCart(
   code: string,
   params: {
     orderId: string;
@@ -243,9 +229,9 @@ export async function validateForAutomaticCampaign(
     userId: string | null;
     email: string | null;
   },
-): Promise<AppliedCoupon | null> {
+): Promise<AppliedCoupon> {
   const coupon = await findCoupon(prisma, code);
-  if (!coupon) return null;
+  if (!coupon) throw new CouponError("Cupom não encontrado.", "NOT_FOUND");
 
   const subtotal = subtotalFromLines(params.lines);
   assertUsableNow(coupon, subtotal);

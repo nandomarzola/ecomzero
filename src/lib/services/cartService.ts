@@ -1,7 +1,13 @@
 import { prisma } from "@/lib/db";
 import type { OrderGetPayload } from "@/generated/prisma/models";
 import type { Cart, CartItem } from "@/types/cart";
-import { revalidateAppliedCoupon, validateForAutomaticCampaign, validateForCart, type CouponCartLine } from "@/lib/services/couponService";
+import {
+  CouponError,
+  revalidateAppliedCoupon,
+  validateForCustomerCart,
+  type CouponCartLine,
+  type CouponErrorCode,
+} from "@/lib/services/couponService";
 
 // Única camada que toca o Prisma para o carrinho. O carrinho é um Order com
 // status "draft" vinculado a uma sessão anônima (sessionId, cookie).
@@ -17,6 +23,18 @@ const cartInclude = {
 } as const;
 
 type OrderWithItems = OrderGetPayload<{ include: typeof cartInclude }>;
+
+export type CartCustomerIdentity = {
+  userId: string | null;
+  email: string | null;
+};
+
+export type CartCouponReconciliation = {
+  cart: Cart;
+  removed: boolean;
+  reason: string | null;
+  errorCode: CouponErrorCode | null;
+};
 
 export const MAX_CART_ITEM_QUANTITY = 20;
 
@@ -117,9 +135,13 @@ async function recalculateTotal(orderId: string): Promise<void> {
   ]);
 }
 
-// Aplica um cupom ao carrinho (draft). Valida com regras reais (sem identidade —
-// checagem final acontece no checkout). Lança CouponError com mensagem específica.
-export async function applyCoupon(sessionId: string, code: string): Promise<Cart> {
+// Aplica um cupom ao carrinho (draft) usando a identidade disponível. A mesma
+// elegibilidade ainda é repetida de forma autoritativa no checkout.
+export async function applyCoupon(
+  sessionId: string,
+  code: string,
+  identity: CartCustomerIdentity,
+): Promise<Cart> {
   const order = await prisma.order.findUnique({
     where: { sessionId },
     include: { items: { include: { variant: { select: { product: { select: { id: true, categoryId: true } } } } } } },
@@ -130,7 +152,12 @@ export async function applyCoupon(sessionId: string, code: string): Promise<Cart
   const subtotal = round2(
     order.items.reduce((sum, item) => sum + Number(item.precoUnitario) * item.quantidade, 0),
   );
-  const applied = await validateForCart(code, toCouponLines(order.items));
+  const applied = await validateForCustomerCart(code, {
+    orderId: order.id,
+    lines: toCouponLines(order.items),
+    userId: identity.userId,
+    email: identity.email,
+  });
   await prisma.order.update({
     where: { id: order.id },
     data: {
@@ -146,8 +173,11 @@ export async function applyCoupon(sessionId: string, code: string): Promise<Cart
 export async function autoApplyCampaignCoupon(
   sessionId: string,
   code: string,
-  identity: { userId: string | null; email: string | null },
+  identity: CartCustomerIdentity,
 ): Promise<Cart> {
+  if (!identity.userId && !identity.email) {
+    throw new CouponError("Entre para validar esta oferta.", "IDENTITY_REQUIRED");
+  }
   const order = await prisma.order.findUnique({
     where: { sessionId },
     include: {
@@ -159,14 +189,12 @@ export async function autoApplyCampaignCoupon(
     return getCart(sessionId);
   }
 
-  const applied = await validateForAutomaticCampaign(code, {
+  const applied = await validateForCustomerCart(code, {
     orderId: order.id,
     lines: toCouponLines(order.items),
     userId: identity.userId,
     email: identity.email,
   });
-  if (!applied) return getCart(sessionId);
-
   const subtotal = round2(
     order.items.reduce((sum, item) => sum + Number(item.precoUnitario) * item.quantidade, 0),
   );
@@ -180,6 +208,109 @@ export async function autoApplyCampaignCoupon(
     },
   });
   return getCart(sessionId);
+}
+
+export async function clearCouponIfMatching(
+  sessionId: string,
+  couponId: string,
+): Promise<Cart> {
+  const order = await prisma.order.findUnique({
+    where: { sessionId },
+    include: { items: true },
+  });
+  if (
+    !order ||
+    order.status !== "draft" ||
+    order.couponId !== couponId
+  ) {
+    return getCart(sessionId);
+  }
+
+  const subtotal = round2(
+    order.items.reduce(
+      (sum, item) => sum + Number(item.precoUnitario) * item.quantidade,
+      0,
+    ),
+  );
+  await prisma.order.updateMany({
+    where: { id: order.id, status: "draft", couponId },
+    data: {
+      couponId: null,
+      descontoCupom: 0,
+      subtotal,
+      total: subtotal,
+    },
+  });
+  return getCart(sessionId);
+}
+
+export async function reconcileCartCoupon(
+  sessionId: string | null,
+  identity: CartCustomerIdentity,
+): Promise<CartCouponReconciliation> {
+  if (!sessionId) {
+    return {
+      cart: emptyCart(),
+      removed: false,
+      reason: null,
+      errorCode: null,
+    };
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { sessionId },
+    include: cartInclude,
+  });
+  if (
+    !order ||
+    order.status !== "draft" ||
+    !order.couponId ||
+    !order.coupon
+  ) {
+    return {
+      cart: order ? toCart(order) : emptyCart(),
+      removed: false,
+      reason: null,
+      errorCode: null,
+    };
+  }
+
+  try {
+    const applied = await validateForCustomerCart(order.coupon.codigo, {
+      orderId: order.id,
+      lines: toCouponLines(order.items),
+      userId: identity.userId,
+      email: identity.email,
+    });
+    const subtotal = round2(
+      order.items.reduce(
+        (sum, item) => sum + Number(item.precoUnitario) * item.quantidade,
+        0,
+      ),
+    );
+    await prisma.order.updateMany({
+      where: { id: order.id, status: "draft", couponId: order.couponId },
+      data: {
+        descontoCupom: applied.productDiscount,
+        subtotal,
+        total: round2(subtotal - applied.productDiscount),
+      },
+    });
+    return {
+      cart: await getCart(sessionId),
+      removed: false,
+      reason: null,
+      errorCode: null,
+    };
+  } catch (error) {
+    if (!(error instanceof CouponError)) throw error;
+    return {
+      cart: await clearCouponIfMatching(sessionId, order.couponId),
+      removed: true,
+      reason: error.message,
+      errorCode: error.code,
+    };
+  }
 }
 
 export async function removeCoupon(sessionId: string): Promise<Cart> {

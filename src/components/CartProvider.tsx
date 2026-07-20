@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useSession } from "next-auth/react";
 import {
   addToCartAction,
   applyCouponAction,
@@ -77,6 +78,7 @@ export function useCart() {
 export const useCartCount = useCart;
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { status: authenticationStatus } = useSession();
   const [cart, setCart] = useState<Cart>(EMPTY_CART);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,6 +109,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (authenticationStatus === "loading") return;
     const sequence = ++requestSequence.current;
     void getCartAction()
       .then((nextCart) => {
@@ -116,7 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       .finally(() => {
         if (requestSequence.current === sequence) setIsLoading(false);
       });
-  }, []);
+  }, [authenticationStatus]);
 
   const runMutation = useCallback(
     async (mutation: () => Promise<CartActionResult>) => {

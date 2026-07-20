@@ -94,9 +94,13 @@ export async function applyCouponAction(code: unknown): Promise<CartActionResult
   }
   const sessionId = await getCartSessionId();
   if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
+  const session = await auth();
 
   try {
-    const cart = await cartService.applyCoupon(sessionId, code);
+    const cart = await cartService.applyCoupon(sessionId, code, {
+      userId: session?.user?.id ?? null,
+      email: session?.user?.email ?? null,
+    });
     revalidateCart();
     return { success: true, cart };
   } catch (error) {
@@ -112,6 +116,9 @@ export async function autoApplyCampaignCouponAction(code: unknown): Promise<Cart
   const sessionId = await getCartSessionId();
   if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
   const session = await auth();
+  if (!session?.user?.id && !session?.user?.email) {
+    return { success: false, error: "Entre para validar esta oferta." };
+  }
 
   try {
     const cart = await cartService.autoApplyCampaignCoupon(sessionId, code, {
@@ -156,12 +163,21 @@ export async function clearCartItemsAction(): Promise<CartActionResult> {
 // Header — não afeta a classificação estática/dinâmica de nenhuma rota,
 // já que Server Actions rodam sob demanda, fora da renderização da página.
 export async function getCartSummaryAction(): Promise<{ itemCount: number }> {
-  const sessionId = await getCartSessionId();
-  const cart = await cartService.getCart(sessionId);
+  const cart = await getCartAction();
   return { itemCount: cart.itemCount };
 }
 
 export async function getCartAction(): Promise<Cart> {
-  const sessionId = await getCartSessionId();
+  const [sessionId, session] = await Promise.all([
+    getCartSessionId(),
+    auth(),
+  ]);
+  if (session?.user?.id || session?.user?.email) {
+    const result = await cartService.reconcileCartCoupon(sessionId, {
+      userId: session.user.id ?? null,
+      email: session.user.email ?? null,
+    });
+    return result.cart;
+  }
   return cartService.getCart(sessionId);
 }

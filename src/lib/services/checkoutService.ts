@@ -3,12 +3,35 @@ import { prisma } from "@/lib/db";
 import type { ShippingOption } from "@/lib/services/shippingService";
 import type { CheckoutInput } from "@/lib/validation/checkout";
 import { CouponError, validateForCheckout } from "@/lib/services/couponService";
+import { clearCouponIfMatching } from "@/lib/services/cartService";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 
 export class CheckoutServiceError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "CheckoutServiceError";
+  }
+}
+
+export class CheckoutCouponRemovedError extends CheckoutServiceError {
+  readonly code = "COUPON_REMOVED" as const;
+
+  constructor(
+    message: string,
+    readonly cart: { subtotal: number; discount: number; total: number },
+  ) {
+    super(message);
+    this.name = "CheckoutCouponRemovedError";
+  }
+}
+
+class CheckoutCouponValidationError extends Error {
+  constructor(
+    message: string,
+    readonly couponId: string,
+  ) {
+    super(message);
+    this.name = "CheckoutCouponValidationError";
   }
 }
 
@@ -112,7 +135,10 @@ export async function createOrderFromCart(
             couponGrantsFreeShipping = applied.freeShipping;
           } catch (couponError) {
             if (couponError instanceof CouponError) {
-              throw new CheckoutServiceError(couponError.message);
+              throw new CheckoutCouponValidationError(
+                couponError.message,
+                cart.couponId,
+              );
             }
             throw couponError;
           }
@@ -233,6 +259,17 @@ export async function createOrderFromCart(
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
   } catch (error) {
+    if (error instanceof CheckoutCouponValidationError) {
+      const cart = await clearCouponIfMatching(sessionId, error.couponId);
+      throw new CheckoutCouponRemovedError(
+        `${error.message} O cupom foi removido. Confira o novo total antes de continuar.`,
+        {
+          subtotal: cart.subtotal,
+          discount: cart.discount,
+          total: cart.total,
+        },
+      );
+    }
     if (error instanceof CheckoutServiceError) throw error;
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&

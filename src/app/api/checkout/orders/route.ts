@@ -6,6 +6,7 @@ import {
   setCheckoutOrderAccess,
 } from "@/lib/session";
 import {
+  CheckoutCouponRemovedError,
   CheckoutServiceError,
   createOrderFromCart,
 } from "@/lib/services/checkoutService";
@@ -41,6 +42,16 @@ export async function POST(request: NextRequest) {
     await rotateCartSessionId();
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
+    if (error instanceof CheckoutCouponRemovedError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: error.code,
+          cart: error.cart,
+        },
+        { status: 409 },
+      );
+    }
     if (error instanceof CheckoutServiceError) {
       return NextResponse.json({ error: error.message }, { status: 422 });
     }

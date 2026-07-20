@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import CheckoutForm from "@/components/CheckoutForm";
 import { auth } from "@/lib/auth";
-import { getCart } from "@/lib/services/cartService";
+import { reconcileCartCoupon } from "@/lib/services/cartService";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 import { getCartSessionId } from "@/lib/session";
 
@@ -16,11 +16,13 @@ export default async function CheckoutPage() {
     auth(),
     getCartSessionId(),
   ]);
-  const cart = await getCart(sessionId);
-
   if (!session?.user?.id) {
     redirect("/checkout/identificacao");
   }
+  const { cart } = await reconcileCartCoupon(sessionId, {
+    userId: session.user.id,
+    email: session.user.email ?? null,
+  });
 
   return (
     <div className="min-h-screen bg-[#050505]">

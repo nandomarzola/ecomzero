@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { CheckCircle2, Gift, Truck } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { isAnnouncementEligibleForUf } from "@/lib/client/announcementRegion";
 import { getUserUfSnapshot, subscribeUserCep } from "@/lib/client/cepStorage";
@@ -35,7 +37,9 @@ function campaignProgress(
 }
 
 export default function CartPromotionProgress({ items }: { items: StoreAnnouncementItem[] }) {
+  const router = useRouter();
   const { cart, autoApplyCampaignCoupon } = useCart();
+  const { status: authenticationStatus } = useSession();
   const storedUf = useSyncExternalStore(subscribeUserCep, getUserUfSnapshot, () => null);
   const [rejectedCampaignIds, setRejectedCampaignIds] = useState<Set<string>>(() => new Set());
   const automaticAttempts = useRef(new Set<string>());
@@ -72,9 +76,17 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
   const isApplied = Boolean(coupon && cart.coupon?.code === coupon.code);
   const hasAnotherCoupon = Boolean(cart.coupon && !isApplied);
   const unlocked = selectedProgress?.unlocked ?? false;
+  const waitingForAuthentication = Boolean(
+    coupon?.requiresCustomerIdentity &&
+    authenticationStatus !== "authenticated" &&
+    unlocked &&
+    !isApplied &&
+    !hasAnotherCoupon,
+  );
 
   useEffect(() => {
     if (!coupon || !unlocked || isApplied || hasAnotherCoupon || !cart.id) return;
+    if (coupon.requiresCustomerIdentity && authenticationStatus !== "authenticated") return;
     const attemptKey = `${cart.id}:${coupon.id}:${cart.subtotal}:${eligibleSubtotal}`;
     if (automaticAttempts.current.has(attemptKey)) return;
     automaticAttempts.current.add(attemptKey);
@@ -86,12 +98,14 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
             next.add(coupon.id);
             return next;
           });
+          return;
         }
+        router.refresh();
       });
-  }, [autoApplyCampaignCoupon, cart.id, cart.subtotal, coupon, eligibleSubtotal, hasAnotherCoupon, isApplied, unlocked]);
+  }, [authenticationStatus, autoApplyCampaignCoupon, cart.id, cart.subtotal, coupon, eligibleSubtotal, hasAnotherCoupon, isApplied, router, unlocked]);
 
   if (!campaign || !coupon) return null;
-  if (unlocked && !isApplied && !hasAnotherCoupon) return null;
+  if (unlocked && !isApplied && !hasAnotherCoupon && !waitingForAuthentication) return null;
   const BenefitIcon = coupon.type === "frete_gratis" ? Truck : Gift;
 
   return (
@@ -103,6 +117,8 @@ export default function CartPromotionProgress({ items }: { items: StoreAnnouncem
         <div className="min-w-0 flex-1">
           {isApplied ? (
             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase text-[var(--brand-color)]"><CheckCircle2 className="h-4 w-4" /> Benefício aplicado</p>
+          ) : waitingForAuthentication ? (
+            <p className="text-[11px] font-bold uppercase leading-4 text-white">Entre para validar esta oferta</p>
           ) : missingEligibleProduct ? (
             <p className="text-[11px] font-bold uppercase leading-4 text-white">Adicione um item de {coupon.scopeLabel} para liberar {benefitLabel(coupon)}</p>
           ) : remaining > 0 ? (
