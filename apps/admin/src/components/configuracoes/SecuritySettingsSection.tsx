@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { signOut } from "next-auth/react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   CheckCircle2,
   Copy,
@@ -57,8 +57,23 @@ export default function SecuritySettingsSection({
   const [protectedCode, setProtectedCode] = useState("");
   const [sessionPassword, setSessionPassword] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
+  const [clearSessionAfterSetup, setClearSessionAfterSetup] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
+  const sessionClearStarted = useRef(false);
+
+  useEffect(() => {
+    if (
+      !clearSessionAfterSetup ||
+      !recoveryCodes ||
+      sessionClearStarted.current
+    ) {
+      return;
+    }
+
+    sessionClearStarted.current = true;
+    void signOut({ redirect: false });
+  }, [clearSessionAfterSetup, recoveryCodes]);
 
   function finishWithReauthentication(messageText: string) {
     setMessage({ type: "success", text: messageText });
@@ -96,6 +111,7 @@ export default function SecuritySettingsSection({
       setSetupPassword("");
       setSetupCode("");
       setMessage({ type: "success", text: "2FA ativado. Salve os códigos antes de entrar novamente." });
+      setClearSessionAfterSetup(true);
     });
   }
 
@@ -213,7 +229,7 @@ export default function SecuritySettingsSection({
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">{recoveryCodes.map((code) => <code key={code} className="rounded border border-white/10 bg-black/25 px-2 py-2 text-center text-[10px] text-white/80">{code}</code>)}</div>
             <div className="mt-4 flex flex-wrap gap-2">
               <button type="button" onClick={() => copyText(recoveryCodes.join("\n"))} className={primaryButton}><Copy className="h-3.5 w-3.5" /> Copiar códigos</button>
-              <button type="button" onClick={() => signOut({ redirectTo: "/login" })} className="inline-flex h-9 items-center gap-2 rounded-md border border-white/10 px-4 text-[10px] font-semibold text-white/65"><LogOut className="h-3.5 w-3.5" /> Salvei, entrar novamente</button>
+              <button type="button" onClick={() => window.location.assign("/login")} className="inline-flex h-9 items-center gap-2 rounded-md border border-white/10 px-4 text-[10px] font-semibold text-white/65"><LogOut className="h-3.5 w-3.5" /> Salvei, entrar novamente</button>
             </div>
           </div>
         ) : null}
