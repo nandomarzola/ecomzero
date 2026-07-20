@@ -112,6 +112,7 @@ test("regressões do cupom de primeira compra", async (suite) => {
     const orderModel = prisma.order as unknown as MutableModel;
     const couponModel = prisma.coupon as unknown as MutableModel;
     const settingsModel = prisma.storeSettings as unknown as MutableModel;
+    const orderItemModel = prisma.orderItem as unknown as MutableModel;
     const prismaRoot = prisma as unknown as MutableModel;
     const originals = {
       findUnique: orderModel.findUnique,
@@ -121,6 +122,7 @@ test("regressões do cupom de primeira compra", async (suite) => {
       updateMany: orderModel.updateMany,
       couponFindUnique: couponModel.findUnique,
       settingsFindUnique: settingsModel.findUnique,
+      orderItemUpdate: orderItemModel.update,
       transaction: prismaRoot.$transaction,
     };
 
@@ -165,6 +167,19 @@ test("regressões do cupom de primeira compra", async (suite) => {
     settingsModel.findUnique = async () => ({
       valorMinimoPedido: new Prisma.Decimal(0),
     });
+    orderItemModel.update = async (input) => {
+      const parsed = input as {
+        where: { id: string };
+        data: { precoUnitario?: unknown };
+      };
+      const item = (order.items as Array<Record<string, unknown>>).find(
+        (candidate) => candidate.id === parsed.where.id,
+      );
+      if (item && parsed.data.precoUnitario) {
+        item.precoUnitario = parsed.data.precoUnitario;
+      }
+      return item ?? null;
+    };
     prismaRoot.$transaction = async (input) => {
       if (typeof input !== "function") {
         throw new Error("Apenas transações interativas são esperadas no teste");
@@ -182,6 +197,7 @@ test("regressões do cupom de primeira compra", async (suite) => {
       orderModel.updateMany = originals.updateMany;
       couponModel.findUnique = originals.couponFindUnique;
       settingsModel.findUnique = originals.settingsFindUnique;
+      orderItemModel.update = originals.orderItemUpdate;
       prismaRoot.$transaction = originals.transaction;
     }
   }
@@ -317,5 +333,32 @@ test("regressões do cupom de primeira compra", async (suite) => {
         assert.equal(state.promoted, false);
       },
     );
+  });
+
+  await suite.test("checkout preserva a sessão e o carrinho ao desistir antes do pagamento", async () => {
+    await withHarness({}, async (state) => {
+      const created = await checkoutService.createOrderFromCart(
+        "session-1",
+        checkoutInput,
+        customer.userId,
+      );
+      assert.equal(created.orderId, "cart-1");
+      assert.equal(state.order.status, "aguardando_pagamento");
+      assert.equal(state.order.sessionId, "session-1");
+
+      const visibleCart = await cartService.getCart("session-1");
+      assert.equal(visibleCart.id, "cart-1");
+      assert.equal(visibleCart.status, "aguardando_pagamento");
+      assert.equal(visibleCart.items.length, 1);
+
+      state.promoted = false;
+      const reused = await checkoutService.createOrderFromCart(
+        "session-1",
+        checkoutInput,
+        customer.userId,
+      );
+      assert.equal(reused.orderId, "cart-1");
+      assert.equal(state.promoted, false);
+    });
   });
 });

@@ -18,6 +18,7 @@ import {
   getCartAction,
   removeCartItemAction,
   removeCouponAction,
+  rotatePaidCartSessionAction,
   updateCartItemAction,
   type CartActionResult,
 } from "@/lib/actions/cartActions";
@@ -25,10 +26,12 @@ import type { Cart } from "@/types/cart";
 
 const EMPTY_CART: Cart = {
   id: null,
+  status: "draft",
   items: [],
   subtotal: 0,
   discount: 0,
   total: 0,
+  pendingPaymentTotal: null,
   itemCount: 0,
   coupon: null,
 };
@@ -46,7 +49,7 @@ type CartContextValue = {
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
-  clearCart: () => void;
+  clearCart: (paidOrderId?: string) => Promise<void>;
   clearCartItems: () => Promise<CartActionResult>;
   refreshCart: () => Promise<Cart>;
   refreshCartCount: () => void;
@@ -84,6 +87,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [mutationCount, setMutationCount] = useState(0);
   const requestSequence = useRef(0);
+  const rotatedPaidOrders = useRef(new Set<string>());
 
   const syncCart = useCallback((nextCart: Cart) => {
     requestSequence.current += 1;
@@ -190,9 +194,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const closeCart = useCallback(() => setIsOpen(false), []);
   const toggleCart = useCallback(() => setIsOpen((current) => !current), []);
-  const clearCart = useCallback(() => {
+  const clearCart = useCallback(async (paidOrderId?: string) => {
     syncCart(EMPTY_CART);
     setIsOpen(false);
+    if (!paidOrderId || rotatedPaidOrders.current.has(paidOrderId)) return;
+
+    rotatedPaidOrders.current.add(paidOrderId);
+    try {
+      const rotated = await rotatePaidCartSessionAction(paidOrderId);
+      if (!rotated) rotatedPaidOrders.current.delete(paidOrderId);
+    } catch (error) {
+      rotatedPaidOrders.current.delete(paidOrderId);
+      throw error;
+    }
   }, [syncCart]);
   const refreshCartCount = useCallback(() => {
     void refreshCart().catch(() => {});

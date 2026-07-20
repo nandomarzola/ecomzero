@@ -12,6 +12,7 @@ type CartDrawerSummaryProps = {
   freeShipping: boolean;
   total: number;
   isPending: boolean;
+  isAwaitingPayment: boolean;
   onCheckout: () => void;
   onContinue: () => void;
 };
@@ -23,6 +24,7 @@ export default function CartDrawerSummary({
   freeShipping,
   total,
   isPending,
+  isAwaitingPayment,
   onCheckout,
   onContinue,
 }: CartDrawerSummaryProps) {
@@ -74,7 +76,7 @@ export default function CartDrawerSummary({
         ) : (
           <LockKeyhole className="h-4 w-4" />
         )}
-        Finalizar compra
+        {isAwaitingPayment ? "Continuar pagamento" : "Finalizar compra"}
       </button>
 
       <button

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CircleCheck, Minus, Plus, Trash2 } from "lucide-react";
 import { useCartCount } from "@/components/CartProvider";
 import {
@@ -20,7 +21,8 @@ const formatPrice = (price: number) =>
 export default function CartItemRow({ item }: { item: CartItem }) {
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { refreshCartCount } = useCartCount();
+  const router = useRouter();
+  const { refreshCart } = useCartCount();
   const hasDiscount = item.precoDe > item.precoUnitario;
   const discountPercentage = hasDiscount
     ? Math.round(((item.precoDe - item.precoUnitario) / item.precoDe) * 100)
@@ -39,7 +41,8 @@ export default function CartItemRow({ item }: { item: CartItem }) {
       }
 
       setErrorMessage(null);
-      refreshCartCount();
+      await refreshCart();
+      router.refresh();
     });
   };
 
@@ -53,7 +56,8 @@ export default function CartItemRow({ item }: { item: CartItem }) {
       }
 
       setErrorMessage(null);
-      refreshCartCount();
+      await refreshCart();
+      router.refresh();
     });
   };
 

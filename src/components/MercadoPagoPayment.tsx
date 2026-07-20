@@ -102,6 +102,7 @@ export default function MercadoPagoPayment({
   const router = useRouter();
   const { clearCart } = useCart();
   const attemptIdRef = useRef<string | null>(null);
+  const finishingPaymentRef = useRef(false);
   const paymentBrickContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,10 +113,19 @@ export default function MercadoPagoPayment({
   const [errorMessage, setErrorMessage] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const finishApprovedPayment = useCallback(() => {
+  const finishApprovedPayment = useCallback(async () => {
+    if (finishingPaymentRef.current) return;
+    finishingPaymentRef.current = true;
     clearCheckoutShippingSelection();
-    clearCart();
-    router.replace(`/pedido/${order.orderId}/sucesso`);
+    try {
+      await clearCart(order.orderId);
+      router.replace(`/pedido/${order.orderId}/sucesso`);
+    } catch {
+      finishingPaymentRef.current = false;
+      setErrorMessage(
+        "Pagamento confirmado. Atualize a página para concluir a sessão do carrinho.",
+      );
+    }
   }, [clearCart, order.orderId, router]);
 
   const nameParts = useMemo(() => order.customer.name.trim().split(/\s+/), [
@@ -248,7 +258,7 @@ export default function MercadoPagoPayment({
           );
         }
         if (data.orderStatus === "pago") {
-          finishApprovedPayment();
+          await finishApprovedPayment();
           return;
         }
         if (data.orderStatus === "cancelado") {
@@ -292,7 +302,7 @@ export default function MercadoPagoPayment({
           data.orderStatus === "pago" ||
           data.payment?.status === "approved"
         ) {
-          finishApprovedPayment();
+          await finishApprovedPayment();
           return;
         }
         if (data.orderStatus === "cancelado") {
@@ -353,7 +363,7 @@ export default function MercadoPagoPayment({
           data.orderStatus === "pago" ||
           data.payment?.status === "approved"
         ) {
-          finishApprovedPayment();
+          await finishApprovedPayment();
           return data;
         }
         if (data.payment && pendingStatuses.has(data.payment.status)) {

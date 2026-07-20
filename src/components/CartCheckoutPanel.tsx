@@ -45,6 +45,9 @@ type CartCheckoutPanelProps = {
   coupon: AppliedCartCoupon | null;
   productCount: number;
   isLoggedIn: boolean;
+  cartStatus: "draft" | "aguardando_pagamento";
+  pendingOrderId: string | null;
+  pendingPaymentTotal: number | null;
 };
 
 const formatPrice = (price: number) =>
@@ -61,9 +64,12 @@ export default function CartCheckoutPanel({
   coupon,
   productCount,
   isLoggedIn,
+  cartStatus,
+  pendingOrderId,
+  pendingPaymentTotal,
 }: CartCheckoutPanelProps) {
   const router = useRouter();
-  const { cart } = useCart();
+  const { cart, refreshCart } = useCart();
   const [couponCode, setCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
   const [couponPending, startCoupon] = useTransition();
@@ -113,8 +119,18 @@ export default function CartCheckoutPanel({
     : false;
   const shippingPrice = selection && !selectionExpired ? selection.preco : 0;
   const freeShipping = qualifiesForFreeShipping(subtotal, coupon?.freeShipping);
-  const total = subtotal - discount + (freeShipping ? 0 : shippingPrice);
-  const canCheckout = freeShipping || Boolean(selection && !selectionExpired);
+  const isAwaitingPayment =
+    cartStatus === "aguardando_pagamento" && Boolean(pendingOrderId);
+  const pendingShipping =
+    isAwaitingPayment && pendingPaymentTotal !== null
+      ? Math.max(0, pendingPaymentTotal - subtotal + discount)
+      : null;
+  const total =
+    isAwaitingPayment && pendingPaymentTotal !== null
+      ? pendingPaymentTotal
+      : subtotal - discount + (freeShipping ? 0 : shippingPrice);
+  const canCheckout =
+    isAwaitingPayment || freeShipping || Boolean(selection && !selectionExpired);
 
   const applyCoupon = () => {
     setCouponError("");
@@ -125,6 +141,7 @@ export default function CartCheckoutPanel({
         return;
       }
       setCouponCode("");
+      await refreshCart();
       router.refresh();
     });
   };
@@ -132,7 +149,12 @@ export default function CartCheckoutPanel({
   const removeCoupon = () => {
     setCouponError("");
     startCoupon(async () => {
-      await removeCouponAction();
+      const result = await removeCouponAction();
+      if (!result.success) {
+        setCouponError(result.error);
+        return;
+      }
+      await refreshCart();
       router.refresh();
     });
   };
@@ -165,6 +187,7 @@ export default function CartCheckoutPanel({
 
       setQuote(data as QuoteResponse);
       setStatus("idle");
+      await refreshCart();
     } catch {
       setErrorMessage("Não foi possível calcular o frete. Tente novamente.");
       setStatus("error");
@@ -193,10 +216,15 @@ export default function CartCheckoutPanel({
   });
 
   useEffect(() => {
-    if (productCount === 0 || freeShipping || hasValidSelection) return;
+    if (
+      productCount === 0 ||
+      isAwaitingPayment ||
+      freeShipping ||
+      hasValidSelection
+    ) return;
     const timer = window.setTimeout(() => autoQuoteRef.current(), 600);
     return () => window.clearTimeout(timer);
-  }, [freeShipping, productCount, subtotal, savedUserCep, hasValidSelection]);
+  }, [freeShipping, productCount, subtotal, savedUserCep, hasValidSelection, isAwaitingPayment]);
 
   const selectShipping = (option: ShippingOption) => {
     if (!quote) return;
@@ -217,6 +245,19 @@ export default function CartCheckoutPanel({
   };
 
   const goToCheckout = () => {
+    if (isAwaitingPayment && pendingOrderId) {
+      trackMetaPixelCommerceEvent({
+        event: "InitiateCheckout",
+        items: cart.items.map((item) => ({
+          variantId: item.variantId,
+          quantity: item.quantidade,
+          unitPrice: item.precoUnitario,
+        })),
+        value: total,
+      });
+      router.push(`/checkout/pagamento/${pendingOrderId}`);
+      return;
+    }
     if (freeShipping) {
       trackMetaPixelCommerceEvent({
         event: "InitiateCheckout",
@@ -282,8 +323,14 @@ export default function CartCheckoutPanel({
                 Frete
                 <Info className="h-3.5 w-3.5" strokeWidth={1.7} />
               </dt>
-              <dd className={freeShipping || selection ? "font-medium text-white" : "text-white/40"}>
-                {freeShipping
+              <dd className={isAwaitingPayment || freeShipping || selection ? "font-medium text-white" : "text-white/40"}>
+                {isAwaitingPayment
+                  ? pendingShipping === null
+                    ? "Já definido"
+                    : pendingShipping === 0
+                      ? "Grátis"
+                      : formatPrice(pendingShipping)
+                  : freeShipping
                   ? "Grátis"
                   : selection && !selectionExpired
                   ? formatPrice(selection.preco)
@@ -353,7 +400,9 @@ export default function CartCheckoutPanel({
             </strong>
           </div>
           <p className="mt-1 min-h-4 text-[10px] text-white/38 max-md:text-xs max-md:leading-5">
-            {freeShipping
+            {isAwaitingPayment
+              ? "Pedido preservado. Você pode continuar a tentativa de pagamento atual."
+              : freeShipping
               ? "A transportadora será definida após a confirmação do pedido."
               : selection && !selectionExpired
               ? `${selection.transportadora} · ${selection.servico}`
@@ -365,12 +414,21 @@ export default function CartCheckoutPanel({
             onClick={goToCheckout}
             className="store-primary-action font-display mt-5 flex min-h-[54px] w-full items-center justify-center gap-2 px-5 text-xs font-extrabold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white max-md:hidden"
           >
-            {canCheckout ? "Finalizar compra" : "Escolher frete para continuar"}
+            {isAwaitingPayment
+              ? "Continuar pagamento"
+              : canCheckout
+                ? "Finalizar compra"
+                : "Escolher frete para continuar"}
             <ArrowRight className="h-4 w-4" />
           </button>
+          {isAwaitingPayment ? (
+            <p className="mt-3 text-[10px] leading-4 text-amber-200/75 max-md:text-xs max-md:leading-5">
+              Ao alterar itens, cupom ou frete, a tentativa atual será cancelada com segurança antes da edição.
+            </p>
+          ) : null}
         </section>
 
-        {!freeShipping && (
+        {!isAwaitingPayment && !freeShipping && (
           <section
             id="shipping-calculator"
             aria-labelledby="shipping-calculator-title"
@@ -494,7 +552,11 @@ export default function CartCheckoutPanel({
             onClick={goToCheckout}
             className="store-primary-action font-display min-h-[52px] flex-1 px-4 text-sm font-extrabold uppercase"
           >
-            {canCheckout ? "Finalizar compra" : "Escolher frete"}
+            {isAwaitingPayment
+              ? "Continuar pagamento"
+              : canCheckout
+                ? "Finalizar compra"
+                : "Escolher frete"}
           </button>
         </div>
       </div>

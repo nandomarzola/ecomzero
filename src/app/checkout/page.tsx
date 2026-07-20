@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import CheckoutForm from "@/components/CheckoutForm";
 import { auth } from "@/lib/auth";
-import { reconcileCartCoupon } from "@/lib/services/cartService";
+import { getCart, reconcileCartCoupon } from "@/lib/services/cartService";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
-import { getCartSessionId } from "@/lib/session";
+import { getCartSessionId, getCheckoutOrderAccessId } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Finalizar compra",
@@ -12,12 +12,23 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
-  const [session, sessionId] = await Promise.all([
+  const [session, sessionId, signedOrderId] = await Promise.all([
     auth(),
     getCartSessionId(),
+    getCheckoutOrderAccessId(),
   ]);
   if (!session?.user?.id) {
     redirect("/checkout/identificacao");
+  }
+  const recoveredCart = await getCart(sessionId, {
+    signedOrderId,
+    userId: session.user.id,
+  });
+  if (
+    recoveredCart.status === "aguardando_pagamento" &&
+    recoveredCart.id
+  ) {
+    redirect(`/checkout/pagamento/${recoveredCart.id}`);
   }
   const { cart } = await reconcileCartCoupon(sessionId, {
     userId: session.user.id,

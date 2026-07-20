@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isMelhorEnvioConfigurado } from "@/lib/config";
 import { getCartSessionId } from "@/lib/session";
-import { getCart } from "@/lib/services/cartService";
+import {
+  getCart,
+  PendingCartMutationBlockedError,
+  prepareCartForMutation,
+} from "@/lib/services/cartService";
 import {
   calculateCartShipping,
   isShippingRateLimited,
@@ -44,6 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    await prepareCartForMutation(sessionId);
     const cart = await getCart(sessionId);
     if (!cart.id || cart.items.length === 0) {
       return NextResponse.json(
@@ -65,6 +70,9 @@ export async function POST(request: NextRequest) {
       options,
     });
   } catch (error) {
+    if (error instanceof PendingCartMutationBlockedError) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     if (error instanceof ShippingServiceError) {
       return NextResponse.json({ error: error.message }, { status: error.status });
     }

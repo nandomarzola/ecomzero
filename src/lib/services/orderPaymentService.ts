@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
 import { after } from "next/server";
+import { buildPaidOrderTransition } from "@/lib/cartLifecycleDomain";
 import { savePurchasedAddressForUser } from "@/lib/services/accountService";
 import { recordCouponUsage } from "@/lib/services/couponService";
 import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentService";
@@ -29,6 +30,9 @@ type PaymentReconciliationErrorCode =
   | "INVALID_REFERENCE"
   | "ORDER_NOT_FOUND"
   | "PAYMENT_MISMATCH";
+
+const PAYMENT_CREATION_STATUS_PREFIX = "creating:";
+const PREFERENCE_CREATION_STATUS = "creating_preference";
 
 export class OrderPaymentServiceError extends Error {
   constructor(
@@ -379,11 +383,68 @@ export async function processOrderBrickPayment(
     }
   }
 
-  const payment = await createMercadoPagoPayment(
-    buildPaymentSnapshot(order),
-    input,
-    siteUrl,
-  );
+  const creationStatus = `${PAYMENT_CREATION_STATUS_PREFIX}${input.attemptId}`;
+  const isIdempotentRetry = order.mercadoPagoPaymentStatus === creationStatus;
+  if (
+    (order.mercadoPagoPaymentStatus?.startsWith(PAYMENT_CREATION_STATUS_PREFIX) &&
+      !isIdempotentRetry) ||
+    order.mercadoPagoPaymentStatus === PREFERENCE_CREATION_STATUS
+  ) {
+    throw new OrderPaymentServiceError(
+      "Outra tentativa de pagamento já está em andamento",
+      "INVALID_STATUS",
+      409,
+    );
+  }
+  if (!isIdempotentRetry) {
+    const claimed = await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        status: "aguardando_pagamento",
+        mercadoPagoPaymentId: order.mercadoPagoPaymentId,
+        mercadoPagoPaymentStatus: order.mercadoPagoPaymentStatus,
+      },
+      data: { mercadoPagoPaymentStatus: creationStatus },
+    });
+    if (claimed.count !== 1) {
+      throw new OrderPaymentServiceError(
+        "Outra tentativa de pagamento já está em andamento",
+        "INVALID_STATUS",
+        409,
+      );
+    }
+  }
+
+  let payment: MercadoPagoPaymentSnapshot;
+  try {
+    payment = await createMercadoPagoPayment(
+      buildPaymentSnapshot(order),
+      input,
+      siteUrl,
+    );
+  } catch (error) {
+    await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        status: "aguardando_pagamento",
+        mercadoPagoPaymentStatus: creationStatus,
+      },
+      data: { mercadoPagoPaymentStatus: order.mercadoPagoPaymentStatus },
+    });
+    throw error;
+  }
+
+  await prisma.order.updateMany({
+    where: {
+      id: order.id,
+      status: "aguardando_pagamento",
+      mercadoPagoPaymentStatus: creationStatus,
+    },
+    data: {
+      mercadoPagoPaymentId: payment.id,
+      mercadoPagoPaymentStatus: payment.status,
+    },
+  });
   const reconciliation = await reconcilePayment(payment);
 
   return toPaymentResult(order.id, reconciliation.orderStatus, payment);
@@ -446,14 +507,61 @@ export async function getOrCreateOrderPaymentPreference(
     };
   }
 
+  const isIdempotentRetry =
+    order.mercadoPagoPaymentStatus === PREFERENCE_CREATION_STATUS;
+  if (
+    order.mercadoPagoPaymentStatus?.startsWith(PAYMENT_CREATION_STATUS_PREFIX)
+  ) {
+    throw new OrderPaymentServiceError(
+      "Outra tentativa de pagamento já está em andamento",
+      "INVALID_STATUS",
+      409,
+    );
+  }
+  if (!isIdempotentRetry) {
+    const claimed = await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        status: "aguardando_pagamento",
+        mercadoPagoPaymentStatus: order.mercadoPagoPaymentStatus,
+      },
+      data: { mercadoPagoPaymentStatus: PREFERENCE_CREATION_STATUS },
+    });
+    if (claimed.count !== 1) {
+      throw new OrderPaymentServiceError(
+        "Outra tentativa de pagamento já está em andamento",
+        "INVALID_STATUS",
+        409,
+      );
+    }
+  }
+
   const snapshot = buildPaymentSnapshot(order);
-  const preference = await createPaymentPreference(snapshot, siteUrl);
+  let preference;
+  try {
+    preference = await createPaymentPreference(snapshot, siteUrl);
+  } catch (error) {
+    await prisma.order.updateMany({
+      where: {
+        id: order.id,
+        status: "aguardando_pagamento",
+        mercadoPagoPaymentStatus: PREFERENCE_CREATION_STATUS,
+      },
+      data: { mercadoPagoPaymentStatus: order.mercadoPagoPaymentStatus },
+    });
+    throw error;
+  }
   const updated = await prisma.order.updateMany({
-    where: { id: order.id, status: "aguardando_pagamento" },
+    where: {
+      id: order.id,
+      status: "aguardando_pagamento",
+      mercadoPagoPaymentStatus: PREFERENCE_CREATION_STATUS,
+    },
     data: {
       mercadoPagoPreferenceId: preference.preferenceId,
       mercadoPagoInitPoint: preference.initPoint,
       mercadoPagoPreferenceExpiresAt: preference.expiresAt,
+      mercadoPagoPaymentStatus: order.mercadoPagoPaymentStatus,
     },
   });
 
@@ -584,10 +692,7 @@ async function reconcilePayment(
         status: "aguardando_pagamento",
       },
       data: {
-        status: "pago",
-        mercadoPagoPaymentId: payment.id,
-        mercadoPagoPaymentStatus: payment.status,
-        pagoEm: payment.approvedAt ?? new Date(),
+        ...buildPaidOrderTransition(payment),
       },
     });
 

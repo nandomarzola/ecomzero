@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import {
   getCartSessionId,
-  rotateCartSessionId,
   setCheckoutOrderAccess,
 } from "@/lib/session";
 import {
@@ -39,7 +38,6 @@ export async function POST(request: NextRequest) {
       session?.user?.id ?? null,
     );
     await setCheckoutOrderAccess(order.orderId);
-    await rotateCartSessionId();
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     if (error instanceof CheckoutCouponRemovedError) {

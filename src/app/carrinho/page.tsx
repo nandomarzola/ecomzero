@@ -18,7 +18,7 @@ import {
   getAllProducts,
   getOtherProducts,
 } from "@/lib/services/productService";
-import { getCartSessionId } from "@/lib/session";
+import { getCartSessionId, getCheckoutOrderAccessId } from "@/lib/session";
 import { getActiveCategories } from "@/lib/services/storeContentService";
 
 export const metadata: Metadata = {
@@ -56,8 +56,15 @@ const trustBadges = [
 ];
 
 export default async function CartPage() {
-  const [sessionId, session] = await Promise.all([getCartSessionId(), auth()]);
-  const cart = await getCart(sessionId);
+  const [sessionId, session, signedOrderId] = await Promise.all([
+    getCartSessionId(),
+    auth(),
+    getCheckoutOrderAccessId(),
+  ]);
+  const cart = await getCart(sessionId, {
+    signedOrderId,
+    userId: session?.user?.id ?? null,
+  });
   const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const otherProducts = getOtherProducts(
     allProducts,
@@ -139,6 +146,11 @@ export default async function CartPage() {
                 coupon={cart.coupon}
                 productCount={productCount}
                 isLoggedIn={Boolean(session?.user?.id)}
+                cartStatus={cart.status}
+                pendingOrderId={
+                  cart.status === "aguardando_pagamento" ? cart.id : null
+                }
+                pendingPaymentTotal={cart.pendingPaymentTotal}
               />
             </div>
 

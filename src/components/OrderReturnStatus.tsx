@@ -80,8 +80,8 @@ export default function OrderReturnStatus({
   useEffect(() => {
     if (orderStatus !== "pago") return;
     clearCheckoutShippingSelection();
-    clearCart();
-  }, [clearCart, orderStatus]);
+    void clearCart(orderId).catch(() => undefined);
+  }, [clearCart, orderId, orderStatus]);
 
   useEffect(() => {
     if (orderStatus !== "pago" || !purchaseData) return;

@@ -22,6 +22,7 @@ export type AppliedCartCoupon = {
 
 export type Cart = {
   id: string | null;
+  status: "draft" | "aguardando_pagamento";
   items: CartItem[];
   /** soma dos itens (produtos), sem frete nem desconto */
   subtotal: number;
@@ -29,6 +30,8 @@ export type Cart = {
   discount: number;
   /** subtotal - discount */
   total: number;
+  /** total congelado do pedido, incluindo frete, enquanto aguarda pagamento */
+  pendingPaymentTotal: number | null;
   itemCount: number;
   coupon: AppliedCartCoupon | null;
 };

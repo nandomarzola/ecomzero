@@ -44,6 +44,30 @@ export async function rotateCartSessionId(): Promise<string> {
   return sessionId;
 }
 
+function verifyCheckoutOrderCookie(value: string | undefined): string | null {
+  if (!value) return null;
+
+  const separator = value.lastIndexOf(".");
+  if (separator <= 0) return null;
+  const storedOrderId = value.slice(0, separator);
+  const storedSignature = value.slice(separator + 1);
+  const expectedSignature = signCheckoutOrder(storedOrderId);
+  const storedBuffer = Buffer.from(storedSignature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (
+    storedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(storedBuffer, expectedBuffer)
+  ) {
+    return null;
+  }
+  return storedOrderId;
+}
+
+export async function getCheckoutOrderAccessId(): Promise<string | null> {
+  const store = await cookies();
+  return verifyCheckoutOrderCookie(store.get(CHECKOUT_ORDER_COOKIE)?.value);
+}
+
 function signCheckoutOrder(orderId: string): string {
   return createHmac("sha256", config.authSecret)
     .update(orderId)
@@ -63,21 +87,5 @@ export async function setCheckoutOrderAccess(orderId: string): Promise<void> {
 }
 
 export async function hasCheckoutOrderAccess(orderId: string): Promise<boolean> {
-  const store = await cookies();
-  const value = store.get(CHECKOUT_ORDER_COOKIE)?.value;
-  if (!value) return false;
-
-  const separator = value.lastIndexOf(".");
-  if (separator <= 0) return false;
-  const storedOrderId = value.slice(0, separator);
-  const storedSignature = value.slice(separator + 1);
-  if (storedOrderId !== orderId) return false;
-
-  const expectedSignature = signCheckoutOrder(orderId);
-  const storedBuffer = Buffer.from(storedSignature);
-  const expectedBuffer = Buffer.from(expectedSignature);
-  return (
-    storedBuffer.length === expectedBuffer.length &&
-    timingSafeEqual(storedBuffer, expectedBuffer)
-  );
+  return (await getCheckoutOrderAccessId()) === orderId;
 }

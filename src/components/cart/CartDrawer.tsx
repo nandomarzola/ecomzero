@@ -70,8 +70,24 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
     cart.subtotal,
     cart.coupon?.freeShipping,
   );
-  const shippingPrice = freeShipping ? 0 : shippingSelection?.preco ?? null;
-  const total = cart.total + (shippingPrice ?? 0);
+  const isAwaitingPayment =
+    cart.status === "aguardando_pagamento" && Boolean(cart.id);
+  const pendingShipping =
+    isAwaitingPayment && cart.pendingPaymentTotal !== null
+      ? Math.max(
+          0,
+          cart.pendingPaymentTotal - cart.subtotal + cart.discount,
+        )
+      : null;
+  const shippingPrice = isAwaitingPayment
+    ? pendingShipping
+    : freeShipping
+      ? 0
+      : shippingSelection?.preco ?? null;
+  const total =
+    isAwaitingPayment && cart.pendingPaymentTotal !== null
+      ? cart.pendingPaymentTotal
+      : cart.total + (shippingPrice ?? 0);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -133,6 +149,21 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
   }, [closeCart, isOpen]);
 
   const goToCheckout = () => {
+    if (isAwaitingPayment && cart.id) {
+      setCheckoutError("");
+      trackMetaPixelCommerceEvent({
+        event: "InitiateCheckout",
+        items: cart.items.map((item) => ({
+          variantId: item.variantId,
+          quantity: item.quantidade,
+          unitPrice: item.precoUnitario,
+        })),
+        value: total,
+      });
+      closeCart();
+      router.push(`/checkout/pagamento/${cart.id}`);
+      return;
+    }
     if (minimumOrderValue > 0 && cart.subtotal + 0.005 < minimumOrderValue) {
       const missing = minimumOrderValue - cart.subtotal;
       setCheckoutError(`Adicione mais ${missing.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} em produtos para atingir o pedido mínimo.`);
@@ -253,9 +284,11 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
                   <CartDrawerItem key={item.id} item={item} />
                 ))}
               </section>
-              <CartPromotionProgress items={promotionItems} />
+              {!isAwaitingPayment ? (
+                <CartPromotionProgress items={promotionItems} />
+              ) : null}
               <CartDrawerCoupon />
-              {!freeShipping ? (
+              {!isAwaitingPayment && !freeShipping ? (
                 <CartDrawerShipping subtotal={cart.subtotal} active={isOpen} />
               ) : null}
               {checkoutError ? (
@@ -272,6 +305,7 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
               freeShipping={freeShipping}
               total={total}
               isPending={isMutating}
+              isAwaitingPayment={isAwaitingPayment}
               onCheckout={goToCheckout}
               onContinue={closeCart}
             />

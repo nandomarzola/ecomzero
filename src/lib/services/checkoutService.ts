@@ -68,7 +68,10 @@ export async function createOrderFromCart(
     return await prisma.$transaction(
       async (transaction) => {
         const cart = await transaction.order.findFirst({
-          where: { sessionId, status: "draft" },
+          where: {
+            sessionId,
+            status: { in: ["draft", "aguardando_pagamento"] },
+          },
           include: {
             items: {
               include: { variant: { include: { product: true } } },
@@ -78,6 +81,17 @@ export async function createOrderFromCart(
 
         if (!cart || cart.items.length === 0) {
           throw new CheckoutServiceError("Carrinho vazio ou não encontrado");
+        }
+
+        if (cart.status === "aguardando_pagamento") {
+          return {
+            orderId: cart.id,
+            status: "aguardando_pagamento" as const,
+            subtotal: cart.subtotal.toNumber(),
+            valorFrete: cart.valorFrete.toNumber(),
+            descontoCupom: cart.descontoCupom.toNumber(),
+            total: cart.total.toNumber(),
+          };
         }
 
         const unavailableProducts = [
@@ -210,7 +224,6 @@ export async function createOrderFromCart(
           where: { id: cart.id, sessionId, status: "draft" },
           data: {
             status: "aguardando_pagamento",
-            sessionId: null,
             userId,
             nomeCliente: checkout.nome,
             emailCliente: checkout.email,

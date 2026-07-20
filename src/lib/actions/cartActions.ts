@@ -2,9 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { getCartSessionId, getOrCreateCartSessionId } from "@/lib/session";
+import {
+  getCartSessionId,
+  getCheckoutOrderAccessId,
+  getOrCreateCartSessionId,
+  hasCheckoutOrderAccess,
+} from "@/lib/session";
 import * as cartService from "@/lib/services/cartService";
+import { rotatePaidCartSession } from "@/lib/services/cartSessionService";
 import { CouponError, normalizeCode } from "@/lib/services/couponService";
+import { paymentOrderIdSchema } from "@/lib/validation/payment";
 import {
   addToCartSchema,
   removeCartItemSchema,
@@ -21,6 +28,9 @@ export type CartActionResult =
 
 function getCartActionError(error: unknown, fallback: string): CartActionResult {
   if (error instanceof cartService.CartQuantityLimitError) {
+    return { success: false, error: error.message };
+  }
+  if (error instanceof cartService.PendingCartMutationBlockedError) {
     return { success: false, error: error.message };
   }
 
@@ -83,8 +93,8 @@ export async function removeCartItemAction(input: unknown): Promise<CartActionRe
     const cart = await cartService.removeItem(sessionId, parsed.data.itemId);
     revalidateCart();
     return { success: true, cart };
-  } catch {
-    return { success: false, error: "Não foi possível remover o item" };
+  } catch (error) {
+    return getCartActionError(error, "Não foi possível remover o item");
   }
 }
 
@@ -105,7 +115,7 @@ export async function applyCouponAction(code: unknown): Promise<CartActionResult
     return { success: true, cart };
   } catch (error) {
     if (error instanceof CouponError) return { success: false, error: error.message };
-    return { success: false, error: "Não foi possível aplicar o cupom." };
+    return getCartActionError(error, "Não foi possível aplicar o cupom.");
   }
 }
 
@@ -141,8 +151,8 @@ export async function removeCouponAction(): Promise<CartActionResult> {
     const cart = await cartService.removeCoupon(sessionId);
     revalidateCart();
     return { success: true, cart };
-  } catch {
-    return { success: false, error: "Não foi possível remover o cupom." };
+  } catch (error) {
+    return getCartActionError(error, "Não foi possível remover o cupom.");
   }
 }
 
@@ -154,8 +164,8 @@ export async function clearCartItemsAction(): Promise<CartActionResult> {
     const cart = await cartService.clearCart(sessionId);
     revalidateCart();
     return { success: true, cart };
-  } catch {
-    return { success: false, error: "Não foi possível limpar o carrinho." };
+  } catch (error) {
+    return getCartActionError(error, "Não foi possível limpar o carrinho.");
   }
 }
 
@@ -168,10 +178,15 @@ export async function getCartSummaryAction(): Promise<{ itemCount: number }> {
 }
 
 export async function getCartAction(): Promise<Cart> {
-  const [sessionId, session] = await Promise.all([
-    getCartSessionId(),
+  const [sessionId, session, signedOrderId] = await Promise.all([
+    getOrCreateCartSessionId(),
     auth(),
+    getCheckoutOrderAccessId(),
   ]);
+  const resolvedCart = await cartService.getCart(sessionId, {
+    signedOrderId,
+    userId: session?.user?.id ?? null,
+  });
   if (session?.user?.id || session?.user?.email) {
     const result = await cartService.reconcileCartCoupon(sessionId, {
       userId: session.user.id ?? null,
@@ -179,5 +194,19 @@ export async function getCartAction(): Promise<Cart> {
     });
     return result.cart;
   }
-  return cartService.getCart(sessionId);
+  return resolvedCart;
+}
+
+export async function rotatePaidCartSessionAction(orderId: unknown): Promise<boolean> {
+  const parsed = paymentOrderIdSchema.safeParse(orderId);
+  if (!parsed.success) return false;
+
+  const [session, hasGuestAccess] = await Promise.all([
+    auth(),
+    hasCheckoutOrderAccess(parsed.data),
+  ]);
+  return rotatePaidCartSession(parsed.data, {
+    userId: session?.user?.id ?? null,
+    hasGuestAccess,
+  });
 }
