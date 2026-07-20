@@ -3,6 +3,8 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { config } from "@/lib/config";
 import { prisma } from "@/lib/db";
+import { createOAuthProviders } from "@/lib/oauthProviders";
+import { isOAuthProfileAllowed } from "@/lib/security/oauth";
 import {
   getSessionIssuedAt,
   isSessionValidForCutoff,
@@ -16,6 +18,7 @@ import {
   rateLimitKey,
   registerAttempt,
 } from "@/lib/security/authRateLimit";
+import { sendWelcomeEmail } from "@/lib/services/transactionalEmailService";
 
 const LOGIN_MAX_FAILURES = 5; // por IP e por e-mail, em janela de 15 min
 
@@ -23,8 +26,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   secret: config.authSecret,
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  pages: { signIn: "/login", error: "/login" },
   callbacks: {
+    signIn({ account, profile }) {
+      if (account?.provider === "google" || account?.provider === "facebook") {
+        return Boolean(
+          profile &&
+            isOAuthProfileAllowed(
+              account.provider,
+              profile as Record<string, unknown>,
+            ),
+        );
+      }
+
+      return true;
+    },
     async jwt({ token, user }) {
       const sessionIssuedAt = user ? Date.now() : getSessionIssuedAt(token);
       if (!token.sub || sessionIssuedAt === null) return null;
@@ -52,6 +68,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.sub;
       }
       return session;
+    },
+  },
+  events: {
+    async createUser({ user }) {
+      if (!user.id || !user.email) return;
+      await sendWelcomeEmail({
+        id: user.id,
+        name: user.name ?? user.email.split("@")[0],
+        email: user.email,
+      });
+    },
+    async linkAccount({ user, account }) {
+      if (account.provider !== "google") return;
+      await prisma.user.updateMany({
+        where: { id: user.id, emailVerified: null },
+        data: { emailVerified: new Date() },
+      });
     },
   },
   providers: [
@@ -91,5 +124,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return user;
       },
     }),
+    ...createOAuthProviders(config.oauth),
   ],
 });

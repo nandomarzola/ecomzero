@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import AccountProfileForm from "@/components/AccountProfileForm";
 import { auth } from "@/lib/auth";
+import { config } from "@/lib/config";
+import { getOAuthAvailability } from "@/lib/security/oauth";
 import { getProfile } from "@/lib/services/accountService";
 
 export const metadata: Metadata = {
@@ -22,7 +24,10 @@ export default async function AccountDataPage() {
       </h2>
       <p className="mt-2 text-sm text-white/45">Atualize suas informações pessoais e sua senha de acesso.</p>
       <div className="mt-5">
-        <AccountProfileForm profile={profile} />
+        <AccountProfileForm
+          profile={profile}
+          oauthAvailability={getOAuthAvailability(config.oauth)}
+        />
       </div>
     </section>
   );

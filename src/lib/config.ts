@@ -12,6 +12,22 @@ function emptyStringToUndefined(value: unknown) {
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL não configurada"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa ter pelo menos 32 caracteres"),
+  AUTH_GOOGLE_ID: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).optional(),
+  ),
+  AUTH_GOOGLE_SECRET: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).optional(),
+  ),
+  AUTH_FACEBOOK_ID: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).optional(),
+  ),
+  AUTH_FACEBOOK_SECRET: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).optional(),
+  ),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   NEXT_PUBLIC_STOREFRONT_URL: z.preprocess(
     emptyStringToUndefined,
@@ -93,6 +109,22 @@ if (!parsed.success) {
 export const config = {
   databaseUrl: parsed.data.DATABASE_URL,
   authSecret: parsed.data.AUTH_SECRET,
+  oauth: {
+    google:
+      parsed.data.AUTH_GOOGLE_ID && parsed.data.AUTH_GOOGLE_SECRET
+        ? {
+            clientId: parsed.data.AUTH_GOOGLE_ID,
+            clientSecret: parsed.data.AUTH_GOOGLE_SECRET,
+          }
+        : null,
+    facebook:
+      parsed.data.AUTH_FACEBOOK_ID && parsed.data.AUTH_FACEBOOK_SECRET
+        ? {
+            clientId: parsed.data.AUTH_FACEBOOK_ID,
+            clientSecret: parsed.data.AUTH_FACEBOOK_SECRET,
+          }
+        : null,
+  },
   nodeEnv: parsed.data.NODE_ENV,
   storefrontUrl:
     parsed.data.NEXT_PUBLIC_STOREFRONT_URL ??

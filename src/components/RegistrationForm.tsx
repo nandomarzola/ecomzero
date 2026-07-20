@@ -3,6 +3,8 @@
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
 import { Check, Eye, EyeOff } from "lucide-react";
+import OAuthButtons from "@/components/OAuthButtons";
+import type { OAuthAvailability } from "@/lib/security/oauth";
 
 type FieldName =
   | "name"
@@ -33,11 +35,13 @@ const formatPhone = (value: string) => {
 type RegistrationFormProps = {
   initialEmail?: string;
   returnTo?: "/" | "/checkout";
+  oauthAvailability: OAuthAvailability;
 };
 
 export default function RegistrationForm({
   initialEmail = "",
   returnTo = "/",
+  oauthAvailability,
 }: RegistrationFormProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState(initialEmail);
@@ -186,7 +190,20 @@ export default function RegistrationForm({
           É rápido, fácil e seguro
         </p>
 
-        <form className="mt-7 space-y-4" noValidate onSubmit={handleSubmit}>
+        <div className="mt-7">
+          <OAuthButtons
+            availability={oauthAvailability}
+            callbackUrl={returnTo}
+          />
+        </div>
+
+        <div className="my-7 flex items-center gap-4 text-xs text-white/45">
+          <span className="h-px flex-1 bg-white/[0.12]" />
+          <span>ou cadastre-se com e-mail</span>
+          <span className="h-px flex-1 bg-white/[0.12]" />
+        </div>
+
+        <form className="space-y-4" noValidate onSubmit={handleSubmit}>
           <div>
             <label htmlFor="name" className="mb-2 block text-[13px] font-semibold text-white">
               Nome completo

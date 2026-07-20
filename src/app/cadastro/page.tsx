@@ -12,6 +12,8 @@ import {
 import CategoryStrip from "@/components/CategoryStrip";
 import RegistrationForm from "@/components/RegistrationForm";
 import TrustBadges from "@/components/TrustBadges";
+import { config } from "@/lib/config";
+import { getOAuthAvailability } from "@/lib/security/oauth";
 import { getActiveCategories } from "@/lib/services/storeContentService";
 
 export const metadata: Metadata = {
@@ -102,7 +104,11 @@ export default async function RegistrationPage({ searchParams }: RegistrationPag
         </nav>
 
         <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:items-stretch">
-          <RegistrationForm initialEmail={initialEmail} returnTo={returnTo} />
+          <RegistrationForm
+            initialEmail={initialEmail}
+            returnTo={returnTo}
+            oauthAvailability={getOAuthAvailability(config.oauth)}
+          />
 
           <aside
             aria-labelledby="registration-benefits-title"

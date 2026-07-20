@@ -12,6 +12,12 @@ import {
 import CategoryStrip from "@/components/CategoryStrip";
 import LoginForm from "@/components/LoginForm";
 import TrustBadges from "@/components/TrustBadges";
+import { config } from "@/lib/config";
+import {
+  getOAuthAvailability,
+  oauthErrorMessage,
+  safeOAuthReturnTo,
+} from "@/lib/security/oauth";
 import { getActiveCategories } from "@/lib/services/storeContentService";
 
 export const metadata: Metadata = {
@@ -73,7 +79,20 @@ const trustBadges = [
   },
 ];
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams: Promise<{
+    error?: string | string[];
+    callbackUrl?: string | string[];
+    retorno?: string | string[];
+  }>;
+};
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const returnTo = safeOAuthReturnTo(
+    params.callbackUrl ?? params.retorno,
+    "/",
+  );
   const categories = await getActiveCategories();
   return (
     <div className="bg-[#050505]">
@@ -94,7 +113,11 @@ export default async function LoginPage() {
         </nav>
 
         <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] lg:items-stretch">
-          <LoginForm />
+          <LoginForm
+            oauthAvailability={getOAuthAvailability(config.oauth)}
+            returnTo={returnTo}
+            initialErrorMessage={oauthErrorMessage(params.error)}
+          />
 
           <aside
             aria-labelledby="login-benefits-title"

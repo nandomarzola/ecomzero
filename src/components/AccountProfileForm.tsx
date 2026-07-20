@@ -1,17 +1,34 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Eye, EyeOff, LoaderCircle, LockKeyhole, Save, UserRound } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Link2,
+  LoaderCircle,
+  LockKeyhole,
+  Save,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
+import OAuthButtons from "@/components/OAuthButtons";
+import type {
+  OAuthAvailability,
+  OAuthProviderId,
+} from "@/lib/security/oauth";
 
 type AccountProfileFormProps = {
   profile: {
     nome: string | null;
     email: string;
     telefone: string | null;
+    hasPassword: boolean;
+    connectedOAuthProviders: OAuthProviderId[];
   };
+  oauthAvailability: OAuthAvailability;
 };
 
 const inputClassName =
@@ -24,7 +41,10 @@ const formatPhone = (value: string) => {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 };
 
-export default function AccountProfileForm({ profile }: AccountProfileFormProps) {
+export default function AccountProfileForm({
+  profile,
+  oauthAvailability,
+}: AccountProfileFormProps) {
   const router = useRouter();
   const [name, setName] = useState(profile.nome ?? "");
   const [phone, setPhone] = useState(formatPhone(profile.telefone ?? ""));
@@ -143,6 +163,32 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
         </button>
       </form>
 
+      <section className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
+        <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
+            <Link2 className="h-5 w-5" />
+          </span>
+          <div>
+            <h3 className="font-display text-lg font-bold text-white">
+              Contas sociais
+            </h3>
+            <p className="mt-1 text-[11px] text-white/45">
+              Conecte uma rede social para entrar com um toque.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 max-w-lg">
+          <OAuthButtons
+            availability={oauthAvailability}
+            callbackUrl="/conta/dados"
+            mode="connect"
+            connectedProviders={profile.connectedOAuthProviders}
+          />
+        </div>
+      </section>
+
+      {profile.hasPassword ? (
       <form id="account-change-password" onSubmit={savePassword} className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7">
         <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
@@ -202,6 +248,36 @@ export default function AccountProfileForm({ profile }: AccountProfileFormProps)
           {isSavingPassword ? "Alterando" : "Alterar senha"}
         </button>
       </form>
+      ) : (
+        <section
+          id="account-change-password"
+          className="rounded-xl border border-white/[0.1] bg-[#0D0D0D] p-5 sm:p-7"
+        >
+          <div className="flex items-center gap-3 border-b border-white/[0.08] pb-5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-color)]/10 text-[var(--brand-color)]">
+              <LockKeyhole className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="font-display text-lg font-bold text-white">
+                Criar senha
+              </h3>
+              <p className="mt-1 text-[11px] text-white/45">
+                Sua conta foi criada por uma rede social e ainda não possui senha.
+              </p>
+            </div>
+          </div>
+          <p className="mt-5 max-w-xl text-sm leading-6 text-white/55">
+            Solicite um link seguro por e-mail para criar uma senha e também poder
+            entrar sem o Google ou Facebook.
+          </p>
+          <Link
+            href={`/recuperar-senha?email=${encodeURIComponent(profile.email)}`}
+            className="font-display mt-5 inline-flex min-h-11 items-center justify-center rounded-md border border-[var(--brand-color)]/60 px-6 text-[10px] font-extrabold uppercase text-[var(--brand-color)] transition hover:bg-[var(--brand-color)] hover:text-black"
+          >
+            Criar senha por e-mail
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

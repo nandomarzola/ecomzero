@@ -21,8 +21,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import CheckoutSteps from "@/components/checkout/CheckoutSteps";
+import OAuthButtons from "@/components/OAuthButtons";
 import TrustBadges from "@/components/TrustBadges";
 import { registerCheckoutAccountAction } from "@/lib/actions/checkoutRegistrationAction";
+import type { OAuthAvailability } from "@/lib/security/oauth";
 
 const inputClassName =
   "h-12 w-full rounded-md border border-white/[0.15] bg-[#080808] pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-white/35 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 max-md:h-[52px] max-md:text-base";
@@ -68,7 +70,13 @@ type MobileRegistrationErrors = Partial<
   Record<MobileRegistrationField, string>
 >;
 
-export default function CheckoutIdentification() {
+type CheckoutIdentificationProps = {
+  oauthAvailability: OAuthAvailability;
+};
+
+export default function CheckoutIdentification({
+  oauthAvailability,
+}: CheckoutIdentificationProps) {
   const [activeMobileMode, setActiveMobileMode] =
     useState<MobileMode>("login");
   const [loginEmail, setLoginEmail] = useState("");
@@ -563,27 +571,11 @@ export default function CheckoutIdentification() {
               É rápido e você não precisa lembrar de senhas.
             </p>
           </div>
-          <div className="mx-auto mt-5 grid max-w-[760px] gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => showUnavailableMessage("O acesso com Facebook")}
-              className="relative flex min-h-12 items-center justify-center rounded-md border border-white/[0.14] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
-            >
-              <span className="absolute left-4 flex h-6 w-6 items-end justify-center rounded-full bg-[#1877F2] text-lg font-bold leading-[22px] text-white">
-                f
-              </span>
-              Continuar com Facebook
-            </button>
-            <button
-              type="button"
-              onClick={() => showUnavailableMessage("O acesso com Google")}
-              className="relative flex min-h-12 items-center justify-center rounded-md border border-white/[0.14] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
-            >
-              <span className="absolute left-4 bg-[conic-gradient(from_-45deg,#4285F4_0_25%,#34A853_0_45%,#FBBC05_0_70%,#EA4335_0)] bg-clip-text text-xl font-extrabold text-transparent">
-                G
-              </span>
-              Continuar com Google
-            </button>
+          <div className="mx-auto mt-5 max-w-[760px]">
+            <OAuthButtons
+              availability={oauthAvailability}
+              callbackUrl="/checkout"
+            />
           </div>
         </section>
 

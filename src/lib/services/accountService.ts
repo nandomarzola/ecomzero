@@ -175,6 +175,11 @@ export async function getProfile(userId: string) {
       name: true,
       email: true,
       telefone: true,
+      senhaHash: true,
+      accounts: {
+        where: { provider: { in: ["google", "facebook"] } },
+        select: { provider: true },
+      },
       orders: {
         where: {
           status: { not: "draft" },
@@ -196,6 +201,13 @@ export async function getProfile(userId: string) {
     email: user.email,
     telefone: user.telefone,
     cpfCnpj: user.orders[0]?.cpfCnpj ?? null,
+    hasPassword: Boolean(user.senhaHash),
+    connectedOAuthProviders: user.accounts
+      .map((account) => account.provider)
+      .filter(
+        (provider): provider is "google" | "facebook" =>
+          provider === "google" || provider === "facebook",
+      ),
   };
 }
 

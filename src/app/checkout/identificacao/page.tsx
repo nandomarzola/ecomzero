@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import CheckoutIdentification from "@/components/CheckoutIdentification";
 import { auth } from "@/lib/auth";
+import { config } from "@/lib/config";
+import { getOAuthAvailability } from "@/lib/security/oauth";
 import { getCart } from "@/lib/services/cartService";
 import { getCartSessionId } from "@/lib/session";
 
@@ -25,5 +27,9 @@ export default async function CheckoutIdentificationPage() {
     redirect("/carrinho");
   }
 
-  return <CheckoutIdentification />;
+  return (
+    <CheckoutIdentification
+      oauthAvailability={getOAuthAvailability(config.oauth)}
+    />
+  );
 }

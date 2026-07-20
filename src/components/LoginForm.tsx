@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import OAuthButtons from "@/components/OAuthButtons";
+import type { OAuthAvailability } from "@/lib/security/oauth";
 
 type FieldName = "email" | "password";
 
@@ -13,15 +15,27 @@ type FieldErrors = Partial<Record<FieldName, string>>;
 const inputClassName =
   "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
 
-export default function LoginForm() {
+type LoginFormProps = {
+  oauthAvailability: OAuthAvailability;
+  returnTo?: "/" | "/checkout" | "/conta/dados";
+  initialErrorMessage?: string;
+};
+
+export default function LoginForm({
+  oauthAvailability,
+  returnTo = "/",
+  initialErrorMessage = "",
+}: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [statusMessage, setStatusMessage] = useState("");
-  const [statusIsError, setStatusIsError] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(initialErrorMessage);
+  const [statusIsError, setStatusIsError] = useState(
+    Boolean(initialErrorMessage),
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const clearFieldError = (field: FieldName) => {
@@ -77,7 +91,7 @@ export default function LoginForm() {
       }
 
       setStatusMessage("Login realizado com sucesso.");
-      router.replace("/");
+      router.replace(returnTo);
       router.refresh();
     } catch {
       setStatusMessage("Não foi possível entrar agora. Tente novamente.");
@@ -85,12 +99,6 @@ export default function LoginForm() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const showUnavailableMessage = (provider: string) => {
-    setErrors({});
-    setStatusMessage(`${provider} ainda não está disponível.`);
-    setStatusIsError(false);
   };
 
   return (
@@ -231,40 +239,19 @@ export default function LoginForm() {
           <span className="h-px flex-1 bg-white/[0.12]" />
         </div>
 
-        <div className="grid gap-3">
-          <button
-            type="button"
-            onClick={() => showUnavailableMessage("O acesso com Google")}
-            className="relative flex h-12 items-center justify-center rounded-md border border-white/[0.16] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
-          >
-            <span
-              aria-hidden="true"
-              className="absolute left-4 bg-[conic-gradient(from_-45deg,#4285F4_0_25%,#34A853_0_45%,#FBBC05_0_70%,#EA4335_0)] bg-clip-text text-xl font-extrabold text-transparent"
-            >
-              G
-            </span>
-            Continuar com Google
-          </button>
-
-          <button
-            type="button"
-            onClick={() => showUnavailableMessage("O acesso com Facebook")}
-            className="relative flex h-12 items-center justify-center rounded-md border border-white/[0.16] bg-[#080808] px-12 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
-          >
-            <span
-              aria-hidden="true"
-              className="absolute left-4 flex h-5 w-5 items-end justify-center rounded-full bg-[#1877F2] text-base font-bold leading-[18px] text-white"
-            >
-              f
-            </span>
-            Continuar com Facebook
-          </button>
-        </div>
+        <OAuthButtons
+          availability={oauthAvailability}
+          callbackUrl={returnTo}
+        />
 
         <p className="mt-8 text-center text-xs text-white/55 sm:text-sm">
           Ainda não tem uma conta?{" "}
           <Link
-            href="/cadastro"
+            href={
+              returnTo === "/checkout"
+                ? "/cadastro?retorno=/checkout"
+                : "/cadastro"
+            }
             className="font-semibold text-[var(--brand-color)] transition hover:text-[#B7FF23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
           >
             Criar conta
