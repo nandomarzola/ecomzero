@@ -319,7 +319,7 @@ function createCatalogItem(
     category,
     googleProductCategory: cleanMetaCatalogText(settings.defaultCategory) || null,
     availability,
-    quantity: stockQuantity,
+    quantity: availability === "in stock" ? 999 : stockQuantity,
     price: validCurrentPrice ? (hasSalePrice ? originalPrice : currentPrice) : null,
     salePrice: hasSalePrice ? currentPrice : null,
     brand,

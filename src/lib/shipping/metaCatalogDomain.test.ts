@@ -52,6 +52,7 @@ test("responde HTTP 200 com Content-Type XML e documento bem formado", async () 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "application/xml; charset=utf-8");
   assert.equal(XMLValidator.validate(xml), true);
+  assert.match(xml, /<g:quantity_to_sell_on_facebook>999<\/g:quantity_to_sell_on_facebook>/);
 });
 
 test("responde XML 503 quando o feed está desativado e oferece download quando ativo", async () => {
