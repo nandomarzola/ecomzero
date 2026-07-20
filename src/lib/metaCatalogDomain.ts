@@ -2,6 +2,9 @@ import { metaCatalogContentId } from "@/lib/metaCatalogIds";
 
 export const META_CATALOG_SITE_URL = "https://www.ecomzero.com.br";
 export const META_CATALOG_FEED_PATH = "/api/integracoes/meta/catalogo.xml";
+export const META_CATALOG_EXCLUDED_CATEGORY_SLUGS = new Set([
+  "canivetes-esportivos",
+]);
 
 export type MetaCatalogSettings = {
   feedActive: boolean;
@@ -33,6 +36,7 @@ export type MetaCatalogProductInput = {
   active: boolean;
   kind: "simples" | "variacoes";
   category: string;
+  categorySlug: string | null;
   variants: MetaCatalogVariantInput[];
 };
 
@@ -192,6 +196,17 @@ function createCatalogItem(
   const stockQuantity = variant?.stockQuantity ?? null;
   const availability = stockQuantity !== null && stockQuantity <= 0 ? "out of stock" : "in stock";
 
+  if (product.categorySlug && META_CATALOG_EXCLUDED_CATEGORY_SLUGS.has(product.categorySlug.trim().toLowerCase())) {
+    issues.push(issue({
+      code: "excluded_category_policy",
+      product,
+      variantId: variant?.id,
+      field: "Política da Meta",
+      reason: "Categoria excluída do catálogo da Meta por política de produtos restritos.",
+      recommendation: "O produto permanece ativo na loja, mas não deve ser enviado ao Commerce Manager.",
+      severity: "error",
+    }));
+  }
   if (!product.active) {
     issues.push(issue({
       code: "inactive",

@@ -37,6 +37,11 @@ export async function getMetaCatalogReport(): Promise<MetaCatalogReport> {
         ativo: true,
         tipo: true,
         categoria: true,
+        category: {
+          select: {
+            slug: true,
+          },
+        },
         variantes: {
           orderBy: { id: "asc" },
           select: {
@@ -61,6 +66,7 @@ export async function getMetaCatalogReport(): Promise<MetaCatalogReport> {
     active: product.ativo,
     kind: product.tipo,
     category: product.categoria,
+    categorySlug: product.category?.slug ?? null,
     variants: product.variantes.map((variant) => ({
       id: variant.id,
       label: variant.label,

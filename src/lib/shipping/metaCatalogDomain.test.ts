@@ -32,6 +32,7 @@ function product(overrides: Partial<MetaCatalogProductInput> = {}): MetaCatalogP
     active: true,
     kind: "simples",
     category: "Casa / Utilidades",
+    categorySlug: "utilidades",
     variants: [{
       id: "variant-1",
       label: "Padrão",
@@ -85,6 +86,35 @@ test("inclui ativos e ignora produtos inativos", () => {
   assert.equal(report.metrics.totalItems, 1);
   assert.equal(report.items.find((item) => item.variantId === "variant-1")?.included, true);
   assert.equal(report.items.find((item) => item.variantId === "variant-2")?.included, false);
+});
+
+test("exclui canivetes do catálogo Meta sem alterar o status do produto", () => {
+  const blockedProduct = product({
+    id: "product-knife",
+    slug: "canivete-esportivo",
+    name: "Canivete esportivo",
+    active: true,
+    category: "Acessórios para pesca / Canivetes esportivos",
+    categorySlug: "canivetes-esportivos",
+    kind: "variacoes",
+    variants: [
+      { id: "knife-variant-1", label: "Preto", sku: "KNIFE-1", priceFrom: 20, priceFor: 20, stockQuantity: null },
+      { id: "knife-variant-2", label: "Camuflado", sku: "KNIFE-2", priceFrom: 22, priceFor: 22, stockQuantity: null },
+    ],
+  });
+  const report = buildMetaCatalogReport([product(), blockedProduct], settings);
+  const xml = buildMetaCatalogXml(report);
+  const blockedItems = report.items.filter((item) => item.productId === blockedProduct.id);
+
+  assert.equal(blockedProduct.active, true);
+  assert.equal(blockedItems.length, 2);
+  assert.equal(blockedItems.every((item) => !item.included), true);
+  assert.equal(blockedItems.every((item) => item.exclusionReason?.includes("política de produtos restritos")), true);
+  assert.equal(report.metrics.totalItems, 1);
+  assert.equal(report.metrics.ignoredItems, 2);
+  assert.equal(report.metrics.ignoredProducts, 1);
+  assert.match(xml, /produto-teste/);
+  assert.doesNotMatch(xml, /canivete-esportivo|knife-variant/);
 });
 
 test("formata preço em BRL e envia promoção somente quando válida e habilitada", () => {
