@@ -14,6 +14,7 @@ export function authorizeAdminRequest({
     pathname: nextUrl.pathname,
     isLoggedIn: Boolean(auth?.user),
     hasTwoFactor: auth?.user?.twoFactorEnabled === true,
+    requireTwoFactor: process.env.ADMIN_REQUIRE_2FA !== "false",
   });
 
   if (decision.type === "allow") return true;

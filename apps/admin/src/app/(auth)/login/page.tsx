@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import AdminLoginFlow from "@/components/auth/AdminLoginFlow";
+import { config } from "@/lib/config";
 import { getAdminLoginRedirect } from "@/lib/security/adminRouteGuard";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -12,7 +13,10 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const session = await auth();
-  const destination = getAdminLoginRedirect(session?.user);
+  const destination = getAdminLoginRedirect(
+    session?.user,
+    config.requireTwoFactor,
+  );
   if (destination) redirect(destination);
 
   const { error } = await searchParams;

@@ -11,6 +11,10 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, "DATABASE_URL não configurada"),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET precisa ter pelo menos 32 caracteres"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  ADMIN_REQUIRE_2FA: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((value) => value === "true"),
   // Upload de imagens de produto. Opcional: sem ela, só o upload fica indisponível.
   BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
   MELHOR_ENVIO_BASE_URL: z.string().url().optional(),
@@ -45,6 +49,7 @@ export const config = {
   databaseUrl: parsed.data.DATABASE_URL,
   authSecret: parsed.data.AUTH_SECRET,
   nodeEnv: parsed.data.NODE_ENV,
+  requireTwoFactor: parsed.data.ADMIN_REQUIRE_2FA,
   blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,
   melhorEnvioBaseUrl: parsed.data.MELHOR_ENVIO_BASE_URL,
   melhorEnvioCepOrigem: parsed.data.MELHOR_ENVIO_CEP_ORIGEM,

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/auth.config";
+import { config } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import {
   getSessionIssuedAt,
@@ -159,7 +160,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        if (admin.twoFactorEnabled) return null;
+        if (config.requireTwoFactor && admin.twoFactorEnabled) return null;
 
         await Promise.all([clearAttempts(ipKey), clearAttempts(emailKey)]);
         return {

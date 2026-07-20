@@ -18,7 +18,7 @@ export default async function PainelLayout({ children }: { children: ReactNode }
       userLabel={session?.user?.email ?? "Administrador"}
       logoUrl={config.adminLogoUrl}
     >
-      {securityStatus && !securityStatus.twoFactorEnabled ? (
+      {config.requireTwoFactor && securityStatus && !securityStatus.twoFactorEnabled ? (
         <div className="mx-auto max-w-4xl rounded-[10px] border border-white/[0.09] bg-[linear-gradient(145deg,#111111,#0C0C0C)] p-5 sm:p-7">
           <SecuritySettingsSection initialStatus={securityStatus} setupRequired />
         </div>

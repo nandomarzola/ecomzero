@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { config } from "@/lib/config";
 
 export type VerifiedAdmin = {
   id: string;
@@ -18,7 +19,7 @@ export async function requireVerifiedAdmin(
   if (!user?.id || !user.email) {
     return { ok: false, error: "Sessão expirada. Faça login novamente." };
   }
-  if (!user.twoFactorEnabled) {
+  if (config.requireTwoFactor && !user.twoFactorEnabled) {
     return { ok: false, error: "Ative a autenticação em dois fatores para continuar." };
   }
   if (options.owner && user.role !== "owner") {

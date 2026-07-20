@@ -96,6 +96,31 @@ test("página Node de login decide somente após auth() revalidar a sessão", ()
   assert.equal(getAdminLoginRedirect({ twoFactorEnabled: true }), "/");
 });
 
+test("sandbox com 2FA desativado libera painel e não abre rota de ativação", () => {
+  assert.deepEqual(
+    getAdminRouteGuardDecision({
+      pathname: "/pedidos",
+      isLoggedIn: true,
+      hasTwoFactor: false,
+      requireTwoFactor: false,
+    }),
+    { type: "allow" },
+  );
+  assert.deepEqual(
+    getAdminRouteGuardDecision({
+      pathname: "/ativar-2fa",
+      isLoggedIn: true,
+      hasTwoFactor: false,
+      requireTwoFactor: false,
+    }),
+    { type: "redirect", pathname: "/" },
+  );
+  assert.equal(
+    getAdminLoginRedirect({ twoFactorEnabled: false }, false),
+    "/",
+  );
+});
+
 test("callback real do guard libera /login para JWT Edge potencialmente revogado", async () => {
   assert.equal(authConfig.callbacks.authorized, authorizeAdminRequest);
 

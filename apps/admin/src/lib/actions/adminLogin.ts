@@ -20,6 +20,7 @@ import {
   resendAdminLoginChallenge,
   validateAdminPassword,
 } from "@/lib/services/adminLoginChallengeService";
+import { config } from "@/lib/config";
 
 const LOGIN_MAX_FAILURES = 5;
 
@@ -71,7 +72,7 @@ export async function beginAdminLoginAction(input: unknown) {
     return { ok: false as const, error: "E-mail ou senha inválidos.", retryAfterSeconds: 0 };
   }
   await Promise.all([clearAttempts(ipKey), clearAttempts(emailKey)]);
-  if (!admin.twoFactorEnabled) {
+  if (!config.requireTwoFactor || !admin.twoFactorEnabled) {
     return { ok: true as const, requiresVerification: false as const };
   }
 
