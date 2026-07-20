@@ -49,6 +49,10 @@ const envSchema = z.object({
     emptyStringToUndefined,
     z.string().min(3).optional(),
   ),
+  META_CAPI_ACCESS_TOKEN: z.preprocess(
+    emptyStringToUndefined,
+    z.string().min(1).optional(),
+  ),
   // Opcional: sem ela, o endpoint /api/admin/sync-catalog recusa todo request
   // em vez de derrubar o app inteiro (integração opcional, não é o core do site).
   STOREFRONT_SYNC_API_KEY: z.preprocess(
@@ -139,6 +143,9 @@ export const config = {
     securityFrom:
       parsed.data.TRANSACTIONAL_EMAIL_FROM_SEGURANCA ??
       parsed.data.PASSWORD_RESET_EMAIL_FROM,
+  },
+  meta: {
+    capiAccessToken: parsed.data.META_CAPI_ACCESS_TOKEN,
   },
   storefrontSyncApiKey: parsed.data.STOREFRONT_SYNC_API_KEY,
   blobReadWriteToken: parsed.data.BLOB_READ_WRITE_TOKEN,

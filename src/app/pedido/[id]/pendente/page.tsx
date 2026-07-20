@@ -23,6 +23,7 @@ export default async function OrderPendingPage({
       description="Seu pedido foi registrado e o pagamento ainda está sendo processado. Aguarde a confirmação oficial antes de realizar uma nova tentativa."
       orderId={id}
       initialOrderStatus={order?.status ?? null}
+      initialPurchaseData={order?.status === "pago" ? { total: order.total, items: order.items } : null}
     />
   );
 }

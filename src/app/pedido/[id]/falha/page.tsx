@@ -23,6 +23,7 @@ export default async function OrderFailurePage({
       description="Não recebemos uma confirmação de pagamento. Seu pedido continua aguardando pagamento e nenhuma aprovação será presumida por esta tela."
       orderId={id}
       initialOrderStatus={order?.status ?? null}
+      initialPurchaseData={order?.status === "pago" ? { total: order.total, items: order.items } : null}
     />
   );
 }

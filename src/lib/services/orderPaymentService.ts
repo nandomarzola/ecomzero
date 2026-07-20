@@ -7,6 +7,7 @@ import { prepareShipmentAfterPayment } from "@/lib/services/shippingFulfillmentS
 import { refundLatePaymentForCanceledOrder } from "@/lib/services/orderCancellationService";
 import { createCustomerNotificationFromShipmentEvent } from "@/lib/services/customerNotificationService";
 import { sendOrderLifecycleEmail } from "@/lib/services/transactionalEmailService";
+import { sendMetaPurchaseConversion } from "@/lib/services/metaConversionsService";
 import {
   createMercadoPagoPayment,
   createPaymentPreference,
@@ -681,6 +682,12 @@ async function reconcilePayment(
   after(async () => {
     await sendOrderLifecycleEmail(order.id, "payment_confirmed");
   });
+
+  if (updated.count === 1) {
+    after(async () => {
+      await sendMetaPurchaseConversion(order.id);
+    });
+  }
 
   if (preparationPending) {
     after(async () => {

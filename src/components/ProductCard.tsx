@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { useCart } from "@/components/CartProvider";
 import { useFavorites } from "@/components/FavoritesProvider";
+import { trackMetaPixelCommerceEvent } from "@/lib/client/metaPixel";
 import type { Product } from "@/types/product";
 
 type ProductCardProps = {
@@ -78,6 +79,17 @@ export default function ProductCard({ product }: ProductCardProps) {
         toast.error(result.error);
         return;
       }
+
+      trackMetaPixelCommerceEvent({
+        event: "AddToCart",
+        items: [{
+          variantId: defaultVariant.id,
+          quantity: 1,
+          unitPrice: defaultVariant.precoPor,
+        }],
+        value: defaultVariant.precoPor,
+        contentName: product.nome,
+      });
 
       if (action === "buy") {
         window.location.assign("/carrinho");
