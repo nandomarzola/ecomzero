@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isDeliveredOrder } from "@/lib/reviews/reviewDomain";
-import { productReviewInputSchema } from "@/lib/validation/productReview";
+import {
+  buildAggregateRating,
+  isDeliveredOrder,
+} from "@/lib/reviews/reviewDomain";
+import {
+  productReviewInputSchema,
+  productReviewSubmissionSchema,
+} from "@/lib/validation/productReview";
 
 test("libera avaliação somente quando o envio foi entregue", () => {
   assert.equal(
@@ -32,4 +38,39 @@ test("valida nota, comentário e limite de fotos", () => {
     productReviewInputSchema.safeParse({ rating: 4, comment: null, photos: [photo, photo, photo, photo] }).success,
     false,
   );
+});
+
+test("valida o envio de avaliação pela página do produto", () => {
+  const productId = "f202fdc9-4381-44d3-bde3-e612dc073c43";
+  assert.equal(
+    productReviewSubmissionSchema.safeParse({
+      productId,
+      rating: 5,
+      comment: "Produto muito bom",
+    }).success,
+    true,
+  );
+  assert.equal(
+    productReviewSubmissionSchema.safeParse({
+      productId,
+      rating: 6,
+      comment: null,
+    }).success,
+    false,
+  );
+});
+
+test("omite aggregateRating sem review aprovado e arredonda média legítima", () => {
+  const withoutReviews = buildAggregateRating(null, 0);
+  const productJsonLd = {
+    "@type": "Product",
+    ...(withoutReviews ? { aggregateRating: withoutReviews } : {}),
+  };
+
+  assert.equal("aggregateRating" in productJsonLd, false);
+  assert.deepEqual(buildAggregateRating(4.666, 3), {
+    "@type": "AggregateRating",
+    ratingValue: 4.7,
+    reviewCount: 3,
+  });
 });

@@ -20,7 +20,7 @@ export default async function AvaliacoesPage() {
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-2xl font-bold text-white">Avaliações</h1>
-        <p className="mt-1 text-sm text-white/45">As avaliações são publicadas automaticamente. Remova apenas conteúdos falsos ou que violem as regras da loja.</p>
+        <p className="mt-1 text-sm text-white/45">Revise as novas avaliações antes de publicá-las na loja.</p>
       </div>
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <OrderSummaryCard label="Pendentes" value={String(pending)} subtitle="Aguardam moderação" icon={Clock3} tone="amber" active={pending > 0} />

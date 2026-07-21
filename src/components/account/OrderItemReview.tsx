@@ -187,7 +187,7 @@ export default function OrderItemReview({
       }
       setReview(body.review);
       setEditing(false);
-      setSuccess("Avaliação publicada com sucesso.");
+      setSuccess("Avaliação enviada para moderação.");
       router.refresh();
     } catch (saveError) {
       setError(
@@ -308,7 +308,7 @@ export default function OrderItemReview({
         />
       </div>
       <p className="mt-2 text-[10px] text-white/30">Até 3 fotos JPG, PNG ou WebP, com 5 MB cada.</p>
-      {review?.status === "approved" ? <p className="mt-3 text-[11px] text-white/35">As alterações serão publicadas assim que você salvar.</p> : null}
+      {review?.status === "approved" ? <p className="mt-3 text-[11px] text-white/35">Ao salvar, as alterações voltarão para moderação antes de serem publicadas.</p> : null}
       {error ? <p className="mt-3 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] text-red-300">{error}</p> : null}
 
       <div className="mt-4 flex flex-wrap gap-2">

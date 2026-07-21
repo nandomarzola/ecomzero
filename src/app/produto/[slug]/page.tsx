@@ -22,6 +22,8 @@ import ProductPurchase from "@/components/ProductPurchase";
 import ProductReviews from "@/components/ProductReviews";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import TrustBadges from "@/components/TrustBadges";
+import { auth } from "@/lib/auth";
+import { buildAggregateRating } from "@/lib/reviews/reviewDomain";
 import {
   findCategoryLabel,
   getAllProducts,
@@ -30,7 +32,10 @@ import {
 } from "@/lib/services/productService";
 import type { Product } from "@/types/product";
 import { getActiveCategories } from "@/lib/services/storeContentService";
-import { getApprovedProductReviews } from "@/lib/services/productReviewService";
+import {
+  getProductReviewEligibility,
+  getProductReviewsOverview,
+} from "@/lib/services/productReviewService";
 import { serializeJsonLd } from "@/lib/jsonLd";
 
 type ProductPageProps = {
@@ -98,13 +103,20 @@ export async function generateMetadata({
   };
 }
 
-const buildProductJsonLd = (product: Product) => {
+const buildProductJsonLd = (
+  product: Product,
+  reviewAggregate: { average: number | null; count: number },
+) => {
   const prices = product.variantes.map((variant) => variant.precoPor);
   const productSummary = getProductSummary({
     productName: product.nome,
     subtitle: product.subtitulo,
     description: product.descricao,
   });
+  const aggregateRating = buildAggregateRating(
+    reviewAggregate.average,
+    reviewAggregate.count,
+  );
 
   return {
     "@context": "https://schema.org",
@@ -125,15 +137,7 @@ const buildProductJsonLd = (product: Product) => {
       url: product.linkShopee ?? `${siteUrl}/produto/${product.slug}`,
       seller: { "@type": "Organization", name: "EcomZero" },
     },
-    ...(product.avaliacaoMedia && product.totalAvaliacoes > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: product.avaliacaoMedia.toFixed(1),
-            reviewCount: product.totalAvaliacoes,
-          },
-        }
-      : {}),
+    ...(aggregateRating ? { aggregateRating } : {}),
   };
 };
 
@@ -160,11 +164,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const [allProducts, categories, reviews] = await Promise.all([
+  const [allProducts, categories, reviewOverview, session] = await Promise.all([
     getAllProducts(),
     getActiveCategories(),
-    getApprovedProductReviews(product.id),
+    getProductReviewsOverview(product.id),
+    auth(),
   ]);
+  const reviewEligibility = session?.user.id
+    ? await getProductReviewEligibility(session.user.id, product.id)
+    : null;
   const relatedProducts = getRelatedProducts(product, allProducts);
   const categoryLabel = findCategoryLabel(product.categoria) ?? product.categoria;
 
@@ -206,7 +214,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: serializeJsonLd(buildProductJsonLd(product)),
+          __html: serializeJsonLd(
+            buildProductJsonLd(product, {
+              average: reviewOverview.average,
+              count: reviewOverview.count,
+            }),
+          ),
         }}
       />
 
@@ -338,9 +351,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
         />
 
         <ProductReviews
-          reviews={reviews}
-          average={product.avaliacaoMedia}
-          total={product.totalAvaliacoes}
+          reviews={reviewOverview.reviews}
+          average={reviewOverview.average}
+          total={reviewOverview.count}
+          reviewForm={
+            reviewEligibility
+              ? { productId: product.id, productName: product.nome }
+              : null
+          }
         />
 
         {relatedProducts.length > 0 && (
