@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 import {
   ArrowLeft,
   Eye,
@@ -288,9 +289,12 @@ export default function AdminLoginFlow({ initialError = false }: { initialError?
               </label>
 
               <div className="flex justify-end">
-                <span aria-disabled="true" title="Recuperação de senha disponível em breve" className="cursor-default text-xs font-medium text-[#A9EC17]/75">
+                <Link
+                  href={`/recuperar-senha${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+                  className="text-xs font-medium text-[#A9EC17]/80 transition hover:text-[#A9EC17]"
+                >
                   Esqueci minha senha
-                </span>
+                </Link>
               </div>
 
               <SubmitButton loading={loading}>Entrar</SubmitButton>

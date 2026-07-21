@@ -12,7 +12,13 @@ export function getAdminRouteGuardDecision({
   isLoggedIn: boolean;
   hasTwoFactor: boolean;
 }): AdminRouteGuardDecision {
-  if (pathname === "/login") return { type: "allow" };
+  if (
+    pathname === "/login" ||
+    pathname === "/recuperar-senha" ||
+    pathname === "/redefinir-senha"
+  ) {
+    return { type: "allow" };
+  }
   if (!isLoggedIn) return { type: "deny" };
 
   if (pathname === "/ativar-2fa") {

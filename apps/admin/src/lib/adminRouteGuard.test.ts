@@ -29,6 +29,20 @@ const edgeScenarios: Array<{
     expected: { type: "allow" },
   },
   {
+    name: "recuperação de senha sem sessão",
+    pathname: "/recuperar-senha",
+    isLoggedIn: false,
+    hasTwoFactor: false,
+    expected: { type: "allow" },
+  },
+  {
+    name: "redefinição de senha sem sessão",
+    pathname: "/redefinir-senha",
+    isLoggedIn: false,
+    hasTwoFactor: false,
+    expected: { type: "allow" },
+  },
+  {
     name: "ativação sem sessão",
     pathname: "/ativar-2fa",
     isLoggedIn: false,
@@ -72,7 +86,7 @@ const edgeScenarios: Array<{
   },
 ];
 
-test("guard Edge cobre os 8 cenários de autenticação e 2FA", async (t) => {
+test("guard Edge cobre os cenários de autenticação, recuperação e 2FA", async (t) => {
   for (const scenario of edgeScenarios) {
     await t.test(scenario.name, () => {
       assert.deepEqual(
