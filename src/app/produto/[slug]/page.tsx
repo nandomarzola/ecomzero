@@ -208,6 +208,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
     subtitle: product.subtitulo,
     description: product.descricao,
   });
+  const marketplaceLinks = {
+    shopee: product.linkShopee,
+    mercadoLivre: product.linkMercadoLivre,
+    tiktokShop: product.linkTiktokShop,
+    shein: product.linkShein,
+  };
 
   return (
     <div className="product-detail-page min-h-screen bg-black">
@@ -326,18 +332,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
               variants={product.variantes}
               productName={product.nome}
               productImage={product.imagem}
+              marketplaceLinks={marketplaceLinks}
             />
           </div>
         </section>
 
-        <ProductMarketplaces
-          links={{
-            shopee: product.linkShopee,
-            mercadoLivre: product.linkMercadoLivre,
-            tiktokShop: product.linkTiktokShop,
-            shein: product.linkShein,
-          }}
-        />
+        <ProductMarketplaces links={marketplaceLinks} />
 
         <TrustBadges
           items={trustBadges}
