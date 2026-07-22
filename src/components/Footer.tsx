@@ -15,9 +15,12 @@ import {
   LockKeyhole,
   Mail,
   MessageCircle,
+  PackageCheck,
   Phone,
   QrCode,
   ShieldCheck,
+  ShoppingBag,
+  Store,
   Truck,
   Users,
   Video,
@@ -171,6 +174,12 @@ export default async function Footer() {
     settings.youtubeAtivo && settings.linkYoutube ? { label: "YouTube", href: settings.linkYoutube, icon: Video } : null,
     settings.twitterAtivo && settings.linkTwitter ? { label: "X / Twitter", href: settings.linkTwitter, icon: MessageCircle } : null,
   ].filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const marketplaceLinks = [
+    settings.shopeeAtivo && settings.linkShopee ? { label: "Shopee", href: settings.linkShopee, icon: ShoppingBag } : null,
+    settings.mercadoLivreAtivo && settings.linkMercadoLivre ? { label: "Mercado Livre", href: settings.linkMercadoLivre, icon: Store } : null,
+    settings.tiktokShopAtivo && settings.linkTiktokShop ? { label: "TikTok Shop", href: settings.linkTiktokShop, icon: PackageCheck } : null,
+    settings.sheinAtivo && settings.linkShein ? { label: "Shein", href: settings.linkShein, icon: ShoppingBag } : null,
+  ].filter((item): item is NonNullable<typeof item> => Boolean(item));
   const year = settings.footerCopyrightAno === "fixo" && settings.footerCopyrightAnoFixo
     ? settings.footerCopyrightAnoFixo
     : new Date().getFullYear();
@@ -280,6 +289,21 @@ export default async function Footer() {
           </section>
         </div>
       </div>
+
+      {marketplaceLinks.length ? (
+        <div className="border-b border-white/[0.09]">
+          <div className="mx-auto max-w-[1440px] px-5 py-7 sm:px-6 lg:px-10">
+            <FooterHeading>Compre também em</FooterHeading>
+            <div className="mt-5 flex flex-wrap gap-3">
+              {marketplaceLinks.map(({ label, href, icon: Icon }) => (
+                <a key={label} href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-white/[0.16] px-4 py-2.5 text-sm font-medium text-white/60 transition hover:border-[var(--brand-color)] hover:text-[var(--brand-color)]">
+                  <Icon className="h-4 w-4" /> {label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="border-b border-white/[0.09]">
         <div className="mx-auto grid max-w-[1440px] items-center gap-7 px-5 py-7 sm:px-6 md:grid-cols-[1.5fr_1fr_auto] lg:px-10">
