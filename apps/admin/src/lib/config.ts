@@ -33,6 +33,7 @@ const envSchema = z.object({
       .optional(),
   ),
   NEXT_PUBLIC_STOREFRONT_URL: z.string().url().optional(),
+  ADMIN_URL: z.string().url().optional(),
   NEXT_PUBLIC_ADMIN_LOGO_URL: z.string().min(1).optional(),
 });
 
@@ -59,5 +60,6 @@ export const config = {
     parsed.data.MELHOR_ENVIO_AUTO_PURCHASE_ENABLED,
   storefrontSyncApiKey: parsed.data.STOREFRONT_SYNC_API_KEY,
   storefrontUrl: parsed.data.NEXT_PUBLIC_STOREFRONT_URL,
+  adminUrl: parsed.data.ADMIN_URL,
   adminLogoUrl: parsed.data.NEXT_PUBLIC_ADMIN_LOGO_URL ?? "/admin-logo.svg",
 } as const;

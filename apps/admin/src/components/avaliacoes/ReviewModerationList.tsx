@@ -43,7 +43,7 @@ export default function ReviewModerationList({
   reviews: ReviewAdminListItem[];
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"all" | ReviewModerationStatus>("approved");
+  const [tab, setTab] = useState<"all" | ReviewModerationStatus>("pending");
   const [rejecting, setRejecting] = useState<ReviewAdminListItem | null>(null);
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);

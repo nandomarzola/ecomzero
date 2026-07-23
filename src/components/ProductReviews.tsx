@@ -11,6 +11,7 @@ import {
   Star,
   Tag,
 } from "lucide-react";
+import ProductReviewForm from "@/components/ProductReviewForm";
 
 type PublicReview = {
   id: string;
@@ -54,10 +55,12 @@ export default function ProductReviews({
   reviews,
   average,
   total,
+  reviewForm,
 }: {
   reviews: PublicReview[];
   average: number | null;
   total: number;
+  reviewForm: { productId: string; productName: string } | null;
 }) {
   const [expanded, setExpanded] = useState(false);
   const visibleReviews = expanded ? reviews : reviews.slice(0, 2);
@@ -90,6 +93,13 @@ export default function ProductReviews({
           </div>
         ) : null}
       </div>
+
+      {reviewForm ? (
+        <ProductReviewForm
+          productId={reviewForm.productId}
+          productName={reviewForm.productName}
+        />
+      ) : null}
 
       {reviews.length === 0 ? (
         <div className="mt-8 flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-[#0B0B0B] text-center">

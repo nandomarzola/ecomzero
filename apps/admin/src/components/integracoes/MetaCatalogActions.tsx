@@ -10,6 +10,7 @@ const secondaryButton = "inline-flex min-h-10 items-center justify-center gap-2 
 export default function MetaCatalogActions({ feedUrl, validationAvailable }: { feedUrl: string; validationAvailable: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [refreshPending, startRefreshTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   const copyUrl = async () => {
@@ -33,6 +34,13 @@ export default function MetaCatalogActions({ feedUrl, validationAvailable }: { f
     });
   };
 
+  const refresh = () => {
+    startRefreshTransition(() => {
+      router.refresh();
+      setFeedback({ tone: "success", text: "Dados atualizados." });
+    });
+  };
+
   return (
     <div className="space-y-2 xl:max-w-[760px]">
       <div className="flex flex-wrap gap-2 xl:justify-end">
@@ -43,7 +51,9 @@ export default function MetaCatalogActions({ feedUrl, validationAvailable }: { f
         <button type="button" onClick={validate} disabled={pending || !validationAvailable} className={`${secondaryButton} disabled:cursor-not-allowed disabled:opacity-40`}>
           {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />} Validar catálogo
         </button>
-        <button type="button" onClick={() => router.refresh()} disabled={pending} className={`${secondaryButton} disabled:opacity-40`}><RefreshCw className="h-4 w-4" /> Atualizar dados</button>
+        <button type="button" onClick={refresh} disabled={refreshPending} className={`${secondaryButton} disabled:opacity-40`}>
+          {refreshPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Atualizar dados
+        </button>
         <a href={`${feedUrl}?download=1`} className={secondaryButton}><Download className="h-4 w-4" /> Baixar XML</a>
         <a href="#como-conectar-meta" className={secondaryButton}><BookOpen className="h-4 w-4" /> Ver instruções</a>
       </div>

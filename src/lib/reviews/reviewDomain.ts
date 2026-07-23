@@ -10,3 +10,16 @@ export function isDeliveredOrder(shipment: {
         shipment.entregueEm),
   );
 }
+
+export function buildAggregateRating(
+  average: number | null,
+  count: number,
+) {
+  if (average === null || count < 1 || !Number.isFinite(average)) return null;
+
+  return {
+    "@type": "AggregateRating" as const,
+    ratingValue: Number(average.toFixed(1)),
+    reviewCount: count,
+  };
+}

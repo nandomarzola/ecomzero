@@ -78,6 +78,7 @@ export default function ProductMarketplaces({ links }: ProductMarketplacesProps)
 
   return (
     <section
+      id="marketplaces"
       aria-labelledby="product-marketplaces-title"
       className="mt-5 rounded-xl border border-white/[0.09] bg-[linear-gradient(110deg,#0D0D0D,#111111_55%,#0D0D0D)] p-3 sm:p-4"
     >

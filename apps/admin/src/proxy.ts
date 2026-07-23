@@ -3,8 +3,8 @@ import { authConfig } from "@/auth.config";
 
 // Proxy (ex-"middleware", renomeado no Next 16) de proteção. Instancia o
 // NextAuth só com a config edge-safe (sem Prisma). O callback `authorized` em
-// auth.config decide o acesso às rotas protegidas. /login fica livre no Edge;
-// a página Node revalida a sessão no banco antes de qualquer redirecionamento.
+// auth.config decide o acesso às rotas protegidas. Login e recuperação de
+// senha ficam livres no Edge; a página Node de login revalida a sessão no banco.
 const { auth } = NextAuth(authConfig);
 
 export default auth;

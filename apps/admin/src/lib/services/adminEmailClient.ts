@@ -51,3 +51,53 @@ export async function sendAdminLoginCodeViaStorefront(input: {
     return { ok: false, error: "Não foi possível contatar o serviço de e-mail." };
   }
 }
+
+export async function sendAdminPasswordResetViaStorefront(input: {
+  adminUserId: string;
+  email: string;
+  resetUrl: string;
+  requestId: string;
+  expiresInMinutes: number;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!config.storefrontSyncApiKey) {
+    console.error(
+      "[admin-password-reset] envio indisponível: integração com storefront não configurada",
+    );
+    return { ok: false, error: "Envio de e-mail não configurado." };
+  }
+
+  try {
+    const response = await fetch(
+      `${storefrontBaseUrl()}/api/admin/auth/password-reset`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.storefrontSyncApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(input),
+        cache: "no-store",
+        signal: AbortSignal.timeout(12_000),
+      },
+    );
+    if (!response.ok) {
+      console.error("[admin-password-reset] storefront recusou envio", {
+        adminUserId: input.adminUserId,
+        requestId: input.requestId,
+        status: response.status,
+      });
+      return {
+        ok: false,
+        error: `Storefront respondeu HTTP ${response.status}.`,
+      };
+    }
+    return { ok: true };
+  } catch (error) {
+    console.error("[admin-password-reset] falha ao solicitar envio", {
+      adminUserId: input.adminUserId,
+      requestId: input.requestId,
+      name: error instanceof Error ? error.name : "unknown_error",
+    });
+    return { ok: false, error: "Não foi possível contatar o serviço de e-mail." };
+  }
+}

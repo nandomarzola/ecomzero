@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { toast } from "sonner";
-import { Minus, Plus, ShoppingCart, Zap } from "lucide-react";
+import { Handshake, Minus, Music2, Plus, ShoppingBag, ShoppingCart, Store, Zap } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import ShippingCalculator from "@/components/ShippingCalculator";
 import { trackMetaPixelCommerceEvent } from "@/lib/client/metaPixel";
@@ -12,6 +13,12 @@ type ProductPurchaseProps = {
   variants: ProductVariant[];
   productName: string;
   productImage: string;
+  marketplaceLinks: {
+    shopee: string | null;
+    mercadoLivre: string | null;
+    tiktokShop: string | null;
+    shein: string | null;
+  };
 };
 
 const formatPrice = (price: number) =>
@@ -20,9 +27,52 @@ const formatPrice = (price: number) =>
     currency: "BRL",
   });
 
+// Mesmo ícone/cor usados nos cards de src/components/ProductMarketplaces.tsx,
+// só que em tamanho compacto — mantém a mesma identidade visual do card que
+// esse aceno aponta lá embaixo.
+const marketplaceBadgeIcon: Record<string, ReactNode> = {
+  shopee: (
+    <span className="relative inline-flex text-[#EE4D2D]">
+      <ShoppingBag className="h-3.5 w-3.5" strokeWidth={1.8} />
+      <span className="absolute inset-x-0 top-[3px] text-center text-[5px] font-bold">S</span>
+    </span>
+  ),
+  mercadoLivre: (
+    <span className="inline-flex h-3.5 w-5 items-center justify-center rounded-[50%] border border-[#2D3277] bg-[#FFE600] text-[#2D3277]">
+      <Handshake className="h-2.5 w-2.5" strokeWidth={1.8} />
+    </span>
+  ),
+  tiktokShop: (
+    <Music2
+      className="h-3.5 w-3.5 text-white [filter:drop-shadow(-1px_0_0_#25F4EE)_drop-shadow(1px_0_0_#FE2C55)]"
+      strokeWidth={2.4}
+    />
+  ),
+  shein: <Store className="h-3.5 w-3.5 text-white" strokeWidth={1.8} />,
+};
+
+const marketplaceBadgeLabel: Record<string, string> = {
+  shopee: "Shopee",
+  mercadoLivre: "Mercado Livre",
+  tiktokShop: "TikTok Shop",
+  shein: "Shein",
+};
+
+// Compensa o header sticky (Header.tsx) ao rolar até a seção de marketplaces,
+// senão o título fica escondido atrás dele.
+const STICKY_HEADER_OFFSET = 88;
+
+function scrollToMarketplacesSection() {
+  const target = document.getElementById("marketplaces");
+  if (!target) return;
+  const top = target.getBoundingClientRect().top + window.scrollY - STICKY_HEADER_OFFSET;
+  window.scrollTo({ top, behavior: "smooth" });
+}
+
 export default function ProductPurchase({
   variants,
   productName,
+  marketplaceLinks,
 }: ProductPurchaseProps) {
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
@@ -36,6 +86,15 @@ export default function ProductPurchase({
   const discountPercentage = hasDiscount
     ? Math.round((1 - selectedVariant.precoPor / selectedVariant.precoDe) * 100)
     : 0;
+
+  const activeMarketplaces = (
+    [
+      ["shopee", marketplaceLinks.shopee],
+      ["mercadoLivre", marketplaceLinks.mercadoLivre],
+      ["tiktokShop", marketplaceLinks.tiktokShop],
+      ["shein", marketplaceLinks.shein],
+    ] as const
+  ).filter(([, url]) => Boolean(url?.trim()));
 
   useEffect(() => {
     trackMetaPixelCommerceEvent({
@@ -165,6 +224,22 @@ export default function ProductPurchase({
                   </span>
                 )}
               </p>
+              {activeMarketplaces.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={scrollToMarketplacesSection}
+                  className="mt-2 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wide text-white/40 transition hover:text-[var(--brand-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-color)]"
+                >
+                  Também disponível em
+                  <span className="flex items-center gap-1">
+                    {activeMarketplaces.map(([key]) => (
+                      <span key={key} title={marketplaceBadgeLabel[key]}>
+                        {marketplaceBadgeIcon[key]}
+                      </span>
+                    ))}
+                  </span>
+                </button>
+              ) : null}
             </div>
           </div>
 

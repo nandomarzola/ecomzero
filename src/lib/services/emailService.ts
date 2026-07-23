@@ -5,6 +5,7 @@ export type TransactionalEmailKind =
   | "password_reset"
   | "checkout_temporary_password"
   | "admin_login_code"
+  | "admin_password_reset"
   | "welcome"
   | "payment_confirmed"
   | "order_in_transit"
@@ -210,6 +211,42 @@ export async function sendPasswordResetEmail(input: {
     const reason = error instanceof Error ? error.name : "unknown_error";
     console.error("[email] falha ao preparar recuperação de senha", {
       kind: "password_reset",
+      to: maskedEmail(input.to),
+      reason,
+    });
+    return { status: "failed", reason };
+  }
+}
+
+export async function sendAdminPasswordResetEmail(input: {
+  adminUserId: string;
+  requestId: string;
+  to: string;
+  resetUrl: string;
+  expiresInMinutes: number;
+}): Promise<EmailSendResult> {
+  try {
+    const branding = await getEmailBranding();
+    const content = renderBrandedEmail({
+      branding,
+      heading: "Redefina a senha do painel",
+      message: `Recebemos uma solicitação para redefinir a senha do painel administrativo. O link expira em ${input.expiresInMinutes} minutos e só pode ser usado uma vez. Se você não solicitou a alteração, ignore este e-mail.`,
+      action: { label: "Redefinir senha do admin", url: input.resetUrl },
+    });
+
+    return sendTransactionalEmail({
+      kind: "admin_password_reset",
+      from: config.email.securityFrom,
+      to: input.to,
+      subject: `Redefina sua senha do Admin ${branding.storeName}`,
+      html: content.html,
+      text: content.text,
+      idempotencyKey: `admin-password-reset/${input.adminUserId}/${input.requestId}`,
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.name : "unknown_error";
+    console.error("[email] falha ao preparar recuperação de senha do admin", {
+      kind: "admin_password_reset",
       to: maskedEmail(input.to),
       reason,
     });

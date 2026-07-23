@@ -1,6 +1,7 @@
 import CategoryStrip from "@/components/CategoryStrip";
 import DeliveryBanner from "@/components/DeliveryBanner";
 import FeatureBar from "@/components/FeatureBar";
+import MarketplaceHighlightBar from "@/components/MarketplaceHighlightBar";
 import NewsletterBanner from "@/components/NewsletterBanner";
 import HomeProductSection from "@/components/HomeProductSection";
 import {
@@ -27,6 +28,8 @@ export default async function HomePage() {
 
   return (
     <div className="bg-black">
+      <MarketplaceHighlightBar />
+
       <CategoryStrip categories={categories} />
 
       <FeatureBar />
