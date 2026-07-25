@@ -178,19 +178,29 @@ export async function getCartSummaryAction(): Promise<{ itemCount: number }> {
 }
 
 export async function getCartAction(): Promise<Cart> {
-  const [sessionId, session, signedOrderId] = await Promise.all([
-    getOrCreateCartSessionId(),
+  const [existingSessionId, session, signedOrderId] = await Promise.all([
+    getCartSessionId(),
     auth(),
     getCheckoutOrderAccessId(),
   ]);
+  const userId = session?.user?.id ?? null;
+  const email = session?.user?.email ?? null;
+  const hasCustomerIdentity = Boolean(userId || email);
+
+  if (!existingSessionId && !signedOrderId && !hasCustomerIdentity) {
+    return cartService.getCart(null);
+  }
+
+  const sessionId =
+    existingSessionId ?? (await getOrCreateCartSessionId());
   const resolvedCart = await cartService.getCart(sessionId, {
     signedOrderId,
-    userId: session?.user?.id ?? null,
+    userId,
   });
-  if (session?.user?.id || session?.user?.email) {
+  if (hasCustomerIdentity) {
     const result = await cartService.reconcileCartCoupon(sessionId, {
-      userId: session.user.id ?? null,
-      email: session.user.email ?? null,
+      userId,
+      email,
     });
     return result.cart;
   }

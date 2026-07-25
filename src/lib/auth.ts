@@ -20,7 +20,8 @@ import {
 } from "@/lib/security/authRateLimit";
 import { sendWelcomeEmail } from "@/lib/services/transactionalEmailService";
 
-const LOGIN_MAX_FAILURES = 5; // por IP e por e-mail, em janela de 15 min
+const LOGIN_MAX_FAILURES_BY_IP = 50;
+const LOGIN_MAX_FAILURES_BY_EMAIL = 5;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -103,8 +104,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ipKey = rateLimitKey("login-cliente-ip", await clientIp());
         const emailKey = rateLimitKey("login-cliente-email", parsed.data.email);
         if (
-          (await isRateLimited(ipKey, LOGIN_MAX_FAILURES)) ||
-          (await isRateLimited(emailKey, LOGIN_MAX_FAILURES))
+          (await isRateLimited(ipKey, LOGIN_MAX_FAILURES_BY_IP)) ||
+          (await isRateLimited(emailKey, LOGIN_MAX_FAILURES_BY_EMAIL))
         ) {
           return null; // bloqueado — credenciais nem são checadas
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -36,6 +36,7 @@ const formatCompactCount = (value: number) =>
 export default function ProductCard({ product }: ProductCardProps) {
   const [feedback, setFeedback] = useState<"idle" | "added">("idle");
   const [pendingAction, setPendingAction] = useState<"buy" | "cart" | null>(null);
+  const actionLock = useRef(false);
   const { isAuthenticated: canFavorite, isFavorite, toggle: toggleFavorite } = useFavorites();
   const favorited = isFavorite(product.id);
   const isPending = pendingAction !== null;
@@ -67,8 +68,9 @@ export default function ProductCard({ product }: ProductCardProps) {
       : product.imagem;
 
   const handleCartAction = async (action: "buy" | "cart") => {
-    if (!defaultVariant || isPending) return;
+    if (!defaultVariant || actionLock.current) return;
 
+    actionLock.current = true;
     setPendingAction(action);
     try {
       const result = await addItem(defaultVariant.id, 1, {
@@ -101,6 +103,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     } catch {
       toast.error("Não foi possível adicionar o produto ao carrinho");
     } finally {
+      actionLock.current = false;
       setPendingAction(null);
     }
   };

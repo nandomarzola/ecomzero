@@ -17,6 +17,7 @@ import {
 export async function POST(request: NextRequest) {
   const secret = config.mercadoPago.webhookSecret;
   if (!secret) {
+    console.error("Mercado Pago webhook configuration missing");
     return NextResponse.json(
       { error: "Webhook não configurado" },
       { status: 503 },
@@ -52,6 +53,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof InvalidWebhookSignatureError) {
+      console.error("Mercado Pago webhook signature rejected", {
+        paymentId: parsedPaymentId.data,
+        requestId: request.headers.get("x-request-id"),
+        reason: error.message,
+      });
       return NextResponse.json(
         { error: "Assinatura inválida" },
         { status: 401 },
@@ -77,6 +83,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true, ignored: true });
     }
     if (error instanceof MercadoPagoServiceError) {
+      console.error("Mercado Pago webhook provider failure", {
+        paymentId: parsedPaymentId.data,
+        status: error.status,
+        message: error.message,
+      });
       return NextResponse.json(
         { error: "Falha temporária ao confirmar pagamento" },
         { status: error.status },
@@ -85,6 +96,9 @@ export async function POST(request: NextRequest) {
 
     console.error("Falha inesperada no webhook do Mercado Pago", {
       paymentId: parsedPaymentId.data,
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      errorMessage:
+        error instanceof Error ? error.message : "Erro desconhecido",
     });
     return NextResponse.json(
       { error: "Falha temporária ao confirmar pagamento" },

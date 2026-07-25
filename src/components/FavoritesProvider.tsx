@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
   getFavoriteIdsAction,
@@ -32,25 +33,36 @@ export function useFavorites(): FavoritesContextValue {
 }
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
+  const { data: session, status } = useSession();
   const [ids, setIds] = useState<Set<string>>(new Set());
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loadedForUserId, setLoadedForUserId] = useState<string | null>(null);
+  const sessionUserId = session?.user?.id ?? null;
+  const isAuthenticated =
+    status === "authenticated" &&
+    sessionUserId !== null &&
+    loadedForUserId === sessionUserId;
 
-  // Hidrata a partir do servidor no mount (mesmo padrão do CartProvider).
   useEffect(() => {
+    if (status !== "authenticated" || !sessionUserId) return;
+
     let active = true;
     getFavoriteIdsAction()
       .then((result) => {
         if (!active) return;
-        setIsAuthenticated(result.authenticated);
+        if (!result.authenticated) {
+          setLoadedForUserId(null);
+          return;
+        }
         setIds(new Set(result.ids));
+        setLoadedForUserId(sessionUserId);
       })
       .catch(() => {
-        // Sem favoritos hidratados — o coração fica oculto (não autenticado).
+        if (active) setLoadedForUserId(null);
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [sessionUserId, status]);
 
   const isFavorite = useCallback(
     (productId: string) => ids.has(productId),

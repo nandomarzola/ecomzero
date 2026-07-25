@@ -17,7 +17,7 @@ export default async function AccountLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  if (!session?.user?.id) redirect("/login?retorno=/conta/pedidos");
   const mustChangePassword = await getMustChangePassword(session.user.id);
 
   return (

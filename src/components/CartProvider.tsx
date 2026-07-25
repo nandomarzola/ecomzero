@@ -88,6 +88,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [mutationCount, setMutationCount] = useState(0);
   const requestSequence = useRef(0);
   const rotatedPaidOrders = useRef(new Set<string>());
+  const pendingAdditions = useRef(new Map<string, Promise<CartActionResult>>());
 
   const syncCart = useCallback((nextCart: Cart) => {
     requestSequence.current += 1;
@@ -145,15 +146,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
       quantidade: number,
       options: AddItemOptions = {},
     ) => {
-      const result = await runMutation(() =>
-        addToCartAction({ variantId, quantidade }),
-      );
+      const requestKey = `${variantId}:${quantidade}`;
+      let request = pendingAdditions.current.get(requestKey);
 
-      if (result.success) {
-        if (options.openDrawer !== false) setIsOpen(true);
+      if (!request) {
+        request = runMutation(() =>
+          addToCartAction({ variantId, quantidade }),
+        );
+        pendingAdditions.current.set(requestKey, request);
       }
 
-      return result;
+      try {
+        const result = await request;
+
+        if (result.success) {
+          if (options.openDrawer !== false) setIsOpen(true);
+        }
+
+        return result;
+      } finally {
+        if (pendingAdditions.current.get(requestKey) === request) {
+          pendingAdditions.current.delete(requestKey);
+        }
+      }
     },
     [runMutation],
   );

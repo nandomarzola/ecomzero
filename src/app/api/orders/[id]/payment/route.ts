@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import { config, isMercadoPagoBrickConfigurado } from "@/lib/config";
@@ -30,29 +31,69 @@ const getOrderAccess = async (orderId: string) => {
   };
 };
 
-const handlePaymentError = (error: unknown) => {
+type PaymentErrorContext = {
+  requestId: string;
+  operation: "get" | "create";
+  orderReference: string;
+  paymentMethod?: string;
+};
+
+const paymentResponse = (
+  body: Record<string, unknown>,
+  status: number,
+  requestId: string,
+) =>
+  NextResponse.json(
+    { ...body, requestId },
+    { status, headers: { "x-payment-request-id": requestId } },
+  );
+
+const handlePaymentError = (
+  error: unknown,
+  context: PaymentErrorContext,
+) => {
+  console.error("Mercado Pago payment route failed", {
+    ...context,
+    errorName: error instanceof Error ? error.name : "UnknownError",
+    errorMessage: error instanceof Error ? error.message : "Erro desconhecido",
+    errorCode:
+      error instanceof OrderPaymentServiceError ||
+      error instanceof PaymentReconciliationError
+        ? error.code
+        : null,
+    status:
+      error instanceof OrderPaymentServiceError ||
+      error instanceof MercadoPagoServiceError
+        ? error.status
+        : null,
+  });
+
   if (error instanceof OrderPaymentServiceError) {
-    return NextResponse.json(
+    return paymentResponse(
       { error: error.message },
-      { status: error.status },
+      error.status,
+      context.requestId,
     );
   }
   if (error instanceof MercadoPagoServiceError) {
-    return NextResponse.json(
+    return paymentResponse(
       { error: error.message },
-      { status: error.status },
+      error.status,
+      context.requestId,
     );
   }
   if (error instanceof PaymentReconciliationError) {
-    return NextResponse.json(
+    return paymentResponse(
       { error: "O pagamento não corresponde a este pedido" },
-      { status: 409 },
+      409,
+      context.requestId,
     );
   }
 
-  return NextResponse.json(
+  return paymentResponse(
     { error: "Erro inesperado ao processar pagamento" },
-    { status: 500 },
+    500,
+    context.requestId,
   );
 };
 
@@ -60,14 +101,23 @@ export async function GET(
   _request: NextRequest,
   { params }: OrderPaymentRouteProps,
 ) {
+  const requestId = randomUUID();
   const parsedId = paymentOrderIdSchema.safeParse((await params).id);
   if (!parsedId.success) {
-    return NextResponse.json({ error: "Pedido inválido" }, { status: 400 });
+    return paymentResponse({ error: "Pedido inválido" }, 400, requestId);
   }
   if (!isMercadoPagoBrickConfigurado) {
-    return NextResponse.json(
+    console.error("Mercado Pago payment configuration missing", {
+      requestId,
+      operation: "get",
+      hasAccessToken: Boolean(config.mercadoPago.accessToken),
+      hasPublicKey: Boolean(config.mercadoPago.publicKey),
+      environment: config.mercadoPago.environment,
+    });
+    return paymentResponse(
       { error: "Pagamento temporariamente indisponível" },
-      { status: 503 },
+      503,
+      requestId,
     );
   }
 
@@ -78,7 +128,11 @@ export async function GET(
     );
     return NextResponse.json(payment);
   } catch (error) {
-    return handlePaymentError(error);
+    return handlePaymentError(error, {
+      requestId,
+      operation: "get",
+      orderReference: parsedId.data.slice(0, 8),
+    });
   }
 }
 
@@ -86,23 +140,43 @@ export async function POST(
   request: NextRequest,
   { params }: OrderPaymentRouteProps,
 ) {
+  const requestId = randomUUID();
   const parsedId = paymentOrderIdSchema.safeParse((await params).id);
   if (!parsedId.success) {
-    return NextResponse.json({ error: "Pedido inválido" }, { status: 400 });
+    return paymentResponse({ error: "Pedido inválido" }, 400, requestId);
   }
   if (!isMercadoPagoBrickConfigurado) {
-    return NextResponse.json(
+    console.error("Mercado Pago payment configuration missing", {
+      requestId,
+      operation: "create",
+      orderReference: parsedId.data.slice(0, 8),
+      hasAccessToken: Boolean(config.mercadoPago.accessToken),
+      hasPublicKey: Boolean(config.mercadoPago.publicKey),
+      environment: config.mercadoPago.environment,
+    });
+    return paymentResponse(
       { error: "Pagamento temporariamente indisponível" },
-      { status: 503 },
+      503,
+      requestId,
     );
   }
 
   const body = await request.json().catch(() => null);
   const parsedBody = brickPaymentSchema.safeParse(body);
   if (!parsedBody.success) {
-    return NextResponse.json(
+    console.warn("Mercado Pago payment payload rejected", {
+      requestId,
+      orderReference: parsedId.data.slice(0, 8),
+      issues: parsedBody.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        code: issue.code,
+        message: issue.message,
+      })),
+    });
+    return paymentResponse(
       { error: parsedBody.error.issues[0]?.message ?? "Pagamento inválido" },
-      { status: 400 },
+      400,
+      requestId,
     );
   }
 
@@ -117,6 +191,11 @@ export async function POST(
     );
     return NextResponse.json(payment);
   } catch (error) {
-    return handlePaymentError(error);
+    return handlePaymentError(error, {
+      requestId,
+      operation: "create",
+      orderReference: parsedId.data.slice(0, 8),
+      paymentMethod: parsedBody.data.formData.payment_method_id,
+    });
   }
 }

@@ -149,6 +149,7 @@ test("Google exige e-mail verificado e Facebook exige e-mail válido", () => {
 test("retorno OAuth só aceita destinos internos previstos", () => {
   assert.equal(safeOAuthReturnTo("/checkout"), "/checkout");
   assert.equal(safeOAuthReturnTo("/conta/dados"), "/conta/dados");
+  assert.equal(safeOAuthReturnTo("/conta/pedidos"), "/conta/pedidos");
   assert.equal(safeOAuthReturnTo("https://evil.example/checkout"), "/");
   assert.equal(safeOAuthReturnTo("//evil.example"), "/");
   assert.equal(safeOAuthReturnTo(["/checkout"]), "/");

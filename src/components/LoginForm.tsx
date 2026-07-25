@@ -6,18 +6,21 @@ import { signIn } from "next-auth/react";
 import { FormEvent, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import OAuthButtons from "@/components/OAuthButtons";
-import type { OAuthAvailability } from "@/lib/security/oauth";
+import type {
+  OAuthAvailability,
+  OAuthReturnPath,
+} from "@/lib/security/oauth";
 
 type FieldName = "email" | "password";
 
 type FieldErrors = Partial<Record<FieldName, string>>;
 
 const inputClassName =
-  "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60";
+  "h-12 w-full rounded-md border border-white/[0.16] bg-[#080808] px-4 text-sm text-white outline-none transition placeholder:text-white/32 hover:border-white/25 focus:border-[var(--brand-color)] focus:ring-1 focus:ring-[var(--brand-color)] aria-[invalid=true]:border-red-400/80 aria-[invalid=true]:focus:ring-red-400/60 max-md:h-[52px] max-md:text-base";
 
 type LoginFormProps = {
   oauthAvailability: OAuthAvailability;
-  returnTo?: "/" | "/checkout" | "/conta/dados";
+  returnTo?: OAuthReturnPath;
   initialErrorMessage?: string;
 };
 

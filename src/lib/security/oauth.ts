@@ -4,6 +4,12 @@ export type OAuthProviderId = (typeof oauthProviderIds)[number];
 
 export type OAuthAvailability = Record<OAuthProviderId, boolean>;
 
+export type OAuthReturnPath =
+  | "/"
+  | "/checkout"
+  | "/conta/dados"
+  | "/conta/pedidos";
+
 export function getOAuthAvailability(oauth: {
   google: unknown | null;
   facebook: unknown | null;
@@ -30,15 +36,20 @@ export function isOAuthProfileAllowed(
   return provider === "facebook";
 }
 
-const allowedReturnPaths = new Set(["/", "/checkout", "/conta/dados"]);
+const allowedReturnPaths: ReadonlySet<string> = new Set<OAuthReturnPath>([
+  "/",
+  "/checkout",
+  "/conta/dados",
+  "/conta/pedidos",
+]);
 
 export function safeOAuthReturnTo(
   value: string | string[] | undefined,
-  fallback: "/" | "/checkout" | "/conta/dados" = "/",
-): "/" | "/checkout" | "/conta/dados" {
+  fallback: OAuthReturnPath = "/",
+): OAuthReturnPath {
   if (typeof value !== "string") return fallback;
   return allowedReturnPaths.has(value)
-    ? (value as "/" | "/checkout" | "/conta/dados")
+    ? (value as OAuthReturnPath)
     : fallback;
 }
 

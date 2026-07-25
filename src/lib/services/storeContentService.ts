@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
 import type { StoreAnnouncementItem } from "@/types/storePromotion";
@@ -46,34 +47,9 @@ export type StoreAnnouncementBarItem = StoreAnnouncementItem;
 
 const legacyFooterMessage = "Produtos úteis para facilitar o seu dia a dia.";
 const secureFooterMessage = "Este site utiliza conexão segura e não armazena os dados do seu cartão.";
+const STORE_CONTENT_REVALIDATE_SECONDS = 60;
 
-async function getFooterContentSettings() {
-  const columns = await prisma.$queryRaw<Array<{ columnName: string }>>`
-    SELECT "column_name" AS "columnName"
-    FROM "information_schema"."columns"
-    WHERE "table_schema" = current_schema()
-      AND "table_name" = 'StoreSettings'
-      AND "column_name" IN ('footerBenefits', 'footerSecurityItems')
-  `;
-
-  if (columns.length !== 2) {
-    return { footerBenefits: null, footerSecurityItems: null };
-  }
-
-  const [settings] = await prisma.$queryRaw<Array<{
-    footerBenefits: unknown;
-    footerSecurityItems: unknown;
-  }>>`
-    SELECT "footerBenefits", "footerSecurityItems"
-    FROM "StoreSettings"
-    WHERE "id" = 'singleton'
-    LIMIT 1
-  `;
-
-  return settings ?? { footerBenefits: null, footerSecurityItems: null };
-}
-
-export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
+async function fetchActiveCategories(): Promise<StoreCategory[]> {
   let rows;
   try {
     rows = await prisma.category.findMany({ where: { ativo: true }, orderBy: [{ ordem: "asc" }, { nome: "asc" }] });
@@ -105,7 +81,18 @@ export const getActiveCategories = cache(async (): Promise<StoreCategory[]> => {
     }
   }
   return result;
-});
+}
+
+const getCachedActiveCategories = unstable_cache(
+  fetchActiveCategories,
+  ["store-content-active-categories-v1"],
+  {
+    revalidate: STORE_CONTENT_REVALIDATE_SECONDS,
+    tags: ["store-content-categories"],
+  },
+);
+
+export const getActiveCategories = cache(getCachedActiveCategories);
 
 // Resolve o caminho de slugs da URL (/categorias/[...slug]) para uma categoria,
 // em QUALQUER profundidade. Caminha os segmentos validando que cada um é filho
@@ -141,16 +128,27 @@ export const resolveCategoryPath = cache(
   },
 );
 
-export const getActiveBanners = cache(async (): Promise<StoreBanner[]> => {
+async function fetchActiveBanners(): Promise<StoreBanner[]> {
   const now = new Date();
   return prisma.banner.findMany({
     where: { ativo: true, AND: [{ OR: [{ inicioEm: null }, { inicioEm: { lte: now } }] }, { OR: [{ expiraEm: null }, { expiraEm: { gt: now } }] }] },
     orderBy: [{ posicao: "asc" }, { ordem: "asc" }],
     select: { id: true, imagemUrl: true, altText: true, linkUrl: true, posicao: true },
   });
-});
+}
 
-export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnouncementBarItem[]> => {
+const getCachedActiveBanners = unstable_cache(
+  fetchActiveBanners,
+  ["store-content-active-banners-v1"],
+  {
+    revalidate: STORE_CONTENT_REVALIDATE_SECONDS,
+    tags: ["store-content-banners"],
+  },
+);
+
+export const getActiveBanners = cache(getCachedActiveBanners);
+
+async function fetchActiveAnnouncementBarItems(): Promise<StoreAnnouncementBarItem[]> {
   const now = new Date();
   let rows;
   try {
@@ -259,35 +257,76 @@ export const getActiveAnnouncementBarItems = cache(async (): Promise<StoreAnnoun
       } : null,
     };
   });
-});
+}
+
+const getCachedActiveAnnouncementBarItems = unstable_cache(
+  fetchActiveAnnouncementBarItems,
+  ["store-content-active-announcement-items-v1"],
+  {
+    revalidate: STORE_CONTENT_REVALIDATE_SECONDS,
+    tags: ["store-content-announcements"],
+  },
+);
+
+export const getActiveAnnouncementBarItems = cache(
+  getCachedActiveAnnouncementBarItems,
+);
 
 async function fetchStoreSettings() {
-  const [settings, footerContent] = await Promise.all([
-    prisma.storeSettings.upsert({
-      where: { id: "singleton" },
-      create: { id: "singleton" },
-      update: {},
-      omit: {
-        footerBenefits: true,
-        footerSecurityItems: true,
-        metaCatalogFeedAtivo: true,
-        metaCatalogIncludeOutOfStock: true,
-        metaCatalogIncludeSalePrice: true,
-        metaCatalogIncludeImages: true,
-        metaCatalogDefaultBrand: true,
-        metaCatalogDefaultCategory: true,
-        metaCatalogLastValidatedAt: true,
-      },
-    }),
-    getFooterContentSettings(),
-  ]);
+  const query = {
+    where: { id: "singleton" },
+    omit: {
+      metaCatalogFeedAtivo: true,
+      metaCatalogIncludeOutOfStock: true,
+      metaCatalogIncludeSalePrice: true,
+      metaCatalogIncludeImages: true,
+      metaCatalogDefaultBrand: true,
+      metaCatalogDefaultCategory: true,
+      metaCatalogLastValidatedAt: true,
+    },
+  } as const;
+  let settings = await prisma.storeSettings.findUnique(query);
+
+  if (!settings) {
+    try {
+      settings = await prisma.storeSettings.create({
+        data: { id: "singleton" },
+        omit: query.omit,
+      });
+    } catch (error) {
+      if (
+        !(
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        )
+      ) {
+        throw error;
+      }
+
+      settings = await prisma.storeSettings.findUnique(query);
+      if (!settings) throw error;
+    }
+  }
 
   return {
     ...settings,
-    mensagemFooter: settings.mensagemFooter === legacyFooterMessage ? secureFooterMessage : settings.mensagemFooter,
-    ...footerContent,
+    valorMinimoPedido: Number(settings.valorMinimoPedido),
+    updatedAt: settings.updatedAt.toISOString(),
+    mensagemFooter:
+      settings.mensagemFooter === legacyFooterMessage
+        ? secureFooterMessage
+        : settings.mensagemFooter,
   };
 }
+
+const getCachedStoreSettings = unstable_cache(
+  fetchStoreSettings,
+  ["store-content-settings-v1"],
+  {
+    revalidate: STORE_CONTENT_REVALIDATE_SECONDS,
+    tags: ["store-content-settings"],
+  },
+);
 
 type StoreSettingsView = Awaited<ReturnType<typeof fetchStoreSettings>>;
 
@@ -334,6 +373,8 @@ const DEFAULT_STORE_SETTINGS: StoreSettingsView = {
   whatsappMensagem: "Olá! Preciso de ajuda com a minha compra.",
   horariosAtendimento: null,
   footerColumns: null,
+  footerBenefits: null,
+  footerSecurityItems: null,
   footerSeloSeguranca: true,
   footerCopyrightTexto: "Todos os direitos reservados.",
   footerCopyrightAno: "automatico",
@@ -361,7 +402,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettingsView = {
   customHeadCode: null,
   modoManutencao: false,
   mensagemManutencao: "Estamos preparando novidades. Voltamos em breve!",
-  valorMinimoPedido: new Prisma.Decimal(0),
+  valorMinimoPedido: 0,
   logoUrl: "/images/logo2.png",
   faviconUrl: null,
   corPrincipal: "#A9EC17",
@@ -376,14 +417,12 @@ const DEFAULT_STORE_SETTINGS: StoreSettingsView = {
   showRating: true,
   showBuyNowButton: true,
   buttonStyle: "filled",
-  updatedAt: new Date(0),
-  footerBenefits: null,
-  footerSecurityItems: null,
+  updatedAt: new Date(0).toISOString(),
 };
 
 export const getStoreSettings = cache(async (): Promise<StoreSettingsView> => {
   try {
-    return await fetchStoreSettings();
+    return await getCachedStoreSettings();
   } catch (error) {
     console.warn(
       "[storeContent] StoreSettings indisponível; usando defaults de build",

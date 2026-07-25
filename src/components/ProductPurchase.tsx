@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Handshake, Minus, Music2, Plus, ShoppingBag, ShoppingCart, Store, Zap } from "lucide-react";
@@ -77,6 +77,7 @@ export default function ProductPurchase({
   const [selectedId, setSelectedId] = useState(variants[0].id);
   const [quantity, setQuantity] = useState(1);
   const [submittingAction, setSubmittingAction] = useState<"add" | "buy" | null>(null);
+  const actionLock = useRef(false);
   const isPending = submittingAction !== null;
   const { addItem } = useCart();
 
@@ -111,8 +112,9 @@ export default function ProductPurchase({
   };
 
   const addToCart = async (action: "add" | "buy") => {
-    if (isPending) return;
+    if (actionLock.current) return;
 
+    actionLock.current = true;
     setSubmittingAction(action);
     try {
       const result = await addItem(selectedVariant.id, quantity, {
@@ -135,6 +137,7 @@ export default function ProductPurchase({
     } catch {
       toast.error("Não foi possível adicionar o produto ao carrinho");
     } finally {
+      actionLock.current = false;
       setSubmittingAction(null);
     }
   };

@@ -103,6 +103,7 @@ export default function MercadoPagoPayment({
   const { clearCart } = useCart();
   const attemptIdRef = useRef<string | null>(null);
   const finishingPaymentRef = useRef(false);
+  const submittingPaymentRef = useRef(false);
   const paymentBrickContainerRef = useRef<HTMLDivElement | null>(null);
   const [isCheckingPayment, setIsCheckingPayment] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -185,6 +186,18 @@ export default function MercadoPagoPayment({
     }),
     [],
   );
+  const handleBrickError = useCallback<
+    NonNullable<ComponentProps<typeof Payment>["onError"]>
+  >((error) => {
+    console.error("Mercado Pago Brick error", {
+      type: error.type,
+      cause: error.cause,
+      message: error.message,
+    });
+    setErrorMessage(
+      "Não foi possível carregar uma parte do pagamento. Atualize a página e tente novamente.",
+    );
+  }, []);
 
   useEffect(() => {
     clearCheckoutShippingSelection();
@@ -335,6 +348,8 @@ export default function MercadoPagoPayment({
     NonNullable<ComponentProps<typeof Payment>["onSubmit"]>
   >(
     async (brickData) => {
+      if (submittingPaymentRef.current) return;
+      submittingPaymentRef.current = true;
       setErrorMessage("");
       setIsSubmitting(true);
       const attemptId =
@@ -382,6 +397,7 @@ export default function MercadoPagoPayment({
         );
         throw error;
       } finally {
+        submittingPaymentRef.current = false;
         setIsSubmitting(false);
       }
     },
@@ -643,11 +659,7 @@ export default function MercadoPagoPayment({
                       customization={customization}
                       locale="pt"
                       onSubmit={handleSubmit}
-                      onError={() =>
-                        setErrorMessage(
-                          "Não foi possível carregar uma parte do pagamento. Atualize a página e tente novamente.",
-                        )
-                      }
+                      onError={handleBrickError}
                     />
                   </div>
                 </>

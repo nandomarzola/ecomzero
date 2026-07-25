@@ -5,11 +5,12 @@ import { useState } from "react";
 import type {
   OAuthAvailability,
   OAuthProviderId,
+  OAuthReturnPath,
 } from "@/lib/security/oauth";
 
 type OAuthButtonsProps = {
   availability: OAuthAvailability;
-  callbackUrl: "/" | "/checkout" | "/conta/dados";
+  callbackUrl: OAuthReturnPath;
   mode?: "signin" | "connect";
   connectedProviders?: OAuthProviderId[];
 };
