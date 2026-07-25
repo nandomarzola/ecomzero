@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const ip = request.headers.get("x-forwarded-for") ?? "desconhecido";
-    if (await isShippingRateLimited(ip)) {
+    if (await isShippingRateLimited("cart", ip)) {
       return NextResponse.json(
         { error: "Muitas requisições — tente novamente em instantes" },
         { status: 429 },

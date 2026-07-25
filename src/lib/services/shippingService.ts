@@ -51,13 +51,15 @@ type ShippingPackage = {
 // filtrados na resposta (vêm com `error`).
 const MELHOR_ENVIO_SERVICES = "1,2,3,4,17,27,31,32,33";
 
-// Cache (10 min) e rate limit (20 req/min por identificador) da rota
-// POST /api/shipping/quote — em Postgres, não em memória, porque a rota
-// roda em funções serverless sem estado compartilhado entre instâncias.
+// Cache (10 min) e rate limit (60 req/min por IP e fluxo) das rotas de frete —
+// em Postgres, não em memória, porque elas rodam em funções serverless sem
+// estado compartilhado entre instâncias.
 const CACHE_TTL_MS = 10 * 60 * 1000;
 const CART_QUOTE_TTL_MS = 15 * 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX_REQUESTS = 20;
+const RATE_LIMIT_MAX_REQUESTS = 60;
+
+export type ShippingRateLimitScope = "product" | "cart";
 
 export async function getCachedShippingQuote(
   cacheKey: string,
@@ -81,21 +83,27 @@ export async function setCachedShippingQuote(
 
 // true = bloqueado. Janela fixa: reseta a contagem quando a janela anterior
 // expira, em vez de janela deslizante — suficiente pra esse volume de MVP.
-export async function isShippingRateLimited(identifier: string): Promise<boolean> {
+export async function isShippingRateLimited(
+  scope: ShippingRateLimitScope,
+  identifier: string,
+): Promise<boolean> {
   const now = new Date();
-  const existing = await prisma.shippingRateLimit.findUnique({ where: { identifier } });
+  const scopedIdentifier = `${scope}:${identifier}`;
+  const existing = await prisma.shippingRateLimit.findUnique({
+    where: { identifier: scopedIdentifier },
+  });
 
   if (!existing || now.getTime() - existing.windowStart.getTime() > RATE_LIMIT_WINDOW_MS) {
     await prisma.shippingRateLimit.upsert({
-      where: { identifier },
-      create: { identifier, count: 1, windowStart: now },
+      where: { identifier: scopedIdentifier },
+      create: { identifier: scopedIdentifier, count: 1, windowStart: now },
       update: { count: 1, windowStart: now },
     });
     return false;
   }
 
   const updated = await prisma.shippingRateLimit.update({
-    where: { identifier },
+    where: { identifier: scopedIdentifier },
     data: { count: { increment: 1 } },
   });
 
