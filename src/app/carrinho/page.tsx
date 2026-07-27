@@ -13,7 +13,10 @@ import CategoryStrip from "@/components/CategoryStrip";
 import RelatedProductsCarousel from "@/components/RelatedProductsCarousel";
 import TrustBadges from "@/components/TrustBadges";
 import { auth } from "@/lib/auth";
-import { getCart } from "@/lib/services/cartService";
+import {
+  getCart,
+  synchronizeAuthenticatedCart,
+} from "@/lib/services/cartService";
 import {
   getAllProducts,
   getOtherProducts,
@@ -61,9 +64,13 @@ export default async function CartPage() {
     auth(),
     getCheckoutOrderAccessId(),
   ]);
+  const userId = session?.user?.id ?? null;
+  if (sessionId && userId) {
+    await synchronizeAuthenticatedCart(sessionId, userId);
+  }
   const cart = await getCart(sessionId, {
     signedOrderId,
-    userId: session?.user?.id ?? null,
+    userId,
   });
   const [allProducts, categories] = await Promise.all([getAllProducts(), getActiveCategories()]);
   const otherProducts = getOtherProducts(

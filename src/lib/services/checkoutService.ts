@@ -5,6 +5,7 @@ import type { CheckoutInput } from "@/lib/validation/checkout";
 import { CouponError, validateForCheckout } from "@/lib/services/couponService";
 import { clearCouponIfMatching } from "@/lib/services/cartService";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
+import { getVolumePriceForQuantity } from "@/lib/productVolumePricing";
 
 export class CheckoutServiceError extends Error {
   constructor(message: string) {
@@ -74,7 +75,24 @@ export async function createOrderFromCart(
           },
           include: {
             items: {
-              include: { variant: { include: { product: true } } },
+              include: {
+                variant: {
+                  include: {
+                    product: {
+                      include: {
+                        variantes: {
+                          select: {
+                            id: true,
+                            label: true,
+                            precoDe: true,
+                            precoPor: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
             },
           },
         });
@@ -108,9 +126,24 @@ export async function createOrderFromCart(
           );
         }
 
-        const subtotal = cart.items.reduce(
-          (total, item) =>
-            total.plus(item.variant.precoPor.mul(item.quantidade)),
+        const pricedItems = cart.items.map((item) => {
+          const volumePrice = getVolumePriceForQuantity(
+            (item.variant.product.variantes ?? []).map((variant) => ({
+              ...variant,
+              precoDe: Number(variant.precoDe),
+              precoPor: Number(variant.precoPor),
+            })),
+            item.quantidade,
+          );
+          return {
+            item,
+            unitPrice:
+              volumePrice?.unitPrice ?? item.variant.precoPor.toNumber(),
+          };
+        });
+        const subtotal = pricedItems.reduce(
+          (total, { item, unitPrice }) =>
+            total.plus(new Prisma.Decimal(unitPrice).mul(item.quantidade)),
           new Prisma.Decimal(0),
         );
 
@@ -134,11 +167,11 @@ export async function createOrderFromCart(
               couponId: cart.couponId,
               orderId: cart.id,
               subtotal: subtotal.toNumber(),
-              lines: cart.items.map((item) => ({
+              lines: pricedItems.map(({ item, unitPrice }) => ({
                 productId: item.variant.product.id,
                 categoryId: item.variant.product.categoryId,
                 quantity: item.quantidade,
-                unitPrice: item.variant.precoPor.toNumber(),
+                unitPrice,
               })),
               shippingCost: 0,
               userId,
@@ -213,10 +246,10 @@ export async function createOrderFromCart(
 
         const total = subtotal.plus(valorFrete).minus(descontoCupom);
 
-        for (const item of cart.items) {
+        for (const { item, unitPrice } of pricedItems) {
           await transaction.orderItem.update({
             where: { id: item.id },
-            data: { precoUnitario: item.variant.precoPor },
+            data: { precoUnitario: unitPrice },
           });
         }
 

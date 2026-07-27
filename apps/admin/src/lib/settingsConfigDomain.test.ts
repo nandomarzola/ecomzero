@@ -39,3 +39,21 @@ test("converte o título legado Ajuda para Atendimento", () => {
 
   assert.equal(column?.titulo, "Atendimento");
 });
+
+test("converte links institucionais legados nas páginas dedicadas", () => {
+  const [column] = normalizeFooterColumns([
+    {
+      id: "institucional",
+      titulo: "Institucional",
+      tipo: "links",
+      ativo: true,
+      links: [
+        { id: "sobre", label: "Sobre", href: "/#sobre", ativo: true },
+        { id: "entrega", label: "Entrega", href: "/#sobre", ativo: true },
+      ],
+    },
+  ]);
+
+  assert.equal(column?.links[0]?.href, "/sobre");
+  assert.equal(column?.links[1]?.href, "/entrega-segura");
+});

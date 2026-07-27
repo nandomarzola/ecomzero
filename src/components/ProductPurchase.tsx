@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Handshake, Minus, Music2, Plus, ShoppingBag, ShoppingCart, Store, Zap } from "lucide-react";
 import { useCart } from "@/components/CartProvider";
 import ShippingCalculator from "@/components/ShippingCalculator";
 import { trackMetaPixelCommerceEvent } from "@/lib/client/metaPixel";
+import {
+  getVolumePriceForQuantity,
+  getVolumePricing,
+} from "@/lib/productVolumePricing";
 import type { ProductVariant } from "@/types/product";
 
 type ProductPurchaseProps = {
@@ -81,11 +85,21 @@ export default function ProductPurchase({
   const isPending = submittingAction !== null;
   const { addItem } = useCart();
 
+  const volumePricing = useMemo(() => getVolumePricing(variants), [variants]);
+  const effectiveSelectedId = volumePricing?.canonicalVariantId ?? selectedId;
   const selectedVariant =
-    variants.find((variant) => variant.id === selectedId) ?? variants[0];
-  const hasDiscount = selectedVariant.precoDe > selectedVariant.precoPor;
+    variants.find((variant) => variant.id === effectiveSelectedId) ?? variants[0];
+  const volumePrice = useMemo(
+    () => getVolumePriceForQuantity(variants, quantity),
+    [quantity, variants],
+  );
+  const unitPrice = volumePrice?.unitPrice ?? selectedVariant.precoPor;
+  const listUnitPrice = volumePrice?.listUnitPrice ?? selectedVariant.precoDe;
+  const totalPrice = Math.round(unitPrice * quantity * 100) / 100;
+  const listTotalPrice = Math.round(listUnitPrice * quantity * 100) / 100;
+  const hasDiscount = listUnitPrice > unitPrice;
   const discountPercentage = hasDiscount
-    ? Math.round((1 - selectedVariant.precoPor / selectedVariant.precoDe) * 100)
+    ? Math.round((1 - unitPrice / listUnitPrice) * 100)
     : 0;
 
   const activeMarketplaces = (
@@ -100,11 +114,11 @@ export default function ProductPurchase({
   useEffect(() => {
     trackMetaPixelCommerceEvent({
       event: "ViewContent",
-      items: [{ variantId: selectedVariant.id, quantity: 1, unitPrice: selectedVariant.precoPor }],
-      value: selectedVariant.precoPor,
+      items: [{ variantId: selectedVariant.id, quantity: 1, unitPrice }],
+      value: unitPrice,
       contentName: productName,
     });
-  }, [productName, selectedVariant]);
+  }, [productName, selectedVariant.id, unitPrice]);
 
   const handleSelectVariant = (variantId: string) => {
     setSelectedId(variantId);
@@ -124,8 +138,8 @@ export default function ProductPurchase({
       if (result.success) {
         trackMetaPixelCommerceEvent({
           event: "AddToCart",
-          items: [{ variantId: selectedVariant.id, quantity, unitPrice: selectedVariant.precoPor }],
-          value: selectedVariant.precoPor * quantity,
+          items: [{ variantId: selectedVariant.id, quantity, unitPrice }],
+          value: totalPrice,
           contentName: productName,
         });
         if (action === "buy") {
@@ -144,7 +158,7 @@ export default function ProductPurchase({
 
   return (
     <div className="mt-5">
-      {variants.length > 1 && (
+      {variants.length > 1 && !volumePricing && (
         <fieldset>
           <legend className="font-display text-[11px] font-bold uppercase tracking-wide text-white/75">
             Escolha a opção
@@ -175,7 +189,7 @@ export default function ProductPurchase({
 
       <section
         aria-labelledby="ecomzero-purchase-title"
-        className={`${variants.length > 1 ? "mt-4" : ""} overflow-hidden rounded-xl border border-white/[0.09] bg-[#0D0D0D] shadow-[0_18px_50px_rgba(0,0,0,0.2)]`}
+        className={`${variants.length > 1 && !volumePricing ? "mt-4" : ""} overflow-hidden rounded-xl border border-white/[0.09] bg-[#0D0D0D] shadow-[0_18px_50px_rgba(0,0,0,0.2)]`}
       >
         <h2 id="ecomzero-purchase-title" className="sr-only">
           Comprar na EcomZero
@@ -215,18 +229,26 @@ export default function ProductPurchase({
                 <p className="text-[10px] text-white/40">
                   De {" "}
                   <span className="line-through">
-                    {formatPrice(selectedVariant.precoDe)}
+                    {formatPrice(listTotalPrice)}
                   </span>
                 </p>
               )}
               <p className="font-display mt-0.5 whitespace-nowrap text-[24px] font-extrabold leading-none text-[var(--brand-color)]">
-                {formatPrice(selectedVariant.precoPor)}
+                {formatPrice(totalPrice)}
                 {hasDiscount && (
                   <span className="ml-2 inline-flex rounded-full bg-[var(--brand-color)]/15 px-2 py-1 align-middle text-[9px] font-bold text-[var(--brand-color)]">
                     {discountPercentage}% OFF
                   </span>
                 )}
               </p>
+              {quantity > 1 && (
+                <p className="mt-1 text-[10px] text-white/50">
+                  {formatPrice(unitPrice)} por unidade
+                  {volumePrice && volumePrice.activeTier.quantity > 1
+                    ? " com desconto progressivo"
+                    : ""}
+                </p>
+              )}
               {activeMarketplaces.length > 0 ? (
                 <button
                   type="button"

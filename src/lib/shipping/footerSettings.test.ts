@@ -58,3 +58,21 @@ test("normaliza a coluna antiga Ajuda para Atendimento", () => {
 
   assert.equal(columns[0]?.titulo, "Atendimento");
 });
+
+test("leva os links institucionais legados para páginas dedicadas", () => {
+  const columns = storeFooterColumns([
+    {
+      id: "institucional",
+      titulo: "Institucional",
+      tipo: "links",
+      ativo: true,
+      links: [
+        { id: "sobre", label: "Sobre", href: "/#sobre", ativo: true },
+        { id: "entrega", label: "Entrega", href: "/#sobre", ativo: true },
+      ],
+    },
+  ]);
+
+  assert.equal(columns[0]?.links[0]?.href, "/sobre");
+  assert.equal(columns[0]?.links[1]?.href, "/entrega-segura");
+});

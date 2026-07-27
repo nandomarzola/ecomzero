@@ -10,10 +10,21 @@ import type { BrickPaymentInput } from "@/lib/validation/payment";
 
 export const PAYMENT_PREFERENCE_TTL_MS = 24 * 60 * 60 * 1000;
 
+export type MercadoPagoProviderFailure = {
+  status: number | null;
+  error: string | null;
+  message: string | null;
+  causes: Array<{
+    code: string | null;
+    description: string | null;
+  }>;
+};
+
 export class MercadoPagoServiceError extends Error {
   constructor(
     message: string,
     public readonly status: 502 | 503,
+    public readonly providerFailure: MercadoPagoProviderFailure | null = null,
   ) {
     super(message);
     this.name = "MercadoPagoServiceError";
@@ -217,6 +228,9 @@ const buildProviderProductItems = (
 };
 
 const sanitizeProviderText = (value: unknown) => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
   if (typeof value !== "string") return null;
 
   return value
@@ -383,12 +397,14 @@ export async function createMercadoPagoPayment(
       throw new MercadoPagoServiceError(
         "Pagamento temporariamente indisponível. Tente novamente mais tarde.",
         503,
+        failure,
       );
     }
 
     throw new MercadoPagoServiceError(
       "Não foi possível processar o pagamento. Confira os dados e tente novamente.",
       502,
+      failure,
     );
   }
 }
@@ -492,9 +508,18 @@ export async function createPaymentPreference(
     };
   } catch (error) {
     if (error instanceof MercadoPagoServiceError) throw error;
+    const failure = getMercadoPagoFailure(error);
+    console.error("Mercado Pago preference creation failed", {
+      orderReference: order.id.slice(0, 8),
+      providerStatus: failure.status,
+      providerError: failure.error,
+      providerMessage: failure.message,
+      providerCauses: failure.causes,
+    });
     throw new MercadoPagoServiceError(
       "Não foi possível iniciar o pagamento. Tente novamente.",
       502,
+      failure,
     );
   }
 }
@@ -509,9 +534,18 @@ export async function getMercadoPagoPayment(
     return normalizePaymentResponse(response);
   } catch (error) {
     if (error instanceof MercadoPagoServiceError) throw error;
+    const failure = getMercadoPagoFailure(error);
+    console.error("Mercado Pago payment lookup failed", {
+      paymentId,
+      providerStatus: failure.status,
+      providerError: failure.error,
+      providerMessage: failure.message,
+      providerCauses: failure.causes,
+    });
     throw new MercadoPagoServiceError(
       "Não foi possível confirmar o pagamento",
       502,
+      failure,
     );
   }
 }
@@ -536,12 +570,14 @@ function mercadoPagoManagementError(
     return new MercadoPagoServiceError(
       "O Mercado Pago recusou a operação. Confira o Access Token de produção.",
       503,
+      failure,
     );
   }
   if (failure.status === 404) {
     return new MercadoPagoServiceError(
       "O pagamento não foi encontrado no Mercado Pago.",
       502,
+      failure,
     );
   }
   if (
@@ -551,6 +587,7 @@ function mercadoPagoManagementError(
     return new MercadoPagoServiceError(
       "Saldo insuficiente no Mercado Pago para estornar este pedido.",
       502,
+      failure,
     );
   }
 
@@ -559,6 +596,7 @@ function mercadoPagoManagementError(
       ? "O Mercado Pago não concluiu o estorno. Verifique o pagamento e tente novamente."
       : "O Mercado Pago não concluiu o cancelamento do pagamento pendente.",
     502,
+    failure,
   );
 }
 

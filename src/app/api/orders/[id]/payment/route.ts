@@ -52,6 +52,10 @@ const handlePaymentError = (
   error: unknown,
   context: PaymentErrorContext,
 ) => {
+  const providerFailure =
+    error instanceof MercadoPagoServiceError
+      ? error.providerFailure
+      : null;
   console.error("Mercado Pago payment route failed", {
     ...context,
     errorName: error instanceof Error ? error.name : "UnknownError",
@@ -66,6 +70,10 @@ const handlePaymentError = (
       error instanceof MercadoPagoServiceError
         ? error.status
         : null,
+    providerStatus: providerFailure?.status ?? null,
+    providerError: providerFailure?.error ?? null,
+    providerMessage: providerFailure?.message ?? null,
+    providerCauses: providerFailure?.causes ?? [],
   });
 
   if (error instanceof OrderPaymentServiceError) {
@@ -77,7 +85,13 @@ const handlePaymentError = (
   }
   if (error instanceof MercadoPagoServiceError) {
     return paymentResponse(
-      { error: error.message },
+      {
+        error: error.message,
+        code:
+          error.providerFailure?.error ??
+          error.providerFailure?.causes[0]?.code ??
+          "MERCADOPAGO_PROVIDER_ERROR",
+      },
       error.status,
       context.requestId,
     );

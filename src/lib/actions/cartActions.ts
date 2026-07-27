@@ -44,16 +44,43 @@ function revalidateCart() {
   revalidatePath("/carrinho");
 }
 
+async function resolveCartMutationContext(
+  createIfMissing: boolean,
+  synchronize = true,
+) {
+  const [existingSessionId, session] = await Promise.all([
+    getCartSessionId(),
+    auth(),
+  ]);
+  const userId = session?.user?.id ?? null;
+  const email = session?.user?.email ?? null;
+  const sessionId =
+    existingSessionId ??
+    (createIfMissing || userId
+      ? await getOrCreateCartSessionId()
+      : null);
+
+  if (synchronize && sessionId && userId) {
+    await cartService.synchronizeAuthenticatedCart(sessionId, userId);
+  }
+
+  return { sessionId, userId, email };
+}
+
 export async function addToCartAction(input: unknown): Promise<CartActionResult> {
   const parsed = addToCartSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "Dados inválidos" };
 
-  const sessionId = await getOrCreateCartSessionId();
   try {
+    const { sessionId, userId } = await resolveCartMutationContext(true);
+    if (!sessionId) {
+      return { success: false, error: "Carrinho não encontrado" };
+    }
     const cart = await cartService.addItem(
       sessionId,
       parsed.data.variantId,
       parsed.data.quantidade,
+      userId,
     );
     revalidateCart();
     return { success: true, cart };
@@ -66,14 +93,19 @@ export async function updateCartItemAction(input: unknown): Promise<CartActionRe
   const parsed = updateCartItemSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "Dados inválidos" };
 
-  const sessionId = await getCartSessionId();
-  if (!sessionId) return { success: false, error: "Carrinho não encontrado" };
-
   try {
+    const { sessionId, userId } = await resolveCartMutationContext(
+      false,
+      false,
+    );
+    if (!sessionId) {
+      return { success: false, error: "Carrinho não encontrado" };
+    }
     const cart = await cartService.updateItemQuantity(
       sessionId,
       parsed.data.itemId,
       parsed.data.quantidade,
+      userId,
     );
     revalidateCart();
     return { success: true, cart };
@@ -86,11 +118,19 @@ export async function removeCartItemAction(input: unknown): Promise<CartActionRe
   const parsed = removeCartItemSchema.safeParse(input);
   if (!parsed.success) return { success: false, error: "Dados inválidos" };
 
-  const sessionId = await getCartSessionId();
-  if (!sessionId) return { success: false, error: "Carrinho não encontrado" };
-
   try {
-    const cart = await cartService.removeItem(sessionId, parsed.data.itemId);
+    const { sessionId, userId } = await resolveCartMutationContext(
+      false,
+      false,
+    );
+    if (!sessionId) {
+      return { success: false, error: "Carrinho não encontrado" };
+    }
+    const cart = await cartService.removeItem(
+      sessionId,
+      parsed.data.itemId,
+      userId,
+    );
     revalidateCart();
     return { success: true, cart };
   } catch (error) {
@@ -102,14 +142,15 @@ export async function applyCouponAction(code: unknown): Promise<CartActionResult
   if (typeof code !== "string" || normalizeCode(code).length < 3) {
     return { success: false, error: "Informe um código de cupom válido." };
   }
-  const sessionId = await getCartSessionId();
-  if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
-  const session = await auth();
-
   try {
+    const { sessionId, userId, email } =
+      await resolveCartMutationContext(false);
+    if (!sessionId) {
+      return { success: false, error: "Carrinho não encontrado." };
+    }
     const cart = await cartService.applyCoupon(sessionId, code, {
-      userId: session?.user?.id ?? null,
-      email: session?.user?.email ?? null,
+      userId,
+      email,
     });
     revalidateCart();
     return { success: true, cart };
@@ -123,17 +164,18 @@ export async function autoApplyCampaignCouponAction(code: unknown): Promise<Cart
   if (typeof code !== "string" || normalizeCode(code).length < 3) {
     return { success: false, error: "Campanha inválida." };
   }
-  const sessionId = await getCartSessionId();
-  if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
-  const session = await auth();
-  if (!session?.user?.id && !session?.user?.email) {
-    return { success: false, error: "Entre para validar esta oferta." };
-  }
-
   try {
+    const { sessionId, userId, email } =
+      await resolveCartMutationContext(false);
+    if (!sessionId) {
+      return { success: false, error: "Carrinho não encontrado." };
+    }
+    if (!userId && !email) {
+      return { success: false, error: "Entre para validar esta oferta." };
+    }
     const cart = await cartService.autoApplyCampaignCoupon(sessionId, code, {
-      userId: session?.user?.id ?? null,
-      email: session?.user?.email ?? null,
+      userId,
+      email,
     });
     revalidateCart();
     return { success: true, cart };
@@ -144,10 +186,11 @@ export async function autoApplyCampaignCouponAction(code: unknown): Promise<Cart
 }
 
 export async function removeCouponAction(): Promise<CartActionResult> {
-  const sessionId = await getCartSessionId();
-  if (!sessionId) return { success: false, error: "Carrinho não encontrado." };
-
   try {
+    const { sessionId } = await resolveCartMutationContext(false);
+    if (!sessionId) {
+      return { success: false, error: "Carrinho não encontrado." };
+    }
     const cart = await cartService.removeCoupon(sessionId);
     revalidateCart();
     return { success: true, cart };
@@ -157,10 +200,11 @@ export async function removeCouponAction(): Promise<CartActionResult> {
 }
 
 export async function clearCartItemsAction(): Promise<CartActionResult> {
-  const sessionId = await getCartSessionId();
-  if (!sessionId) return { success: true, cart: await cartService.getCart(null) };
-
   try {
+    const { sessionId } = await resolveCartMutationContext(false);
+    if (!sessionId) {
+      return { success: true, cart: await cartService.getCart(null) };
+    }
     const cart = await cartService.clearCart(sessionId);
     revalidateCart();
     return { success: true, cart };
@@ -197,6 +241,12 @@ export async function getCartAction(): Promise<Cart> {
     signedOrderId,
     userId,
   });
+  if (resolvedCart.status === "aguardando_pagamento") {
+    return resolvedCart;
+  }
+  if (userId) {
+    await cartService.synchronizeAuthenticatedCart(sessionId, userId);
+  }
   if (hasCustomerIdentity) {
     const result = await cartService.reconcileCartCoupon(sessionId, {
       userId,

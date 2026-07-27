@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import CheckoutForm from "@/components/CheckoutForm";
 import { auth } from "@/lib/auth";
-import { getCart, reconcileCartCoupon } from "@/lib/services/cartService";
+import {
+  getCart,
+  reconcileCartCoupon,
+  synchronizeAuthenticatedCart,
+} from "@/lib/services/cartService";
 import { qualifiesForFreeShipping } from "@/lib/shippingPolicy";
 import { getCartSessionId, getCheckoutOrderAccessId } from "@/lib/session";
 
@@ -19,6 +23,9 @@ export default async function CheckoutPage() {
   ]);
   if (!session?.user?.id) {
     redirect("/checkout/identificacao");
+  }
+  if (sessionId) {
+    await synchronizeAuthenticatedCart(sessionId, session.user.id);
   }
   const recoveredCart = await getCart(sessionId, {
     signedOrderId,

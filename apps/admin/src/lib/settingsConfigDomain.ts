@@ -42,7 +42,7 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumnConfig[] = [
     ativo: true,
     links: [
       { id: "inicio", label: "Início", href: "/", ativo: true, novaAba: false },
-      { id: "sobre", label: "Sobre a EcomZero", href: "/#sobre", ativo: true, novaAba: false },
+      { id: "sobre", label: "Sobre a EcomZero", href: "/sobre", ativo: true, novaAba: false },
       { id: "produtos", label: "Todos os produtos", href: "/produtos", ativo: true, novaAba: false },
     ],
   },
@@ -61,7 +61,7 @@ export const DEFAULT_FOOTER_COLUMNS: FooterColumnConfig[] = [
     links: [
       { id: "carrinho", label: "Meu carrinho", href: "/carrinho", ativo: true, novaAba: false },
       { id: "como-comprar", label: "Como comprar", href: "/como-comprar", ativo: true, novaAba: false },
-      { id: "entrega", label: "Entrega e segurança", href: "/#sobre", ativo: true, novaAba: false },
+      { id: "entrega", label: "Entrega e segurança", href: "/entrega-segura", ativo: true, novaAba: false },
     ],
   },
 ];
@@ -134,10 +134,16 @@ export function normalizeFooterColumns(value: unknown): FooterColumnConfig[] {
     const links = Array.isArray(entry.links)
       ? entry.links.flatMap((link) => {
           if (!isRecord(link) || typeof link.id !== "string" || typeof link.label !== "string" || typeof link.href !== "string") return [];
+          const href =
+            link.id === "sobre" && link.href === "/#sobre"
+              ? "/sobre"
+              : link.id === "entrega" && link.href === "/#sobre"
+                ? "/entrega-segura"
+                : link.href;
           return [{
             id: link.id,
             label: link.label,
-            href: link.href,
+            href,
             ativo: link.ativo !== false,
             novaAba: link.novaAba === true,
           }];

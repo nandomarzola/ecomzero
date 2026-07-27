@@ -87,6 +87,10 @@ export async function POST(request: NextRequest) {
         paymentId: parsedPaymentId.data,
         status: error.status,
         message: error.message,
+        providerStatus: error.providerFailure?.status ?? null,
+        providerError: error.providerFailure?.error ?? null,
+        providerMessage: error.providerFailure?.message ?? null,
+        providerCauses: error.providerFailure?.causes ?? [],
       });
       return NextResponse.json(
         { error: "Falha temporária ao confirmar pagamento" },

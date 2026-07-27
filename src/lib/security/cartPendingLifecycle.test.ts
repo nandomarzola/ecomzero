@@ -333,6 +333,22 @@ test("ciclo seguro do carrinho aguardando pagamento", async (suite) => {
     });
   });
 
+  await suite.test("usuário autenticado enxerga o draft da conta em outro dispositivo", async () => {
+    await withHarness(
+      { sessionId: null, status: "draft" },
+      async (state) => {
+        const cart = await cartService.getCart("mobile-session", {
+          signedOrderId: null,
+          userId: "user-1",
+        });
+        assert.equal(cart.id, "order-1");
+        assert.equal(cart.status, "draft");
+        assert.equal(cart.items.length, 1);
+        assert.equal(state.orders[0].sessionId, null);
+      },
+    );
+  });
+
   await suite.test("cookie assinado reanexa somente o pedido pendente indicado", async () => {
     await withHarness({ sessionId: null }, async (state) => {
       const cart = await cartService.getCart("new-session", {

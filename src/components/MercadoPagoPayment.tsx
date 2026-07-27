@@ -54,6 +54,8 @@ type PaymentApiResponse = {
   orderStatus: "aguardando_pagamento" | "pago" | "cancelado";
   payment: PaymentDetails | null;
   error?: string;
+  code?: string;
+  requestId?: string;
 };
 
 type MercadoPagoPaymentProps = {
@@ -370,6 +372,16 @@ export default function MercadoPagoPayment({
           | null;
 
         if (!response.ok || !data) {
+          console.error("Mercado Pago payment request failed", {
+            orderReference: order.orderId.slice(0, 8),
+            paymentMethod: brickData.formData.payment_method_id,
+            httpStatus: response.status,
+            requestId:
+              data?.requestId ??
+              response.headers.get("x-payment-request-id"),
+            errorCode: data?.code ?? null,
+            errorMessage: data?.error ?? null,
+          });
           throw new Error(
             data?.error ?? "Não foi possível processar o pagamento.",
           );
