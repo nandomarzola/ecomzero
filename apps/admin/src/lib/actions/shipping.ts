@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
 import { requireVerifiedAdmin } from "@/lib/security/adminAuthorization";
 import {
   calculateOrderShipping,
@@ -188,6 +189,61 @@ export async function markExternalShipmentAction(orderId: string) {
 
 export async function syncShipmentStatusAction(orderId: string) {
   return runShipmentAction(orderId, syncShipmentInStorefront);
+}
+
+export async function syncActiveShipmentStatusesAction(): Promise<
+  ActionResult<{ checked: number; failed: number }>
+> {
+  if (!(await isAuthenticated())) {
+    return { ok: false, error: "Sessão expirada. Faça login novamente." };
+  }
+
+  try {
+    const shipments = await prisma.shipment.findMany({
+      where: {
+        melhorEnvioId: { not: null },
+        labelStatus: {
+          in: ["purchased", "generated", "printed", "posted", "in_transit"],
+        },
+      },
+      orderBy: { updatedAt: "asc" },
+      take: 20,
+      select: { orderId: true },
+    });
+
+    let checked = 0;
+    let failed = 0;
+    let firstError: string | null = null;
+    const concurrency = 4;
+
+    for (let index = 0; index < shipments.length; index += concurrency) {
+      const batch = shipments.slice(index, index + concurrency);
+      const results = await Promise.allSettled(
+        batch.map(({ orderId }) => syncShipmentInStorefront(orderId)),
+      );
+      for (const result of results) {
+        if (result.status === "fulfilled") {
+          checked += 1;
+        } else {
+          failed += 1;
+          if (!firstError) firstError = errorMessage(result.reason);
+        }
+      }
+    }
+
+    revalidatePath("/pedidos");
+    if (shipments.length > 0 && checked === 0) {
+      return {
+        ok: false,
+        error:
+          firstError ??
+          "Não foi possível consultar os rastreios no Melhor Envio.",
+      };
+    }
+    return { ok: true, data: { checked, failed } };
+  } catch (error) {
+    return { ok: false, error: errorMessage(error) };
+  }
 }
 
 export async function cancelShipmentAction(orderId: string) {

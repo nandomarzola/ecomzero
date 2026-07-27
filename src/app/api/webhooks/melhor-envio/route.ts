@@ -39,11 +39,13 @@ function signatureIsValid(rawBody: string, received: string | null, secret: stri
 export async function POST(request: NextRequest) {
   const secret = config.melhorEnvio.clientSecret;
   if (!secret) {
+    console.error("[melhor-envio:webhook] configuração ausente");
     return NextResponse.json({ error: "Webhook não configurado" }, { status: 503 });
   }
 
   const rawBody = await request.text();
   if (!signatureIsValid(rawBody, request.headers.get("x-me-signature"), secret)) {
+    console.warn("[melhor-envio:webhook] assinatura inválida");
     return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
   }
 
@@ -51,10 +53,14 @@ export async function POST(request: NextRequest) {
   try {
     body = JSON.parse(rawBody) as WebhookBody;
   } catch {
+    console.warn("[melhor-envio:webhook] corpo inválido");
     return NextResponse.json({ error: "Notificação inválida" }, { status: 400 });
   }
   const data = body?.data;
   if (!data || typeof data.id !== "string") {
+    console.info("[melhor-envio:webhook] evento ignorado sem id", {
+      event: typeof body.event === "string" ? body.event : null,
+    });
     return NextResponse.json({ received: true, ignored: true });
   }
 
@@ -88,5 +94,12 @@ export async function POST(request: NextRequest) {
     canceledAt: safeDate(data.canceled_at),
   });
 
+  console.info("[melhor-envio:webhook] evento processado", {
+    event: typeof body.event === "string" ? body.event : null,
+    providerOrderId: data.id,
+    status,
+    matched: result.matched,
+    changed: result.changed,
+  });
   return NextResponse.json({ received: true, ...result });
 }

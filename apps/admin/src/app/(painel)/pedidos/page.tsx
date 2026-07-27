@@ -6,6 +6,7 @@ import OrdersToolbar from "@/components/pedidos/OrdersToolbar";
 import OrdersTableSection from "@/components/pedidos/OrdersTableSection";
 import OrdersTableSkeleton from "@/components/pedidos/OrdersTableSkeleton";
 import SummaryCards, { SummaryCardsSkeleton } from "@/components/pedidos/SummaryCards";
+import OrdersTrackingSync from "@/components/pedidos/OrdersTrackingSync";
 
 // Estado da tela (aba, período, busca, página) vive nos query params da URL —
 // compartilhável e navegável com o voltar do browser. Server Component lê os
@@ -37,6 +38,8 @@ export default async function PedidosPage({
 
   return (
     <div className="space-y-4">
+      <OrdersTrackingSync />
+
       <Suspense key={period} fallback={<SummaryCardsSkeleton />}>
         <SummaryCards period={period} activeMetric={filter.metric} />
       </Suspense>

@@ -13,6 +13,7 @@ import {
   isValidNfeKey,
   shouldAutomaticallyPurchase,
 } from "@/lib/shipping/shippingDomain";
+import { findMelhorEnvioTrackingPayload } from "@/lib/shipping/melhorEnvioTracking";
 
 const MELHOR_ENVIO_SERVICES = "1,2,3,4,17,27,31,32,33";
 const QUOTE_TTL_MS = 15 * 60 * 1000;
@@ -82,19 +83,6 @@ function optionalString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function shipmentResponseObject(value: unknown): JsonObject | null {
-  const object = asObject(value);
-  if (!object) return null;
-  if ("status" in object || "tracking" in object || "protocol" in object) {
-    return object;
-  }
-  for (const nested of Object.values(object)) {
-    const found = shipmentResponseObject(nested);
-    if (found) return found;
-  }
-  return null;
-}
-
 function safeError(error: unknown): string {
   if (error instanceof MelhorEnvioServiceError) return error.message.slice(0, 500);
   if (error instanceof ShippingFulfillmentError) return error.message.slice(0, 500);
@@ -103,6 +91,12 @@ function safeError(error: unknown): string {
 
 function normalizeDigits(value: string | null | undefined): string {
   return value?.replace(/\D/g, "") ?? "";
+}
+
+function optionalDate(value: unknown): Date | null {
+  if (typeof value !== "string") return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 export function validateNfeKey(value: string): string {
@@ -1361,6 +1355,64 @@ export async function prepareShipmentAfterPayment(orderId: string) {
   return preparation;
 }
 
+async function fetchShipmentTrackingPayload(shipment: {
+  melhorEnvioId: string;
+  codigoRastreio: string | null;
+}) {
+  const requests: Array<() => Promise<unknown>> = [
+    () =>
+      melhorEnvioRequest("/api/v2/me/shipment/tracking", {
+        method: "POST",
+        body: { orders: [shipment.melhorEnvioId] },
+      }),
+    () =>
+      melhorEnvioRequest(
+        `/api/v2/me/orders/${encodeURIComponent(shipment.melhorEnvioId)}`,
+      ),
+    () =>
+      melhorEnvioRequest(
+        `/api/v2/me/orders/search?q=${encodeURIComponent(shipment.melhorEnvioId)}`,
+      ),
+  ];
+  if (shipment.codigoRastreio) {
+    requests.push(() =>
+      melhorEnvioRequest(
+        `/api/v2/me/orders/search?q=${encodeURIComponent(shipment.codigoRastreio!)}`,
+      ),
+    );
+  }
+
+  const errors: unknown[] = [];
+  for (const request of requests) {
+    try {
+      const response = await request();
+      const data = findMelhorEnvioTrackingPayload(
+        response,
+        shipment.melhorEnvioId,
+      );
+      if (data && optionalString(data.status)) return data;
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  const authorizationError = errors.find(
+    (error) =>
+      error instanceof MelhorEnvioServiceError &&
+      (error.status === 401 || error.status === 403),
+  );
+  if (authorizationError) {
+    throw new ShippingFulfillmentError(
+      "A integração do Melhor Envio precisa ser reautorizada para consultar rastreios.",
+      "TRACKING_UNAUTHORIZED",
+    );
+  }
+  throw new ShippingFulfillmentError(
+    "A etiqueta não foi encontrada nas consultas de rastreio, detalhes ou pesquisa do Melhor Envio.",
+    "TRACKING_NOT_FOUND",
+  );
+}
+
 export async function syncShipmentTracking(orderId: string) {
   const shipment = await prisma.shipment.findUnique({ where: { orderId } });
   if (!shipment?.melhorEnvioId) {
@@ -1369,18 +1421,29 @@ export async function syncShipmentTracking(orderId: string) {
       "LABEL_NOT_FOUND",
     );
   }
-  const response = await melhorEnvioRequest(
-    "/api/v2/me/shipment/tracking",
-    { method: "POST", body: { orders: [shipment.melhorEnvioId] } },
-  );
-  const data = shipmentResponseObject(response);
-  await applyProviderShipmentUpdate({
+  const data = await fetchShipmentTrackingPayload({
+    melhorEnvioId: shipment.melhorEnvioId,
+    codigoRastreio: shipment.codigoRastreio,
+  });
+  const status = optionalString(data?.status);
+  if (!status) {
+    throw new ShippingFulfillmentError(
+      "O Melhor Envio não retornou um status de rastreio reconhecível.",
+      "INVALID_PROVIDER_RESPONSE",
+    );
+  }
+  return applyProviderShipmentUpdate({
     melhorEnvioId: shipment.melhorEnvioId,
     orderId,
     protocol: optionalString(data?.protocol),
-    status: optionalString(data?.status),
+    status,
     tracking: optionalString(data?.tracking),
     trackingUrl: optionalString(data?.tracking_url),
+    paidAt: optionalDate(data.paid_at),
+    generatedAt: optionalDate(data.generated_at),
+    postedAt: optionalDate(data.posted_at),
+    deliveredAt: optionalDate(data.delivered_at),
+    canceledAt: optionalDate(data.canceled_at),
   });
 }
 
