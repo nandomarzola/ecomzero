@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BadgePercent, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { deleteCouponAction } from "@/lib/actions/coupon";
 import type { CouponListItem } from "@/lib/services/couponAdminService";
 
@@ -23,11 +24,18 @@ function discountLabel(coupon: CouponListItem): string {
 
 export default function CouponManager({ coupons }: { coupons: CouponListItem[] }) {
   const router = useRouter();
+  const confirmDialog = useConfirmDialog();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function remove(coupon: CouponListItem) {
-    if (!window.confirm(`Excluir o cupom ${coupon.codigo}?`)) return;
+  async function remove(coupon: CouponListItem) {
+    const confirmed = await confirmDialog({
+      title: "Excluir cupom?",
+      description: `O cupom ${coupon.codigo} deixará de ficar disponível para novas compras.`,
+      confirmLabel: "Excluir cupom",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     setError(null);
     startTransition(async () => {
       const result = await deleteCouponAction(coupon.id);

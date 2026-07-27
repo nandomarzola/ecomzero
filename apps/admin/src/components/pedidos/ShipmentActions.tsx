@@ -14,6 +14,7 @@ import {
   Trash2,
   Truck,
 } from "lucide-react";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import {
   attachInvoiceAction,
   calculateOrderShippingAction,
@@ -108,6 +109,7 @@ export default function ShipmentActions({
   shipment: Shipment;
 }) {
   const router = useRouter();
+  const confirmDialog = useConfirmDialog();
   const [invoiceKey, setInvoiceKey] = useState(shipment?.chaveNotaFiscal ?? "");
   const [selectedFiscalType, setSelectedFiscalType] = useState<
     "nota_fiscal" | "declaracao_conteudo"
@@ -273,8 +275,15 @@ export default function ShipmentActions({
     });
   }
 
-  function markExternal() {
-    if (!window.confirm("Marcar este pedido como envio externo? Ele deixará a fila do Melhor Envio.")) return;
+  async function markExternal() {
+    const confirmed = await confirmDialog({
+      title: "Marcar como envio externo?",
+      description:
+        "O pedido deixará a fila do Melhor Envio e a logística passará a ser controlada externamente.",
+      confirmLabel: "Marcar como externo",
+      tone: "warning",
+    });
+    if (!confirmed) return;
     run(
       "external",
       () => markExternalShipmentAction(orderId),
@@ -282,8 +291,15 @@ export default function ShipmentActions({
     );
   }
 
-  function cancelLabel() {
-    if (!window.confirm("Cancelar esta etiqueta no Melhor Envio? O cancelamento pode depender da aprovação da transportadora.")) return;
+  async function cancelLabel() {
+    const confirmed = await confirmDialog({
+      title: "Cancelar etiqueta?",
+      description:
+        "A solicitação será enviada ao Melhor Envio e poderá depender da aprovação da transportadora.",
+      confirmLabel: "Cancelar etiqueta",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     run(
       "cancel",
       () => cancelShipmentAction(orderId),

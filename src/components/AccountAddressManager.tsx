@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { Home, LoaderCircle, MapPin, Pencil, Plus, Search, Star, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 
 export type AccountAddress = {
   id: string;
@@ -53,6 +54,7 @@ const sortAddresses = (addresses: AccountAddress[]) =>
   [...addresses].sort((first, second) => Number(second.padrao) - Number(first.padrao));
 
 export default function AccountAddressManager({ initialAddresses }: { initialAddresses: AccountAddress[] }) {
+  const confirmDialog = useConfirmDialog();
   const [addresses, setAddresses] = useState(sortAddresses(initialAddresses));
   const [form, setForm] = useState<AddressForm>(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -178,7 +180,14 @@ export default function AccountAddressManager({ initialAddresses }: { initialAdd
   };
 
   const removeAddress = async (addressId: string) => {
-    if (!window.confirm("Deseja excluir este endereço?")) return;
+    const confirmed = await confirmDialog({
+      title: "Excluir endereço?",
+      description:
+        "O endereço será removido permanentemente da sua conta.",
+      confirmLabel: "Excluir endereço",
+      tone: "danger",
+    });
+    if (!confirmed) return;
 
     setBusyAddressId(addressId);
     try {

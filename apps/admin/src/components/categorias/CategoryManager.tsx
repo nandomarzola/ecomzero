@@ -41,6 +41,7 @@ import {
   X,
 } from "lucide-react";
 import ImageUploader from "@/components/produtos/ImageUploader";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import {
   deleteCategoryAction,
   duplicateCategoryAction,
@@ -376,6 +377,7 @@ function CategoryDrawer({
 
 export default function CategoryManager({ categories }: { categories: CategoryListItem[] }) {
   const router = useRouter();
+  const confirmDialog = useConfirmDialog();
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -471,13 +473,19 @@ export default function CategoryManager({ categories }: { categories: CategoryLi
     });
   }
 
-  function remove(category: CategoryListItem) {
+  async function remove(category: CategoryListItem) {
     const blockedReason = deletionBlockReason(category);
     if (blockedReason) {
       setError(blockedReason);
       return;
     }
-    if (!window.confirm(`Excluir definitivamente a categoria “${category.nome}”?`)) return;
+    const confirmed = await confirmDialog({
+      title: "Excluir categoria?",
+      description: `A categoria “${category.nome}” será excluída permanentemente.`,
+      confirmLabel: "Excluir categoria",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     setError(null);
     startTransition(async () => {
       const result = await deleteCategoryAction(category.id);

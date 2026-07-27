@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { ImageIcon, Loader2, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import BannerImageUploader from "@/components/banners/BannerImageUploader";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import { deleteBannerAction, saveBannerAction } from "@/lib/actions/banner";
 import { bannerSpecs, type BannerPositionValue } from "@/lib/bannerSpecs";
 import type { BannerListItem } from "@/lib/services/bannerAdminService";
@@ -41,6 +42,7 @@ const inputClass = "rounded-lg border border-white/10 bg-[#090909] px-3 py-2.5 t
 
 export default function BannerManager({ banners }: { banners: BannerListItem[] }) {
   const router = useRouter();
+  const confirmDialog = useConfirmDialog();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -57,8 +59,14 @@ export default function BannerManager({ banners }: { banners: BannerListItem[] }
     });
   }
 
-  function remove(banner: BannerListItem) {
-    if (!window.confirm(`Excluir o banner “${banner.nome}”?`)) return;
+  async function remove(banner: BannerListItem) {
+    const confirmed = await confirmDialog({
+      title: "Excluir banner?",
+      description: `O banner “${banner.nome}” será removido permanentemente.`,
+      confirmLabel: "Excluir banner",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     startTransition(async () => {
       const result = await deleteBannerAction(banner.id);
       if (!result.ok) return setError(result.error);

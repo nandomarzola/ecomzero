@@ -13,6 +13,7 @@ import Header from "@/components/Header";
 import MaintenancePage from "@/components/MaintenancePage";
 import TrackingScripts from "@/components/TrackingScripts";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import { getActiveAnnouncementBarItems, getStoreSettings } from "@/lib/services/storeContentService";
 import { ProductFiltersProvider } from "@/components/ProductFiltersProvider";
 import { serializeJsonLd } from "@/lib/jsonLd";
@@ -121,10 +122,11 @@ export default async function RootLayout({
 
         <TrackingScripts settings={settings} />
 
-        {settings.modoManutencao ? (
-          <MaintenancePage logoUrl={settings.logoUrl} storeName={settings.nomeLoja} message={settings.mensagemManutencao} />
-        ) : (
-          <>
+        <ConfirmDialogProvider>
+          {settings.modoManutencao ? (
+            <MaintenancePage logoUrl={settings.logoUrl} storeName={settings.nomeLoja} message={settings.mensagemManutencao} />
+          ) : (
+            <>
 
         <AuthSessionProvider>
           <CartProvider>
@@ -152,9 +154,10 @@ export default async function RootLayout({
           </CartProvider>
         </AuthSessionProvider>
 
-        <Toaster position="top-center" theme="dark" richColors closeButton />
-          </>
-        )}
+              <Toaster position="top-center" theme="dark" richColors closeButton />
+            </>
+          )}
+        </ConfirmDialogProvider>
       </body>
     </html>
   );

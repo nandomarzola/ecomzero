@@ -15,6 +15,7 @@ import CartPromotionProgress from "@/components/cart/CartPromotionProgress";
 import CartDrawerItem from "@/components/cart/CartDrawerItem";
 import CartDrawerShipping from "@/components/cart/CartDrawerShipping";
 import CartDrawerSummary from "@/components/cart/CartDrawerSummary";
+import { useConfirmDialog } from "@/components/ui/ConfirmDialogProvider";
 import {
   getCheckoutShippingSnapshot,
   isCheckoutShippingExpired,
@@ -38,6 +39,7 @@ const focusableSelector = [
 export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { promotionItems: StoreAnnouncementItem[]; minimumOrderValue?: number }) {
   const router = useRouter();
   const pathname = usePathname();
+  const confirmDialog = useConfirmDialog();
   const {
     cart,
     isOpen,
@@ -190,10 +192,19 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
   };
 
   const clearAllItems = async () => {
-    const confirmation = isAwaitingPayment
-      ? "Cancelar o pagamento em andamento e remover todos os produtos?"
-      : "Remover todos os produtos do carrinho?";
-    if (!window.confirm(confirmation)) return;
+    const confirmed = await confirmDialog({
+      title: isAwaitingPayment
+        ? "Cancelar pagamento?"
+        : "Limpar o carrinho?",
+      description: isAwaitingPayment
+        ? "O pagamento em andamento será cancelado e todos os produtos serão removidos do carrinho."
+        : "Todos os produtos serão removidos do carrinho. Esta ação não pode ser desfeita.",
+      confirmLabel: isAwaitingPayment
+        ? "Cancelar pagamento"
+        : "Limpar carrinho",
+      tone: "danger",
+    });
+    if (!confirmed) return;
     setClearError("");
     const result = await clearCartItems();
     if (!result.success) {

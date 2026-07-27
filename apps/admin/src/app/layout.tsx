@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Inter, Montserrat, Poppins, Roboto } from "next/font/google";
+import { ConfirmDialogProvider } from "@/components/ui/ConfirmDialogProvider";
 import "./globals.css";
 
 const geist = Geist({
@@ -38,7 +39,7 @@ export default function RootLayout({
       <body
         className={`${geist.variable} ${montserrat.variable} ${inter.variable} ${poppins.variable} ${roboto.variable} font-sans antialiased`}
       >
-        {children}
+        <ConfirmDialogProvider>{children}</ConfirmDialogProvider>
       </body>
     </html>
   );
