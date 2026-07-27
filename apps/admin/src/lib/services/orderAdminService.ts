@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   ORDERS_PAGE_SIZE,
+  orderPeriodScope,
   type OrderFilterId,
   type OrderPeriodId,
 } from "@/lib/orders/filters";
@@ -125,9 +126,31 @@ function periodStart(period: OrderPeriodId): Date | undefined {
   }
 }
 
-function dateWhere(period: OrderPeriodId): Prisma.OrderWhereInput {
+function dateWhere(
+  period: OrderPeriodId,
+  filter: OrderFilterId,
+): Prisma.OrderWhereInput {
   const gte = periodStart(period);
-  return gte ? { createdAt: { gte } } : {};
+  if (!gte) return {};
+
+  const scope = orderPeriodScope(filter);
+  if (scope === "active-queue") return {};
+  if (scope === "delivery-activity") {
+    return {
+      OR: [
+        { shipment: { is: { entregueEm: { gte } } } },
+        {
+          shipment: {
+            is: {
+              entregueEm: null,
+              updatedAt: { gte },
+            },
+          },
+        },
+      ],
+    };
+  }
+  return { createdAt: { gte } };
 }
 
 function searchWhere(search: string | undefined): Prisma.OrderWhereInput {
@@ -145,7 +168,7 @@ function searchWhere(search: string | undefined): Prisma.OrderWhereInput {
 }
 
 export async function getOrdersSummary(period: OrderPeriodId): Promise<OrdersSummary> {
-  const dateFilter = dateWhere(period);
+  const dateFilter = dateWhere(period, "todos");
   const [aguardando, geradas, manuais, problemas] = await Promise.all([
     prisma.order.count({
       where: { ...dateFilter, ...statusWhere("aguardando-etiqueta") },
@@ -183,7 +206,7 @@ export async function listOrdersPaged(params: {
   const where: Prisma.OrderWhereInput = {
     AND: [
       statusWhere(params.filter),
-      dateWhere(params.period),
+      dateWhere(params.period, params.filter),
       searchWhere(params.search),
     ],
   };

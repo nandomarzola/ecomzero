@@ -76,4 +76,25 @@ export function resolveOrderPeriod(value: string | undefined): OrderPeriodId {
     : DEFAULT_ORDER_PERIOD;
 }
 
+export type OrderPeriodScope =
+  | "order-created"
+  | "active-queue"
+  | "delivery-activity";
+
+export function orderPeriodScope(filter: OrderFilterId): OrderPeriodScope {
+  if (
+    [
+      "aguardando-etiqueta",
+      "etiqueta-gerada",
+      "com-problema",
+      "postados",
+      "em-transito",
+    ].includes(filter)
+  ) {
+    return "active-queue";
+  }
+  if (filter === "entregues") return "delivery-activity";
+  return "order-created";
+}
+
 export const ORDERS_PAGE_SIZE = 10;

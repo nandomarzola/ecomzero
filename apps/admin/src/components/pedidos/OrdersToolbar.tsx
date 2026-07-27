@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ChevronDown, Search } from "lucide-react";
-import { ORDER_PERIODS, resolveOrderPeriod } from "@/lib/orders/filters";
+import {
+  ORDER_PERIODS,
+  orderPeriodScope,
+  resolveOrderPeriod,
+} from "@/lib/orders/filters";
 import { ordersHref, type OrdersQuery } from "@/lib/orders/href";
 
 // Toolbar da tabela: busca (debounce 300ms) + botão Filtros + dropdown de período.
@@ -28,6 +32,7 @@ export default function OrdersToolbar({ current }: { current: OrdersQuery }) {
 
   const activePeriodLabel =
     ORDER_PERIODS.find((p) => p.id === resolveOrderPeriod(current.period))?.label ?? "Período";
+  const periodScope = orderPeriodScope(current.filter);
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -42,46 +47,55 @@ export default function OrdersToolbar({ current }: { current: OrdersQuery }) {
         />
       </div>
 
-      <div className="relative shrink-0">
-        <button
-          type="button"
-          onClick={() => setPeriodOpen((open) => !open)}
-          className="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-white/[0.09] bg-[#1A1A1A] px-3 text-[13px] font-medium text-white/80 transition hover:border-[#A9EC17]/30 sm:w-auto"
+      {periodScope === "active-queue" ? (
+        <span
+          title="Filas operacionais mostram todos os pedidos que ainda exigem acompanhamento."
+          className="inline-flex h-9 shrink-0 items-center rounded-lg border border-[#A9EC17]/15 bg-[#A9EC17]/[0.04] px-3 text-[13px] font-medium text-[#D9FF87]/75"
         >
-          {activePeriodLabel}
-          <ChevronDown className="h-4 w-4 text-white/55" />
-        </button>
+          Todos os ativos
+        </span>
+      ) : (
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setPeriodOpen((open) => !open)}
+            className="inline-flex h-9 w-full items-center justify-between gap-2 rounded-lg border border-white/[0.09] bg-[#1A1A1A] px-3 text-[13px] font-medium text-white/80 transition hover:border-[#A9EC17]/30 sm:w-auto"
+          >
+            {activePeriodLabel}
+            <ChevronDown className="h-4 w-4 text-white/55" />
+          </button>
 
-        {periodOpen && (
-          <>
-            <button
-              type="button"
-              aria-label="Fechar"
-              className="fixed inset-0 z-10 cursor-default"
-              onClick={() => setPeriodOpen(false)}
-            />
-            <div className="absolute right-0 z-20 mt-1.5 w-48 overflow-hidden rounded-lg border border-white/[0.1] bg-[#111111] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.5)]">
-              {ORDER_PERIODS.map((period) => {
-                const active = period.id === resolveOrderPeriod(current.period);
-                return (
-                  <Link
-                    key={period.id}
-                    href={ordersHref(current, { period: period.id, page: 1 })}
-                    onClick={() => setPeriodOpen(false)}
-                    scroll={false}
-                    className={`flex items-center justify-between px-3 py-2 text-[13px] transition hover:bg-white/[0.04] ${
-                      active ? "text-[#A9EC17]" : "text-white/75"
-                    }`}
-                  >
-                    {period.label}
-                    {active && <Check className="h-4 w-4" />}
-                  </Link>
-                );
-              })}
-            </div>
-          </>
-        )}
-      </div>
+          {periodOpen && (
+            <>
+              <button
+                type="button"
+                aria-label="Fechar"
+                className="fixed inset-0 z-10 cursor-default"
+                onClick={() => setPeriodOpen(false)}
+              />
+              <div className="absolute right-0 z-20 mt-1.5 w-48 overflow-hidden rounded-lg border border-white/[0.1] bg-[#111111] py-1 shadow-[0_12px_32px_rgba(0,0,0,0.5)]">
+                {ORDER_PERIODS.map((period) => {
+                  const active = period.id === resolveOrderPeriod(current.period);
+                  return (
+                    <Link
+                      key={period.id}
+                      href={ordersHref(current, { period: period.id, page: 1 })}
+                      onClick={() => setPeriodOpen(false)}
+                      scroll={false}
+                      className={`flex items-center justify-between px-3 py-2 text-[13px] transition hover:bg-white/[0.04] ${
+                        active ? "text-[#A9EC17]" : "text-white/75"
+                      }`}
+                    >
+                      {period.label}
+                      {active && <Check className="h-4 w-4" />}
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
