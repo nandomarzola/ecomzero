@@ -362,8 +362,6 @@ export async function createMercadoPagoPayment(
                 },
               },
               shipments: {
-                mode: "not_specified",
-                cost: order.valorFrete,
                 receiver_address: {
                   zip_code: order.cepDestino.replace(/\D/g, ""),
                   street_name: order.logradouro,
@@ -371,7 +369,6 @@ export async function createMercadoPagoPayment(
                   apartment: order.complemento ?? undefined,
                   city_name: order.cidade,
                   state_name: order.uf,
-                  country_name: "Brasil",
                 },
               },
             },
