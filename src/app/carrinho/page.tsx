@@ -58,11 +58,16 @@ const trustBadges = [
   },
 ];
 
-export default async function CartPage() {
-  const [sessionId, session, signedOrderId] = await Promise.all([
+export default async function CartPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [sessionId, session, signedOrderId, query] = await Promise.all([
     getCartSessionId(),
     auth(),
     getCheckoutOrderAccessId(),
+    searchParams,
   ]);
   const userId = session?.user?.id ?? null;
   if (sessionId && userId) {
@@ -78,12 +83,26 @@ export default async function CartPage() {
     cart.items.map((item) => item.productSlug),
   );
   const productCount = cart.items.length;
+  const paymentNotice =
+    query.pagamento === "cancelado"
+      ? "Pagamento cancelado e carrinho limpo com segurança."
+      : query.pagamento === "encerrado"
+        ? "Esse pagamento não está mais disponível. Confira seu carrinho atual."
+        : null;
 
   return (
     <div className="min-h-screen bg-[#050505]">
       <CategoryStrip categories={categories} />
 
       <div className="mx-auto max-w-[1320px] px-4 pb-36 pt-5 sm:px-6 sm:pt-6 md:pb-16 lg:px-8">
+        {paymentNotice ? (
+          <p
+            role="status"
+            className="mb-5 rounded-lg border border-[var(--brand-color)]/25 bg-[var(--brand-color)]/[0.07] px-4 py-3 text-sm text-white/75"
+          >
+            {paymentNotice}
+          </p>
+        ) : null}
         <nav
           aria-label="Navegação estrutural"
           className="flex items-center gap-2 text-[11px] text-white/42 sm:text-xs"

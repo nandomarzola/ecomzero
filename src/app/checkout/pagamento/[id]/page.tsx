@@ -8,6 +8,10 @@ import {
   getOrderPaymentPageData,
   OrderPaymentServiceError,
 } from "@/lib/services/orderPaymentService";
+import {
+  paymentPageErrorRedirect,
+  paymentPageStatusRedirect,
+} from "@/lib/paymentPageNavigation";
 import { paymentOrderIdSchema } from "@/lib/validation/payment";
 
 export const metadata: Metadata = {
@@ -36,18 +40,16 @@ export default async function PaymentPage({ params }: PaymentPageProps) {
     });
   } catch (error) {
     if (error instanceof OrderPaymentServiceError) {
-      if (error.code === "ORDER_NOT_FOUND") notFound();
-      redirect("/carrinho");
+      redirect(paymentPageErrorRedirect(error.code));
     }
     throw error;
   }
 
-  if (order.status === "pago") {
-    redirect(`/pedido/${order.orderId}/sucesso`);
-  }
-  if (order.status === "cancelado") {
-    redirect(`/pedido/${order.orderId}/falha`);
-  }
+  const statusRedirect = paymentPageStatusRedirect(
+    order.orderId,
+    order.status,
+  );
+  if (statusRedirect) redirect(statusRedirect);
   if (!config.mercadoPago.publicKey || !config.mercadoPago.accessToken) {
     return (
       <div className="min-h-[65vh] bg-[#050505] px-4 py-20">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LoaderCircle,
   PackageOpen,
@@ -37,6 +37,7 @@ const focusableSelector = [
 
 export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { promotionItems: StoreAnnouncementItem[]; minimumOrderValue?: number }) {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     cart,
     isOpen,
@@ -189,7 +190,10 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
   };
 
   const clearAllItems = async () => {
-    if (!window.confirm("Remover todos os produtos do carrinho?")) return;
+    const confirmation = isAwaitingPayment
+      ? "Cancelar o pagamento em andamento e remover todos os produtos?"
+      : "Remover todos os produtos do carrinho?";
+    if (!window.confirm(confirmation)) return;
     setClearError("");
     const result = await clearCartItems();
     if (!result.success) {
@@ -198,6 +202,10 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
     }
     clearCheckoutShippingSelection();
     setCheckoutError("");
+    if (pathname.startsWith("/checkout/pagamento/")) {
+      closeCart();
+      router.replace("/carrinho?pagamento=cancelado");
+    }
   };
 
   return (
@@ -239,7 +247,7 @@ export default function CartDrawer({ promotionItems, minimumOrderValue = 0 }: { 
               className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md px-2 text-[9px] font-semibold text-red-300/75 transition hover:bg-red-500/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60 disabled:cursor-not-allowed disabled:opacity-40 max-md:h-11 max-md:text-xs"
             >
               {isMutating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-              Limpar carrinho
+              {isAwaitingPayment ? "Cancelar pagamento" : "Limpar carrinho"}
             </button>
           ) : null}
           <button
