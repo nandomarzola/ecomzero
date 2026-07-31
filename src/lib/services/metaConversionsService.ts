@@ -54,17 +54,20 @@ export async function sendMetaPurchaseConversion(orderId: string): Promise<boole
     ]);
 
     const pixelId = settings?.metaPixelId?.trim() ?? "";
-    if (!settings?.metaPixelAtivo || !/^\d{5,30}$/.test(pixelId)) {
-      console.warn("[meta-capi] Purchase não enviado", {
+    const pixelIdPassouNaRegex = /^\d{5,30}$/.test(pixelId);
+    if (!settings?.metaPixelAtivo || !pixelIdPassouNaRegex) {
+      console.warn("[meta-capi][validacao] Meta Pixel inativo ou ID inválido", {
         orderId,
-        reason: "Meta Pixel inativo ou ID inválido",
+        metaPixelAtivo: settings?.metaPixelAtivo ?? null,
+        pixelIdPassouNaRegex,
       });
       return false;
     }
     if (!order || order.status !== "pago" || order.items.length === 0) {
-      console.warn("[meta-capi] Purchase não enviado", {
+      console.warn("[meta-capi][validacao] Pedido pago não encontrado ou sem itens", {
         orderId,
-        reason: "Pedido pago não encontrado ou sem itens",
+        orderStatus: order?.status ?? null,
+        itemsLength: order?.items.length ?? null,
       });
       return false;
     }
@@ -83,28 +86,41 @@ export async function sendMetaPurchaseConversion(orderId: string): Promise<boole
     });
 
     if (!event.user_data.em && !event.user_data.ph) {
-      console.warn("[meta-capi] Purchase não enviado", {
+      console.warn("[meta-capi][validacao] Dados de correspondência ausentes", {
         orderId,
         eventId: event.event_id,
-        reason: "Pedido sem e-mail ou telefone para correspondência",
+        emailPresente: Boolean(event.user_data.em),
+        telefonePresente: Boolean(event.user_data.ph),
       });
       return false;
     }
 
+    const requestPayload = {
+      data: [event],
+      access_token: accessToken,
+    };
     const response = await fetch(
       `https://graph.facebook.com/${META_GRAPH_API_VERSION}/${encodeURIComponent(pixelId)}/events`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          data: [event],
-          access_token: accessToken,
-        }),
+        body: JSON.stringify(requestPayload),
         cache: "no-store",
         signal: AbortSignal.timeout(8_000),
       },
     );
     const result = (await response.json().catch(() => ({}))) as MetaConversionsApiResponse;
+
+    console.info("[meta-capi][debug-temporario] Resposta do Purchase", {
+      orderId,
+      eventId: event.event_id,
+      payload: {
+        ...requestPayload,
+        access_token: "[REDACTED]",
+      },
+      statusCode: response.status,
+      responseBody: result,
+    });
 
     if (!response.ok || result.events_received !== 1) {
       console.error("[meta-capi] Falha no envio de Purchase", {
