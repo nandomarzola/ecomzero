@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
+import { shouldNotifyOrderCancellation } from "@/lib/shipping/customerNotificationDomain";
+import { createCustomerOrderCanceledNotification } from "@/lib/services/customerNotificationService";
 import {
   cancelMercadoPagoPayment,
   getMercadoPagoPayment,
@@ -9,10 +11,10 @@ import {
   type MercadoPagoRefundSnapshot,
 } from "@/lib/services/mercadoPagoService";
 import { cancelShipment } from "@/lib/services/shippingFulfillmentService";
+import { sendOrderCancellationEmail } from "@/lib/services/transactionalEmailService";
 import type { OrderCancellationInput } from "@/lib/validation/orderCancellation";
 
 const CANCELLATION_LEASE_MS = 2 * 60 * 1000;
-const REFUND_SUCCESS_STATUSES = new Set(["approved", "processed", "refunded"]);
 const PENDING_PAYMENT_STATUSES = new Set([
   "pending",
   "in_process",
@@ -362,6 +364,12 @@ async function finalizeCancellation(
         },
       },
     });
+    if (shouldNotifyOrderCancellation(refund?.status ?? null)) {
+      await createCustomerOrderCanceledNotification(tx, {
+        orderId: claim.order.id,
+        createdAt: completedAt,
+      });
+    }
   });
 
   return {
@@ -407,6 +415,7 @@ export async function cancelOrder(
 
     let refund: MercadoPagoRefundSnapshot | null = null;
     let paymentStatus: string | null = null;
+    let paymentSnapshot: MercadoPagoPaymentSnapshot | null = null;
     const paymentId = claimed.order.mercadoPagoPaymentId;
 
     if (claimed.order.status === "pago" && !paymentId) {
@@ -419,12 +428,13 @@ export async function cancelOrder(
 
     if (paymentId) {
       const payment = await getMercadoPagoPayment(paymentId);
+      paymentSnapshot = payment;
       assertPaymentBelongsToOrder(claimed.order, payment);
       paymentStatus = payment.status;
 
       if (payment.status === "approved") {
         refund = await refundMercadoPagoPayment(paymentId, claimed.order.id);
-        if (!REFUND_SUCCESS_STATUSES.has(refund.status)) {
+        if (!shouldNotifyOrderCancellation(refund.status)) {
           throw new OrderCancellationError(
             `O estorno está com status ${refund.status}. Aguarde a conclusão antes de cancelar o pedido.`,
             "PAYMENT_REFUND_FAILED",
@@ -470,12 +480,19 @@ export async function cancelOrder(
       }
     }
 
-    return await finalizeCancellation(
+    const result = await finalizeCancellation(
       claimed,
       input,
       paymentStatus,
       refund,
     );
+    if (shouldNotifyOrderCancellation(refund?.status ?? null)) {
+      await sendOrderCancellationEmail(claimed.order.id, {
+        paymentMethodId: paymentSnapshot?.paymentMethodId ?? null,
+        paymentTypeId: paymentSnapshot?.paymentTypeId ?? null,
+      });
+    }
+    return result;
   } catch (error) {
     await recordCancellationFailure(claimed, input, error).catch(() => undefined);
     if (error instanceof OrderCancellationError) throw error;
@@ -501,7 +518,7 @@ export async function refundLatePaymentForCanceledOrder(
   const snapshot = { id: order.id, total: Number(order.total) };
   assertPaymentBelongsToOrder(snapshot, payment);
   const refund = await refundMercadoPagoPayment(payment.id, order.id);
-  if (!REFUND_SUCCESS_STATUSES.has(refund.status)) {
+  if (!shouldNotifyOrderCancellation(refund.status)) {
     throw new OrderCancellationError(
       `O estorno do pagamento tardio está com status ${refund.status}.`,
       "PAYMENT_REFUND_FAILED",
@@ -509,7 +526,7 @@ export async function refundLatePaymentForCanceledOrder(
     );
   }
 
-  await prisma.$transaction(async (tx) => {
+  const changed = await prisma.$transaction(async (tx) => {
     const updated = await tx.order.updateMany({
       where: {
         id: order.id,
@@ -522,7 +539,7 @@ export async function refundLatePaymentForCanceledOrder(
         pagoEm: payment.approvedAt ?? new Date(),
       },
     });
-    if (updated.count !== 1) return;
+    if (updated.count !== 1) return false;
     await tx.orderCancellation.updateMany({
       where: { orderId: order.id },
       data: {
@@ -543,6 +560,16 @@ export async function refundLatePaymentForCanceledOrder(
         },
       },
     });
+    await createCustomerOrderCanceledNotification(tx, {
+      orderId: order.id,
+    });
+    return true;
+  });
+  if (!changed) return false;
+
+  await sendOrderCancellationEmail(order.id, {
+    paymentMethodId: payment.paymentMethodId,
+    paymentTypeId: payment.paymentTypeId,
   });
   return true;
 }

@@ -14,6 +14,33 @@ type ShipmentNotificationInput = {
   createdAt?: Date;
 };
 
+export async function createCustomerOrderCanceledNotification(
+  transaction: Prisma.TransactionClient,
+  input: { orderId: string; createdAt?: Date },
+) {
+  const order = await transaction.order.findUnique({
+    where: { id: input.orderId },
+    select: { userId: true },
+  });
+  if (!order?.userId) return;
+
+  const type = CUSTOMER_NOTIFICATION_TYPES.orderCanceled;
+  const content = customerNotificationContent(type, input.orderId);
+  await transaction.notification.createMany({
+    data: [
+      {
+        userId: order.userId,
+        orderId: input.orderId,
+        type,
+        title: content.title,
+        message: content.message,
+        createdAt: input.createdAt,
+      },
+    ],
+    skipDuplicates: true,
+  });
+}
+
 export async function createCustomerNotificationFromShipmentEvent(
   transaction: Prisma.TransactionClient,
   input: ShipmentNotificationInput,

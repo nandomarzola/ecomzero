@@ -4,6 +4,8 @@ import { config } from "@/lib/config";
 import { prisma } from "@/lib/db";
 import {
   CUSTOMER_NOTIFICATION_TYPES,
+  orderCancellationEmailContent,
+  type CancellationPaymentDetails,
   type CustomerNotificationType,
 } from "@/lib/shipping/customerNotificationDomain";
 import { renderCustomerMessage } from "@/lib/storeSettingsDomain";
@@ -44,7 +46,7 @@ function logSkipped(kind: string, reason: string, reference: string) {
 
 async function claimOrderEmail(
   orderId: string,
-  type: OrderEmailType,
+  type: CustomerNotificationType,
 ): Promise<ClaimedOrderEmail | null> {
   const processingToken = randomUUID();
 
@@ -278,6 +280,108 @@ export async function sendOrderLifecycleEmail(
   } catch (error) {
     const reason = error instanceof Error ? error.name : "unknown_error";
     console.error("[email] falha ao processar e-mail de pedido", {
+      kind: type,
+      reference: orderId,
+      reason,
+    });
+
+    if (claim) {
+      await prisma.orderEmailLog
+        .updateMany({
+          where: {
+            id: claim.id,
+            processingToken: claim.processingToken,
+            sentAt: null,
+          },
+          data: {
+            status: "failed",
+            processingToken: null,
+            lastError: reason.slice(0, 500),
+          },
+        })
+        .catch(() => undefined);
+    }
+  }
+}
+
+export async function sendOrderCancellationEmail(
+  orderId: string,
+  payment: CancellationPaymentDetails,
+): Promise<void> {
+  const type = CUSTOMER_NOTIFICATION_TYPES.orderCanceled;
+  let claim: ClaimedOrderEmail | null = null;
+
+  try {
+    const [order, settings] = await Promise.all([
+      prisma.order.findUnique({
+        where: { id: orderId },
+        select: {
+          id: true,
+          total: true,
+          nomeCliente: true,
+          emailCliente: true,
+          user: { select: { name: true, email: true } },
+        },
+      }),
+      prisma.storeSettings.findUnique({
+        where: { id: "singleton" },
+        select: {
+          nomeLoja: true,
+          logoUrl: true,
+          corPrincipal: true,
+        },
+      }),
+    ]);
+
+    if (!order) {
+      logSkipped(type, "order_not_found", orderId);
+      return;
+    }
+
+    const recipient = order.emailCliente ?? order.user?.email;
+    if (!recipient) {
+      logSkipped(type, "recipient_not_found", orderId);
+      return;
+    }
+
+    const customerName =
+      order.nomeCliente?.trim() || order.user?.name?.trim() || "cliente";
+    const copy = orderCancellationEmailContent({
+      orderId: order.id,
+      customerName,
+      total: Number(order.total),
+      payment,
+    });
+    const branding = emailBrandingFromSettings({
+      nomeLoja: settings?.nomeLoja ?? "EcomZero",
+      logoUrl: settings?.logoUrl ?? "/images/logo2.png",
+      corPrincipal: settings?.corPrincipal ?? "#A9EC17",
+    });
+    const content = renderBrandedEmail({
+      branding,
+      heading: copy.subject,
+      message: copy.message,
+    });
+
+    claim = await claimOrderEmail(order.id, type);
+    if (!claim) {
+      logSkipped(type, "already_sent_or_processing", order.id);
+      return;
+    }
+
+    const result = await sendTransactionalEmail({
+      kind: type,
+      from: config.email.contactFrom,
+      to: recipient,
+      subject: copy.subject,
+      html: content.html,
+      text: content.text,
+      idempotencyKey: `order/${type}/${order.id}`,
+    });
+    await finishOrderEmail(claim, result);
+  } catch (error) {
+    const reason = error instanceof Error ? error.name : "unknown_error";
+    console.error("[email] falha ao processar e-mail de cancelamento", {
       kind: type,
       reference: orderId,
       reason,

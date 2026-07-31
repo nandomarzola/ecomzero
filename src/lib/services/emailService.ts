@@ -9,7 +9,8 @@ export type TransactionalEmailKind =
   | "welcome"
   | "payment_confirmed"
   | "order_in_transit"
-  | "order_delivered";
+  | "order_delivered"
+  | "order_canceled";
 
 export type EmailBranding = {
   storeName: string;
