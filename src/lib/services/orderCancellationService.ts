@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { shouldNotifyOrderCancellation } from "@/lib/shipping/customerNotificationDomain";
+import { runOrderCancellationSideEffect } from "@/lib/shipping/orderCancellationSideEffect";
 import { createCustomerOrderCanceledNotification } from "@/lib/services/customerNotificationService";
 import {
   cancelMercadoPagoPayment,
@@ -303,6 +304,25 @@ async function releaseCouponUsage(
   });
 }
 
+async function notifyCustomerCancellationBestEffort(
+  orderId: string,
+  createdAt: Date,
+) {
+  await runOrderCancellationSideEffect(
+    () =>
+      prisma.$transaction((tx) =>
+        createCustomerOrderCanceledNotification(tx, { orderId, createdAt }),
+      ),
+    (error) => {
+      console.error("[order-cancellation] falha na notificação do cliente", {
+        orderId,
+        name: error instanceof Error ? error.name : "unknown_error",
+        message: error instanceof Error ? error.message.slice(0, 500) : null,
+      });
+    },
+  );
+}
+
 async function finalizeCancellation(
   claim: CancellationClaim,
   input: OrderCancellationInput,
@@ -364,12 +384,6 @@ async function finalizeCancellation(
         },
       },
     });
-    if (shouldNotifyOrderCancellation(refund?.status ?? null)) {
-      await createCustomerOrderCanceledNotification(tx, {
-        orderId: claim.order.id,
-        createdAt: completedAt,
-      });
-    }
   });
 
   return {
@@ -487,10 +501,16 @@ export async function cancelOrder(
       refund,
     );
     if (shouldNotifyOrderCancellation(refund?.status ?? null)) {
-      await sendOrderCancellationEmail(claimed.order.id, {
-        paymentMethodId: paymentSnapshot?.paymentMethodId ?? null,
-        paymentTypeId: paymentSnapshot?.paymentTypeId ?? null,
-      });
+      await Promise.all([
+        notifyCustomerCancellationBestEffort(
+          claimed.order.id,
+          new Date(result.completedAt),
+        ),
+        sendOrderCancellationEmail(claimed.order.id, {
+          paymentMethodId: paymentSnapshot?.paymentMethodId ?? null,
+          paymentTypeId: paymentSnapshot?.paymentTypeId ?? null,
+        }),
+      ]);
     }
     return result;
   } catch (error) {

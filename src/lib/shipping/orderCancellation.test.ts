@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { runOrderCancellationSideEffect } from "@/lib/shipping/orderCancellationSideEffect";
 import { orderCancellationSchema } from "@/lib/validation/orderCancellation";
 
 const requestedBy = "admin@ecomzero.com.br";
@@ -33,4 +34,18 @@ test("rejeita ator inválido e observação acima do limite", () => {
     requestedBy: "sem-email",
   });
   assert.equal(parsed.success, false);
+});
+
+test("falha de notificação não interrompe o cancelamento autoritativo", async () => {
+  const errors: unknown[] = [];
+  const completed = await runOrderCancellationSideEffect(
+    async () => {
+      throw new Error("enum de notificação ainda não aplicado");
+    },
+    (error) => errors.push(error),
+  );
+
+  assert.equal(completed, false);
+  assert.equal(errors.length, 1);
+  assert.match(String(errors[0]), /enum de notificação/);
 });
